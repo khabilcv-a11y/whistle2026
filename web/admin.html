@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<script src="config.js"></script>
+<title>WHISTLE 2026 · Score Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f5f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --soft: #f8fafc;
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .hidden { display: none !important; }
+  .display { font-family: "Barlow Condensed", Inter, sans-serif; letter-spacing: .02em; }
+
+  /* ---------- top bar ---------- */
+  .top { position: sticky; top: 0; z-index: 20; background: var(--brand); color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+  .top-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 8px; margin-right: auto; }
+  .brand b { font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 800; letter-spacing: .04em; }
+  .brand span { font-size: 12px; opacity: .7; text-transform: uppercase; letter-spacing: .12em; }
+  .who { font-size: 13px; opacity: .85; display: flex; gap: 10px; align-items: center; }
+  .who a, .who button { color: #fff; background: rgba(255,255,255,.12); border: 0; border-radius: 8px; padding: 6px 10px; text-decoration: none; font-size: 13px; }
+  .tabs { max-width: 1200px; margin: 0 auto; display: flex; gap: 4px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { background: none; border: 0; color: rgba(255,255,255,.7); padding: 10px 14px 12px; font-weight: 600; border-bottom: 3px solid transparent; white-space: nowrap; }
+  .tabs button.on { color: #fff; border-bottom-color: #facc15; }
+  #busybar { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: #facc15; z-index: 100; transition: width .3s; }
+  #busybar.on { width: 70%; transition: width 8s cubic-bezier(.1,.8,.2,1); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 16px 16px 140px; }
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
+  h2.step { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  h2.step .n { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 13px; letter-spacing: 0; }
+  h2.step .sel { margin-left: auto; color: var(--ink); text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 14px; }
+
+  /* ---------- chips ---------- */
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .chip { position: relative; min-height: 54px; border: 2px solid var(--line); background: var(--soft); border-radius: 12px; padding: 8px 12px; text-align: left; font-weight: 600; display: flex; flex-direction: column; justify-content: center; transition: border-color .15s, background .15s, transform .08s; }
+  .chip:active { transform: scale(.98); }
+  .chip small { font-weight: 500; color: var(--muted); font-size: 12px; }
+  .chip.on { border-color: var(--brand); background: var(--brand); color: #fff; }
+  .chip.on small { color: rgba(255,255,255,.7); }
+  .chip.done { border-color: #bbf7d0; background: #f0fdf4; }
+  .chip.done.on { border-color: var(--brand); background: var(--brand); }
+  .chip .tick { font-weight: 700; color: var(--ok); }
+  .chip.on .tick { color: #86efac; }
+  .chips.big .chip { min-height: 64px; font-size: 17px; font-family: "Barlow Condensed", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+  .search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); margin-bottom: 10px; }
+  .empty { grid-column: 1 / -1; color: var(--muted); padding: 18px; text-align: center; border: 2px dashed var(--line); border-radius: 12px; }
+
+  /* ---------- position rows ---------- */
+  .prow { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 10px; background: var(--soft); }
+  .prow.filled { background: #fff; border-color: #cbd5e1; }
+  .prow-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pos-select { appearance: none; -webkit-appearance: none; border: 0; border-radius: 10px; padding: 8px 12px; font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 20px; min-width: 70px; text-align: center; background: #e2e8f0; }
+  .pos-select.p1 { background: linear-gradient(135deg,#fde68a,#f59e0b); }
+  .pos-select.p2 { background: linear-gradient(135deg,#f1f5f9,#94a3b8); }
+  .pos-select.p3 { background: linear-gradient(135deg,#fed7aa,#c2703d); }
+  .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+  .stepper button { width: 38px; height: 38px; border: 0; background: #f1f5f9; font-size: 20px; font-weight: 700; }
+  .stepper input { width: 58px; height: 38px; border: 0; text-align: center; font-weight: 700; font-size: 17px; -moz-appearance: textfield; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .pts-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .row-x { margin-left: auto; border: 0; background: none; color: var(--muted); font-size: 13px; padding: 6px 8px; border-radius: 8px; }
+  .row-x:hover { background: #fee2e2; color: var(--bad); }
+  .houses { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
+  .hbtn { min-height: 58px; border-radius: 12px; border: 3px solid var(--c); background: #fff; color: var(--ink); font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 19px; letter-spacing: .05em; text-transform: uppercase; position: relative; transition: transform .08s, background .12s; }
+  .hbtn { background: linear-gradient(180deg, #fff 70%, #f1f5f9); padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbtn.on { background: var(--c); color: var(--i); box-shadow: 0 4px 14px rgba(15,23,42,.25); }
+  .hbtn.on::after { content: "✓"; position: absolute; right: 6px; top: 3px; font-size: 13px; }
+  .hbtn:active { transform: scale(.97); }
+  .add-row { width: 100%; border: 2px dashed #94a3b8; background: none; border-radius: 12px; padding: 12px; font-weight: 700; color: #334155; }
+  .field { display: block; margin-top: 12px; }
+  .field span { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+
+  .note { border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; }
+  .note.warn { background: #fffbeb; border: 1px solid #fde68a; }
+  .note.info { background: #eff6ff; border: 1px solid #bfdbfe; }
+
+  .hchip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 7px; border-radius: 999px; background: var(--c); color: var(--i); font-weight: 700; font-size: 12px; letter-spacing: .04em; white-space: nowrap; }
+  .medal { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 800; background: #e2e8f0; color: #0f172a; }
+  .medal.m1 { background: #f59e0b; } .medal.m2 { background: #cbd5e1; } .medal.m3 { background: #d08a55; }
+
+  /* ---------- save bar ---------- */
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); box-shadow: 0 -4px 20px rgba(15,23,42,.08); }
+  .savebar-inner { max-width: 1200px; margin: 0 auto; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; }
+  .summary { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
+  .summary b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink); font-size: 15px; line-height: 1.25; }
+  .btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: #e2e8f0; color: var(--ink); }
+  .btn.primary { background: var(--brand); color: #fff; }
+  .btn.save { background: var(--ok); color: #fff; padding: 14px 26px; font-size: 16px; letter-spacing: .04em; }
+  .btn.danger { background: var(--bad); color: #fff; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); }
+  .btn.sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- results table ---------- */
+  .filters { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .filters input, .filters select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .meta-line { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .meta-line .spacer { flex: 1; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.grid th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  table.grid td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table.grid tr.deleted td { color: #94a3b8; }
+  table.grid tr.deleted .hchip { opacity: .45; }
+  table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .st { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .06em; }
+  .st.ACTIVE { background: #dcfce7; color: #166534; }
+  .st.DELETED { background: #fee2e2; color: #991b1b; }
+  .st.HIDDEN { background: #f1f5f9; color: #475569; }
+  .actions { white-space: nowrap; text-align: right; }
+  .actions .btn + .btn { margin-left: 6px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+  .sub { color: var(--muted); font-size: 12px; }
+  .wrap { word-break: break-word; }
+
+  /* ---------- events tab ---------- */
+  .ev-sec { margin-bottom: 16px; }
+  .ev-sec h3 { margin: 0 0 8px; font-family: "Barlow Condensed", sans-serif; font-size: 22px; letter-spacing: .04em; }
+  .ev-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+  .ev-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--soft); }
+  .ev-item.HIDDEN { opacity: .55; }
+  .ev-item .nm { font-weight: 600; flex: 1; min-width: 0; }
+  .add-ev { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+
+  /* ---------- modal / toast ---------- */
+  .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 50; display: grid; place-items: center; padding: 16px; }
+  .modal { background: #fff; border-radius: 16px; max-width: 520px; width: 100%; max-height: 90vh; overflow: auto; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .modal h3 { margin: 0 0 6px; font-size: 20px; }
+  .modal .foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+  .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; width: calc(100% - 32px); max-width: 520px; pointer-events: none; }
+  .toast { background: #0f172a; color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); font-weight: 600; animation: pop .2s ease-out; }
+  .toast.ok { background: #166534; } .toast.error { background: #991b1b; }
+  @keyframes pop { from { transform: translateY(10px); opacity: 0; } }
+
+  /* ---------- login ---------- */
+  .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: radial-gradient(1200px 600px at 20% -10%, #1e293b, #0b1120); }
+  .login .box { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 28px 24px; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+  .login h1 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-size: 40px; letter-spacing: .04em; }
+  .login p { margin: 2px 0 16px; color: var(--muted); }
+  .login .btn { width: 100%; padding: 14px; margin-top: 16px; font-size: 16px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .err { color: var(--bad); font-size: 14px; margin-top: 10px; min-height: 20px; }
+
+  @media (max-width: 760px) {
+    main { padding: 12px 12px 150px; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .filters .q { grid-column: 1 / -1; }
+    .add-ev { grid-template-columns: 1fr; }
+    table.grid thead { display: none; }
+    table.grid, table.grid tbody, table.grid tr, table.grid td { display: block; width: 100%; }
+    table.grid tr { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; background: #fff; }
+    table.grid td { border: 0; padding: 3px 0; display: flex; justify-content: space-between; gap: 10px; text-align: right; }
+    table.grid td::before { content: attr(data-l); flex: none; white-space: nowrap; padding-top: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); text-align: left; }
+    table.grid td > div { min-width: 0; }
+    table.grid td.actions { justify-content: flex-end; padding-top: 8px; }
+    table.grid td.actions::before { content: none; }
+    .chips { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .btn.save { padding: 14px 18px; }
+    .pts-label { display: none; }
+    .houses { gap: 6px; }
+    .hbtn { font-size: 16px; letter-spacing: .02em; }
+    .hbtn.on::after { right: 4px; top: 1px; font-size: 11px; }
+    .stepper button { width: 34px; }
+    .stepper input { width: 46px; }
+  }
+</style>
+</head>
+<body>
+<div id="busybar"></div>
+
+<!-- ============ LOGIN ============ -->
+<div id="login" class="login hidden">
+  <form class="box" id="loginForm" autocomplete="off">
+    <h1>WHISTLE 2026</h1>
+    <p>Score Management · Officials only</p>
+    <label class="field"><span>Official name</span><input id="loginName" placeholder="e.g. Track Judge – Anu" maxlength="60"></label>
+    <label class="field"><span>Admin PIN</span><input id="loginPin" type="password" inputmode="numeric" placeholder="••••••" required></label>
+    <label class="chk"><input type="checkbox" id="loginRemember"> Remember on this device</label>
+    <button class="btn primary" type="submit" id="loginBtn">Enter</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand"><b>WHISTLE 2026</b><span>Score Admin</span></div>
+      <div class="who">
+        <span id="whoName"></span>
+        <a id="dashLink" href="./" target="_blank" rel="noopener">Live Dashboard ↗</a>
+        <button id="logoutBtn" type="button">Log out</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="enter" class="on">Enter Result</button>
+      <button data-tab="results">Results</button>
+      <button data-tab="audit">Audit Trail</button>
+      <button data-tab="events">Events</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ENTER -->
+    <section id="tab-enter">
+      <div class="card">
+        <h2 class="step"><span class="n">1</span> Section <span class="sel" id="selSection"></span></h2>
+        <div class="chips big" id="sectionChips"></div>
+      </div>
+      <div class="card">
+        <h2 class="step"><span class="n">2</span> Event / Item <span class="sel" id="selEvent"></span></h2>
+        <input class="search hidden" id="eventSearch" placeholder="Filter events…">
+        <div class="chips" id="eventChips"></div>
+      </div>
+      <div class="card">
+        <h2 class="step"><span class="n">3</span> Houses &amp; positions</h2>
+        <div id="existingNote"></div>
+        <div id="posRows"></div>
+        <button class="add-row" type="button" id="addRowBtn">+ ADD POSITION</button>
+        <label class="field"><span>Remarks (optional)</span><input id="remarks" maxlength="200" placeholder="e.g. Photo finish, tie for 3rd"></label>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="tab-results" class="hidden">
+      <div class="card">
+        <div class="filters">
+          <input class="q" id="fQ" placeholder="Search ID, event, house, official…">
+          <select id="fSection"></select>
+          <select id="fEvent"></select>
+          <select id="fHouse"></select>
+          <select id="fStatus">
+            <option value="ACTIVE">Active</option>
+            <option value="DELETED">Deleted</option>
+            <option value="">All statuses</option>
+          </select>
+        </div>
+        <div class="meta-line"><span id="resCount"></span><span class="spacer"></span><button class="btn sm ghost" id="refreshBtn" type="button">↻ Refresh</button></div>
+        <div id="resTable"></div>
+      </div>
+    </section>
+
+    <!-- AUDIT -->
+    <section id="tab-audit" class="hidden">
+      <div class="card">
+        <div class="filters" style="grid-template-columns: 2fr 1fr auto;">
+          <input class="q" id="aQ" placeholder="Search audit log…">
+          <select id="aAction"><option value="">All actions</option></select>
+          <button class="btn sm ghost" id="auditRefresh" type="button">↻ Reload</button>
+        </div>
+        <div class="meta-line"><span id="auditCount"></span></div>
+        <div id="auditTable"></div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="tab-events" class="hidden">
+      <div class="card">
+        <div class="meta-line" style="margin-bottom:12px">
+          <span>Events are read from the <b>Registrations</b> sheet. New registrations can add events — sync to pull them in. Hidden events disappear from entry &amp; dashboard.</span>
+          <span class="spacer"></span>
+          <button class="btn primary sm" id="syncBtn" type="button">↻ Sync from registrations</button>
+        </div>
+        <form class="add-ev" id="addEvForm">
+          <label class="field" style="margin:0"><span>Section</span><input id="newEvSection" list="secList" required placeholder="e.g. JUNIOR"></label>
+          <label class="field" style="margin:0"><span>Event name</span><input id="newEvName" required placeholder="e.g. 4x100M RELAY"></label>
+          <button class="btn" type="submit">+ Add event</button>
+          <datalist id="secList"></datalist>
+        </form>
+      </div>
+      <div class="card" id="eventsList"></div>
+    </section>
+  </main>
+
+  <div class="savebar" id="saveBar">
+    <div class="savebar-inner">
+      <div class="summary" id="summary"></div>
+      <button class="btn ghost" type="button" id="clearBtn">Clear</button>
+      <button class="btn save" type="button" id="saveBtn" disabled>SAVE RESULT</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<div id="modalRoot"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------ state
+  var S = {
+    pin: '', official: '',
+    data: null,                 // admin snapshot from server
+    tab: 'enter',
+    section: '', eventKey: '', eventFilter: '',
+    rows: [],
+    audit: null,
+    busy: 0
+  };
+  var LS_PIN = 'whistle_admin_pin', LS_NAME = 'whistle_official';
+
+  // ------------------------------------------------------------------ utils
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ord(n) { var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+  function store(k, v, persist) { try { (persist ? localStorage : sessionStorage).setItem(k, v); } catch (e) {} }
+  function load(k) { try { return sessionStorage.getItem(k) || localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function forget(k) { try { sessionStorage.removeItem(k); localStorage.removeItem(k); } catch (e) {} }
+  function fmtTime(ms) {
+    if (!ms) return '—';
+    var d = new Date(ms), now = new Date();
+    var t = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toDateString() === now.toDateString() ? t : d.toLocaleDateString([], { day: '2-digit', month: 'short' }) + ' ' + t;
+  }
+  function errMsg(e) { return String((e && e.message) || e || 'Something went wrong').replace(/^(Exception|Error):\s*/i, ''); }
+  function house(name) {
+    var h = (S.data && S.data.houses || []).filter(function (x) { return x.name === name; })[0];
+    return h || { name: name, color: '#64748b', ink: '#fff' };
+  }
+  function hchip(name) { var h = house(name); return '<span class="hchip" style="--c:' + h.color + ';--i:' + h.ink + '">' + esc(h.name) + '</span>'; }
+  function cell(label, html, cls) { return '<td data-l="' + label + '"' + (cls ? ' class="' + cls + '"' : '') + '><div>' + html + '</div></td>'; }
+  function medal(p) { return '<span class="medal m' + (p <= 3 ? p : 0) + '">' + p + '</span>'; }
+  function defaultPts(pos) { var d = (S.data && S.data.defaultPoints) || [5, 3, 1]; return d[pos - 1] != null ? d[pos - 1] : 0; }
+
+  function toast(msg, kind) {
+    var el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.textContent = msg;
+    $('toasts').appendChild(el);
+    setTimeout(function () { el.remove(); }, kind === 'error' ? 6000 : 3500);
+  }
+  function busy(on) {
+    S.busy += on ? 1 : -1;
+    $('busybar').className = S.busy > 0 ? 'on' : '';
+    updateSaveBar();
+  }
+
+  // ------------------------------------------------------------------ server
+  // Calls the Apps Script API (URL from config.js). The local preview harness
+  // provides google.script.run instead.
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    if (window.google && google.script && google.script.run) {
+      return new Promise(function (resolve, reject) {
+        var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+        r[fn].apply(r, args);
+      });
+    }
+    var url = window.WHISTLE_CONFIG && window.WHISTLE_CONFIG.apiUrl;
+    if (!/^https:\/\//.test(url || '')) return Promise.reject(new Error('API URL missing – set apiUrl in config.js'));
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Server error (' + r.status + ')');
+      return r.json();
+    }, function () {
+      throw new Error('Cannot reach the server – check the internet connection.');
+    }).then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'Unexpected server response');
+      return j.result;
+    });
+  }
+  function call(fn) {
+    var args = [fn, S.pin].concat(Array.prototype.slice.call(arguments, 1));
+    busy(true);
+    return api.apply(null, args).then(function (res) { busy(false); return res; }, function (e) {
+      busy(false);
+      var m = errMsg(e);
+      if (/Invalid PIN/i.test(m)) { toast('Session expired – please log in again.', 'error'); logout(); }
+      else toast(m, 'error');
+      throw e;
+    });
+  }
+  function applyState(st) {
+    if (!st) return;
+    var user = S.data && S.data.user;
+    S.data = st;
+    if (!st.user) st.user = user;
+    renderAll();
+  }
+
+  // ------------------------------------------------------------------ login
+  function showLogin(msg) {
+    $('app').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    $('loginName').value = load(LS_NAME);
+    $('loginErr').textContent = msg || '';
+    setTimeout(function () { ($('loginName').value ? $('loginPin') : $('loginName')).focus(); }, 50);
+  }
+  function logout() {
+    forget(LS_PIN);
+    S.pin = ''; S.data = null;
+    showLogin();
+  }
+  $('loginForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var pin = $('loginPin').value.trim(), name = $('loginName').value.trim();
+    if (!pin) return;
+    $('loginBtn').disabled = true; $('loginErr').textContent = '';
+    api('getAdminBootstrap', pin).then(function (st) {
+      S.pin = pin; S.official = name;
+      store(LS_PIN, pin, $('loginRemember').checked);
+      store(LS_NAME, name, true);
+      $('loginPin').value = '';
+      enterApp(st);
+    }, function (e) {
+      $('loginErr').textContent = errMsg(e);
+    }).then(function () { $('loginBtn').disabled = false; });
+  });
+  $('logoutBtn').addEventListener('click', logout);
+
+  function enterApp(st) {
+    S.data = st;
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    $('whoName').textContent = S.official || st.user || '';
+    if (st.synced && st.synced.added) toast(st.synced.added + ' new event(s) synced from registrations', 'ok');
+    resetRows();
+    renderAll();
+  }
+
+  // ------------------------------------------------------------------ tabs
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]');
+    if (b) setTab(b.getAttribute('data-tab'));
+  });
+  function setTab(t) {
+    S.tab = t;
+    Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); });
+    ['enter', 'results', 'audit', 'events'].forEach(function (x) { $('tab-' + x).classList.toggle('hidden', x !== t); });
+    $('saveBar').classList.toggle('hidden', t !== 'enter');
+    if (t === 'audit') loadAudit();
+    else refreshState(true);
+    window.scrollTo(0, 0);
+  }
+  function refreshState(quiet) {
+    if (!S.pin) return;
+    (quiet ? api('getAdminState', S.pin) : call('getAdminState')).then(applyState, function (e) {
+      if (quiet && /Invalid PIN/i.test(errMsg(e))) logout();
+    });
+  }
+
+  function renderAll() {
+    if (!S.data) return;
+    renderEnter();
+    renderResultFilters();
+    renderResults();
+    renderEvents();
+  }
+
+  // ================================================================== ENTER
+  function sections() { return (S.data.sections || []).map(function (s) {
+    return { name: s.name, events: s.events.filter(function (e) { return e.status === 'ACTIVE'; }) };
+  }).filter(function (s) { return s.events.length; }); }
+  function currentSection() { return sections().filter(function (s) { return s.name === S.section; })[0] || null; }
+  function currentEvent() {
+    var sec = currentSection();
+    return sec && sec.events.filter(function (e) { return e.key === S.eventKey; })[0] || null;
+  }
+
+  function resetRows() {
+    var d = (S.data && S.data.defaultPoints) || [5, 3, 1];
+    S.rows = d.map(function (p, i) { return { position: i + 1, points: p, house: '', edited: false, base: true }; });
+    if ($('remarks')) $('remarks').value = '';
+  }
+
+  function renderEnter() {
+    var secs = sections();
+    if (S.section && !currentSection()) { S.section = ''; S.eventKey = ''; }
+    if (S.eventKey && !currentEvent()) S.eventKey = '';
+
+    $('sectionChips').innerHTML = secs.length ? secs.map(function (s) {
+      var done = s.events.filter(function (e) { return e.results; }).length;
+      return '<button type="button" class="chip' + (s.name === S.section ? ' on' : '') + '" data-sec="' + esc(s.name) + '">' + esc(s.name) +
+        '<small>' + done + ' / ' + s.events.length + ' declared</small></button>';
+    }).join('') : '<div class="empty">No events yet. Check the <b>Registrations</b> sheet or add events in the Events tab.</div>';
+    $('selSection').textContent = S.section;
+
+    var sec = currentSection();
+    var evs = sec ? sec.events : [];
+    var f = S.eventFilter.toLowerCase();
+    $('eventSearch').classList.toggle('hidden', evs.length <= 12);
+    var shown = evs.filter(function (e) { return !f || e.name.toLowerCase().indexOf(f) >= 0; });
+    $('eventChips').innerHTML = !sec ? '<div class="empty">Select a section first</div>' :
+      shown.map(function (e) {
+        return '<button type="button" class="chip' + (e.results ? ' done' : '') + (e.key === S.eventKey ? ' on' : '') + '" data-ev="' + esc(e.key) + '">' +
+          esc(e.name) +
+          '<small>' + (e.results ? '<span class="tick">✓ Declared</span> · ' : '') + (e.registrations ? e.registrations + ' entries' : 'no entries') + '</small></button>';
+      }).join('') || '<div class="empty">No matching events</div>';
+    var ev = currentEvent();
+    $('selEvent').textContent = ev ? ev.name : '';
+
+    // existing result note
+    var existing = ev ? S.data.results.filter(function (r) { return r.key === ev.key && r.status === 'ACTIVE'; }) : [];
+    existing.sort(function (a, b) { return a.position - b.position; });
+    $('existingNote').innerHTML = existing.length ?
+      '<div class="note warn"><b>Already declared:</b> ' + existing.map(function (r) { return medal(r.position) + ' ' + hchip(r.house) + ' ' + r.points; }).join(' &nbsp; ') +
+      '<br><span class="sub">Saving again will ask whether to <b>replace</b> this result or <b>add</b> to it. To fix one entry, use the Results tab.</span></div>' :
+      (ev ? '' : '<div class="note info">Pick a section and event, then tap the house for each position.</div>');
+
+    // Don't rebuild the rows under an official who is typing points.
+    if ($('posRows').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') updateSaveBar();
+    else renderRows();
+  }
+
+  function renderRows() {
+    var houses = S.data.houses || [];
+    var posOpts = function (sel) {
+      var o = '';
+      for (var i = 1; i <= 10; i++) o += '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + ord(i) + '</option>';
+      return o;
+    };
+    $('posRows').innerHTML = S.rows.map(function (r, i) {
+      return '<div class="prow' + (r.house ? ' filled' : '') + '" data-row="' + i + '">' +
+        '<div class="prow-head">' +
+          '<select class="pos-select p' + r.position + '" data-pos="' + i + '" aria-label="Position">' + posOpts(r.position) + '</select>' +
+          '<span class="pts-label">Points</span>' +
+          '<div class="stepper"><button type="button" data-step="-1" data-i="' + i + '" aria-label="Less">−</button>' +
+          '<input type="number" min="0" step="1" inputmode="decimal" value="' + r.points + '" data-pts="' + i + '" aria-label="Points">' +
+          '<button type="button" data-step="1" data-i="' + i + '" aria-label="More">+</button></div>' +
+          (r.base ? (r.house ? '<button type="button" class="row-x" data-unset="' + i + '">clear</button>' : '') :
+            '<button type="button" class="row-x" data-remove="' + i + '">✕ remove</button>') +
+        '</div>' +
+        '<div class="houses">' + houses.map(function (h) {
+          return '<button type="button" class="hbtn' + (r.house === h.name ? ' on' : '') + '" style="--c:' + h.color + ';--i:' + h.ink + '" data-house="' + esc(h.name) + '" data-i="' + i + '">' + esc(h.name) + '</button>';
+        }).join('') + '</div>' +
+      '</div>';
+    }).join('');
+    updateSaveBar();
+  }
+
+  function entries() {
+    return S.rows.filter(function (r) { return r.house; }).map(function (r) {
+      return { house: r.house, position: r.position, points: Number(r.points) };
+    });
+  }
+
+  function updateSaveBar() {
+    if (!S.data) return;
+    var ev = currentEvent(), en = entries();
+    var pts = en.reduce(function (a, e) { return a + (Number(e.points) || 0); }, 0);
+    $('summary').innerHTML = ev ?
+      '<b>' + esc(ev.section) + ' › ' + esc(ev.name) + '</b>' + (en.length ? en.length + ' position(s) · ' + pts + ' pts total' : 'Tap a house for each position') :
+      '<b>No event selected</b>Choose section → event';
+    var bad = en.some(function (e) { return !(e.points >= 0); });
+    $('saveBtn').disabled = !ev || !en.length || bad || S.busy > 0;
+  }
+
+  $('sectionChips').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sec]'); if (!b) return;
+    var s = b.getAttribute('data-sec');
+    if (s !== S.section) { S.section = s; S.eventKey = ''; S.eventFilter = ''; $('eventSearch').value = ''; }
+    renderEnter();
+  });
+  $('eventSearch').addEventListener('input', function () { S.eventFilter = this.value; renderEnter(); });
+  $('eventChips').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ev]'); if (!b) return;
+    S.eventKey = b.getAttribute('data-ev');
+    renderEnter();
+    setTimeout(function () { $('existingNote').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
+  });
+  $('posRows').addEventListener('click', function (e) {
+    var t;
+    if ((t = e.target.closest('[data-house]'))) {
+      var r = S.rows[+t.getAttribute('data-i')], h = t.getAttribute('data-house');
+      r.house = r.house === h ? '' : h;
+      renderRows();
+    } else if ((t = e.target.closest('[data-step]'))) {
+      var row = S.rows[+t.getAttribute('data-i')];
+      row.points = Math.max(0, (Number(row.points) || 0) + Number(t.getAttribute('data-step')));
+      row.edited = true;
+      renderRows();
+    } else if ((t = e.target.closest('[data-remove]'))) {
+      S.rows.splice(+t.getAttribute('data-remove'), 1);
+      renderRows();
+    } else if ((t = e.target.closest('[data-unset]'))) {
+      S.rows[+t.getAttribute('data-unset')].house = '';
+      renderRows();
+    }
+  });
+  $('posRows').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-pos')) {
+      var r = S.rows[+t.getAttribute('data-pos')];
+      r.position = Number(t.value);
+      if (!r.edited) r.points = defaultPts(r.position);
+      renderRows();
+    }
+  });
+  $('posRows').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-pts')) {
+      var r = S.rows[+t.getAttribute('data-pts')];
+      r.points = t.value === '' ? '' : Number(t.value);
+      r.edited = true;
+      updateSaveBar();
+    }
+  });
+  $('addRowBtn').addEventListener('click', function () {
+    var next = S.rows.reduce(function (m, r) { return Math.max(m, r.position); }, 0) + 1;
+    if (next > 10) next = 10;
+    S.rows.push({ position: next, points: defaultPts(next), house: '', edited: false, base: false });
+    renderRows();
+  });
+  $('clearBtn').addEventListener('click', function () { resetRows(); renderRows(); });
+  $('saveBtn').addEventListener('click', function () { save(''); });
+
+  function save(mode) {
+    var ev = currentEvent(), en = entries();
+    if (!ev || !en.length) return;
+    call('saveResult', {
+      section: ev.section, event: ev.name, entries: en,
+      remarks: $('remarks').value, official: S.official, mode: mode
+    }).then(function (res) {
+      if (res.status === 'EXISTS') return existsModal(ev, res.existing);
+      toast('✓ ' + res.message, 'ok');
+      resetRows();
+      S.eventKey = '';
+      applyState(res.state);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, function () {});
+  }
+
+  function existsModal(ev, existing) {
+    existing.sort(function (a, b) { return a.position - b.position; });
+    modal('<h3>' + esc(ev.section) + ' › ' + esc(ev.name) + ' already has a result</h3>' +
+      '<p class="sub">Currently on the scoreboard:</p>' +
+      '<p>' + existing.map(function (r) { return medal(r.position) + ' ' + hchip(r.house) + ' <b>' + r.points + '</b> <span class="sub mono">' + esc(r.id) + '</span>'; }).join('<br>') + '</p>' +
+      '<p class="sub"><b>Replace</b> soft-deletes the old entries (kept in the audit trail) and saves this one. <b>Add</b> keeps both — use it for extra positions entered later.</p>' +
+      '<div class="foot"><button class="btn ghost" data-close>Cancel</button><button class="btn" data-m="append">Add to existing</button><button class="btn danger" data-m="replace">Replace existing</button></div>',
+      function (root) {
+        root.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-m]');
+          if (b) { closeModal(); save(b.getAttribute('data-m')); }
+        });
+      });
+  }
+
+  // ================================================================== RESULTS
+  var F = { q: '', section: '', event: '', house: '', status: 'ACTIVE' };
+
+  function renderResultFilters() {
+    var secs = S.data.sections || [];
+    var opt = function (v, label, sel) { return '<option value="' + esc(v) + '"' + (v === sel ? ' selected' : '') + '>' + esc(label) + '</option>'; };
+    $('fSection').innerHTML = opt('', 'All sections', F.section) + secs.map(function (s) { return opt(s.name, s.name, F.section); }).join('');
+    var evs = [];
+    secs.forEach(function (s) { if (!F.section || s.name === F.section) s.events.forEach(function (e) { evs.push(e); }); });
+    if (F.event && !evs.some(function (e) { return e.key === F.event; })) F.event = '';
+    $('fEvent').innerHTML = opt('', 'All events', F.event) + evs.map(function (e) { return opt(e.key, (F.section ? '' : e.section + ' › ') + e.name, F.event); }).join('');
+    $('fHouse').innerHTML = opt('', 'All houses', F.house) + (S.data.houses || []).map(function (h) { return opt(h.name, h.name, F.house); }).join('');
+    $('fStatus').value = F.status;
+  }
+
+  function filteredResults() {
+    var q = F.q.toLowerCase();
+    return (S.data.results || []).filter(function (r) {
+      if (F.status && r.status !== F.status) return false;
+      if (F.section && r.section !== F.section) return false;
+      if (F.event && r.key !== F.event) return false;
+      if (F.house && r.house !== F.house) return false;
+      if (q) {
+        var hay = [r.id, r.decl, r.section, r.event, r.house, r.by, r.updatedBy, r.remarks, ord(r.position)].join(' ').toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderResults() {
+    var list = filteredResults();
+    var pts = list.filter(function (r) { return r.status === 'ACTIVE'; }).reduce(function (a, r) { return a + r.points; }, 0);
+    $('resCount').textContent = list.length + ' result row(s)' + (list.length ? ' · ' + Math.round(pts * 100) / 100 + ' active points' : '');
+    if (!list.length) { $('resTable').innerHTML = '<div class="empty">No results match these filters.</div>'; return; }
+    $('resTable').innerHTML = '<table class="grid"><thead><tr><th>ID</th><th>Time</th><th>Section › Event</th><th>House</th><th>Pos</th><th style="text-align:right">Pts</th><th>Status</th><th>By</th><th></th></tr></thead><tbody>' +
+      list.map(function (r) {
+        return '<tr class="' + (r.status === 'DELETED' ? 'deleted' : '') + '">' +
+          cell('ID', '<span class="mono">' + esc(r.id) + '</span><div class="sub mono">' + esc(r.decl) + '</div>') +
+          cell('Time', fmtTime(r.ts) + (r.updatedAt && r.updatedAt - r.ts > 1000 ? '<div class="sub">edited ' + fmtTime(r.updatedAt) + '</div>' : '')) +
+          cell('Event', '<b>' + esc(r.event) + '</b><div class="sub">' + esc(r.section) + '</div>' + (r.remarks ? '<div class="sub">“' + esc(r.remarks) + '”</div>' : ''), 'wrap') +
+          cell('House', hchip(r.house)) +
+          cell('Position', medal(r.position) + ' ' + ord(r.position)) +
+          cell('Points', r.points, 'num') +
+          cell('Status', '<span class="st ' + r.status + '">' + r.status + '</span>') +
+          cell('By', esc(r.updatedBy || r.by), 'sub wrap') +
+          '<td class="actions">' + (r.status === 'ACTIVE' ?
+            '<button class="btn sm" data-edit="' + esc(r.id) + '">Edit</button><button class="btn sm ghost" data-del="' + esc(r.id) + '">Delete</button>' :
+            '<button class="btn sm" data-restore="' + esc(r.id) + '">Restore</button>') + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  $('fQ').addEventListener('input', function () { F.q = this.value; renderResults(); });
+  $('fSection').addEventListener('change', function () { F.section = this.value; renderResultFilters(); renderResults(); });
+  $('fEvent').addEventListener('change', function () { F.event = this.value; renderResults(); });
+  $('fHouse').addEventListener('change', function () { F.house = this.value; renderResults(); });
+  $('fStatus').addEventListener('change', function () { F.status = this.value; renderResults(); });
+  $('refreshBtn').addEventListener('click', function () { refreshState(false); });
+
+  function findResult(id) { return (S.data.results || []).filter(function (r) { return r.id === id; })[0]; }
+
+  $('resTable').addEventListener('click', function (e) {
+    var t;
+    if ((t = e.target.closest('[data-edit]'))) editModal(findResult(t.getAttribute('data-edit')));
+    else if ((t = e.target.closest('[data-del]'))) deleteModal(findResult(t.getAttribute('data-del')));
+    else if ((t = e.target.closest('[data-restore]'))) restoreModal(findResult(t.getAttribute('data-restore')));
+  });
+
+  function editModal(r) {
+    if (!r) return;
+    var sel = { house: r.house };
+    var houses = S.data.houses || [];
+    modal('<h3>Edit ' + esc(r.id) + '</h3><p class="sub">' + esc(r.section) + ' › ' + esc(r.event) + '</p>' +
+      '<div class="houses" id="mHouses">' + houses.map(function (h) {
+        return '<button type="button" class="hbtn' + (h.name === r.house ? ' on' : '') + '" style="--c:' + h.color + ';--i:' + h.ink + '" data-h="' + esc(h.name) + '">' + esc(h.name) + '</button>';
+      }).join('') + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+      '<label class="field"><span>Position</span><input id="mPos" type="number" min="1" max="99" value="' + r.position + '"></label>' +
+      '<label class="field"><span>Points</span><input id="mPts" type="number" min="0" step="any" value="' + r.points + '"></label></div>' +
+      '<label class="field"><span>Remarks</span><input id="mRem" maxlength="200" value="' + esc(r.remarks) + '"></label>' +
+      '<div class="foot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="mSave">Save changes</button></div>',
+      function (root) {
+        root.querySelector('#mHouses').addEventListener('click', function (e) {
+          var b = e.target.closest('[data-h]'); if (!b) return;
+          sel.house = b.getAttribute('data-h');
+          Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); });
+        });
+        root.querySelector('#mSave').addEventListener('click', function () {
+          var btn = this; btn.disabled = true;
+          call('updateResult', r.id, {
+            house: sel.house, position: Number(root.querySelector('#mPos').value),
+            points: root.querySelector('#mPts').value === '' ? '' : Number(root.querySelector('#mPts').value),
+            remarks: root.querySelector('#mRem').value
+          }, S.official).then(function (res) { closeModal(); toast(res.message, 'ok'); applyState(res.state); }, function () { btn.disabled = false; });
+        });
+      });
+  }
+
+  function deleteModal(r) {
+    if (!r) return;
+    var siblings = (S.data.results || []).filter(function (x) { return x.decl && x.decl === r.decl && x.status === 'ACTIVE' && x.id !== r.id; });
+    modal('<h3>Delete result ' + esc(r.id) + '?</h3>' +
+      '<p>' + medal(r.position) + ' ' + hchip(r.house) + ' <b>' + r.points + ' pts</b> — ' + esc(r.section) + ' › ' + esc(r.event) + '</p>' +
+      '<p class="sub">This is a soft delete: points are removed from the scoreboard, the row stays in the sheet and can be restored.</p>' +
+      (siblings.length ? '<label class="chk"><input type="checkbox" id="mAll"> Also delete the other ' + siblings.length + ' position(s) of declaration ' + esc(r.decl) + '</label>' : '') +
+      '<label class="field"><span>Reason (recommended)</span><input id="mReason" maxlength="200" placeholder="e.g. Wrong house entered"></label>' +
+      '<div class="foot"><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="mDel">Delete</button></div>',
+      function (root) {
+        root.querySelector('#mDel').addEventListener('click', function () {
+          var btn = this; btn.disabled = true;
+          var ids = [r.id];
+          var all = root.querySelector('#mAll');
+          if (all && all.checked) ids = ids.concat(siblings.map(function (x) { return x.id; }));
+          call('setResultStatus', ids, 'DELETED', root.querySelector('#mReason').value, S.official)
+            .then(function (res) { closeModal(); toast(res.message, 'ok'); applyState(res.state); }, function () { btn.disabled = false; });
+        });
+      });
+  }
+
+  function restoreModal(r) {
+    if (!r) return;
+    modal('<h3>Restore ' + esc(r.id) + '?</h3><p>' + medal(r.position) + ' ' + hchip(r.house) + ' <b>' + r.points + ' pts</b> — ' + esc(r.section) + ' › ' + esc(r.event) + '</p>' +
+      '<p class="sub">Points will count on the scoreboard again.</p>' +
+      '<label class="field"><span>Reason (optional)</span><input id="mReason" maxlength="200"></label>' +
+      '<div class="foot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="mRes">Restore</button></div>',
+      function (root) {
+        root.querySelector('#mRes').addEventListener('click', function () {
+          var btn = this; btn.disabled = true;
+          call('setResultStatus', [r.id], 'ACTIVE', root.querySelector('#mReason').value, S.official)
+            .then(function (res) { closeModal(); toast(res.message, 'ok'); applyState(res.state); }, function () { btn.disabled = false; });
+        });
+      });
+  }
+
+  // ================================================================== AUDIT
+  function loadAudit() {
+    $('auditTable').innerHTML = '<div class="empty">Loading audit trail…</div>';
+    call('getAudit', 500).then(function (rows) { S.audit = rows; renderAuditFilters(); renderAudit(); }, function () {
+      $('auditTable').innerHTML = '<div class="empty">Could not load the audit trail.</div>';
+    });
+  }
+  function renderAuditFilters() {
+    var acts = {};
+    (S.audit || []).forEach(function (a) { acts[a.action] = 1; });
+    var cur = $('aAction').value;
+    $('aAction').innerHTML = '<option value="">All actions</option>' + Object.keys(acts).sort().map(function (a) {
+      return '<option' + (a === cur ? ' selected' : '') + '>' + esc(a) + '</option>';
+    }).join('');
+  }
+  function renderAudit() {
+    if (!S.audit) return;
+    var q = $('aQ').value.toLowerCase(), act = $('aAction').value;
+    var list = S.audit.filter(function (a) {
+      if (act && a.action !== act) return false;
+      return !q || [a.action, a.id, a.decl, a.prev, a.next, a.user, a.source].join(' ').toLowerCase().indexOf(q) >= 0;
+    });
+    $('auditCount').textContent = list.length + ' entr' + (list.length === 1 ? 'y' : 'ies') + ' (latest 500)';
+    $('auditTable').innerHTML = list.length ? '<table class="grid"><thead><tr><th>Time</th><th>Action</th><th>Result</th><th>Previous value</th><th>New value</th><th>User / source</th></tr></thead><tbody>' +
+      list.map(function (a) {
+        return '<tr>' + cell('Time', fmtTime(a.ts)) +
+          cell('Action', '<b>' + esc(a.action) + '</b>') +
+          cell('Result', esc(a.id) + (a.decl ? '<div class="sub">' + esc(a.decl) + '</div>' : ''), 'mono') +
+          cell('Previous', esc(a.prev), 'sub wrap') +
+          cell('New', esc(a.next), 'wrap') +
+          cell('User', esc(a.user) + '<div>' + esc(a.source) + '</div>', 'sub wrap') + '</tr>';
+      }).join('') + '</tbody></table>' : '<div class="empty">No audit entries.</div>';
+  }
+  $('aQ').addEventListener('input', renderAudit);
+  $('aAction').addEventListener('change', renderAudit);
+  $('auditRefresh').addEventListener('click', loadAudit);
+
+  // ================================================================== EVENTS
+  function renderEvents() {
+    var secs = S.data.sections || [];
+    $('secList').innerHTML = secs.map(function (s) { return '<option value="' + esc(s.name) + '">'; }).join('');
+    $('eventsList').innerHTML = secs.length ? secs.map(function (s) {
+      var active = s.events.filter(function (e) { return e.status === 'ACTIVE'; }).length;
+      return '<div class="ev-sec"><h3>' + esc(s.name) + ' <span class="sub" style="font-family:Inter">' + active + ' active</span></h3><div class="ev-list">' +
+        s.events.map(function (e) {
+          return '<div class="ev-item ' + e.status + '"><div class="nm">' + esc(e.name) +
+            '<div class="sub">' + e.registrations + ' entries' + (e.results ? ' · ' + e.results + ' result row(s)' : '') + (e.source === 'MANUAL' ? ' · manual' : '') + '</div></div>' +
+            '<span class="st ' + e.status + '">' + e.status + '</span>' +
+            '<button class="btn sm ghost" data-evkey="' + esc(e.key) + '" data-to="' + (e.status === 'ACTIVE' ? 'HIDDEN' : 'ACTIVE') + '">' + (e.status === 'ACTIVE' ? 'Hide' : 'Show') + '</button></div>';
+        }).join('') + '</div></div>';
+    }).join('') : '<div class="empty">No events in the catalogue yet.</div>';
+  }
+  $('eventsList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-evkey]'); if (!b) return;
+    call('setEventStatus', b.getAttribute('data-evkey'), b.getAttribute('data-to'), S.official)
+      .then(function (res) { toast(res.message, 'ok'); applyState(res.state); }, function () {});
+  });
+  $('syncBtn').addEventListener('click', function () {
+    call('syncEvents', S.official).then(function (res) { toast(res.message, 'ok'); applyState(res.state); }, function () {});
+  });
+  $('addEvForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    call('addEvent', $('newEvSection').value, $('newEvName').value, S.official).then(function (res) {
+      toast(res.message, 'ok'); $('newEvName').value = ''; applyState(res.state);
+    }, function () {});
+  });
+
+  // ================================================================== modal
+  function modal(html, mount) {
+    closeModal();
+    var bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + '</div>';
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-close]')) closeModal(); });
+    $('modalRoot').appendChild(bg);
+    if (mount) mount(bg.firstChild);
+    var first = bg.querySelector('input,button.primary,button.danger');
+    if (first) first.focus();
+  }
+  function closeModal() { $('modalRoot').innerHTML = ''; }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  // Quietly keep "declared" badges fresh while several officials work in parallel.
+  setInterval(function () {
+    if (S.pin && S.data && !document.hidden && !S.busy && !$('modalRoot').children.length && S.tab !== 'audit') refreshState(true);
+  }, 45000);
+
+  // ================================================================== boot
+  var saved = load(LS_PIN);
+  S.official = load(LS_NAME);
+  if (saved) {
+    api('getAdminBootstrap', saved).then(function (st) { S.pin = saved; enterApp(st); }, function (e) {
+      forget(LS_PIN); showLogin(/Invalid PIN/i.test(errMsg(e)) ? '' : errMsg(e));
+    });
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
