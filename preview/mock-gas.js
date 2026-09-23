@@ -187,7 +187,8 @@
       return fetch('../web/' + page + '.html', { cache: 'no-store' });
     }).then(function (r) { return r.text(); }).then(function (html) {
       var inject = '<script>window.google = parent.google;<\/script>';
-      document.getElementById(frameId || 'frame').srcdoc = html.replace(/<head>/i, '<head>' + inject);
+      html = html.replace(/<head>/i, '<head>' + inject).replace(/"logo\.png"/g, '"../web/logo.png"');
+      document.getElementById(frameId || 'frame').srcdoc = html;
     });
   };
 })(window);

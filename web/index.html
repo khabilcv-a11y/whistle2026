@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="logo.png">
 <script src="config.js"></script>
 <title>WHISTLE 2026 · Live</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,12 +45,17 @@
   #app { height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; }
 
   /* ---------------- header ---------------- */
-  .hdr { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1.5rem; padding: 1rem 2rem .8rem; }
-  .brand { display: flex; align-items: center; gap: 1rem; }
-  .brand svg { width: 3.4rem; height: 3.4rem; flex: none; }
-  .b1 { font-family: var(--cond); font-weight: 800; font-size: 2.6rem; line-height: .9; letter-spacing: .04em; }
-  .b2 { font-size: .85rem; letter-spacing: .32em; color: var(--muted); font-weight: 600; margin-top: .35rem; }
+  .hdr { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1.5rem; padding: .9rem 2rem .7rem; }
+  .brand { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+  .crest { height: 4.6rem; width: auto; flex: none; filter: drop-shadow(0 .3rem .8rem rgba(0,0,0,.45)); }
+  .school { min-width: 0; padding-left: 1rem; border-left: 2px solid rgba(255,255,255,.14); }
+  .s1 { font-family: var(--cond); font-weight: 800; font-size: 2.35rem; line-height: .95; letter-spacing: .05em; white-space: nowrap; }
+  .s2 { font-family: var(--cond); font-weight: 600; font-size: .92rem; letter-spacing: .11em; color: #b9c3de; margin-top: .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .scene-title { text-align: center; }
+  .event-line { display: inline-flex; align-items: baseline; gap: .6rem; font-family: var(--cond); letter-spacing: .16em; margin-bottom: .15rem; }
+  .event-line b { font-weight: 800; font-size: 1.15rem; color: var(--gold); }
+  .event-line span { font-weight: 600; font-size: .95rem; color: var(--muted); }
+  .event-line span::before { content: "·"; margin-right: .6rem; color: var(--dim); }
   #sceneName { font-family: var(--cond); font-weight: 700; font-size: 2rem; letter-spacing: .14em; }
   #sceneSub { font-size: .85rem; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; margin-top: .15rem; min-height: 1.1rem; }
   .hdr-right { justify-self: end; text-align: right; }
@@ -275,6 +281,8 @@
     #app { height: auto; min-height: 100vh; }
     .hdr { grid-template-columns: 1fr auto; padding: .8rem 1rem; }
     .scene-title { grid-column: 1 / -1; grid-row: 2; }
+    .s1 { font-size: 2rem; }
+    .s2 { white-space: normal; }
     .timer { margin: 0 1rem; }
     #stage { min-height: calc(100vh - 12rem); }
     .scene { padding: 1rem; overflow: auto; }
@@ -298,16 +306,16 @@
 <div id="app">
   <header class="hdr">
     <div class="brand">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#f5a70a"/></linearGradient></defs>
-        <path d="M6 22h24l10-6c2-1 4 0 4 2v6c0 1.5-1 2.6-2.4 2.9L30 29" fill="none" stroke="url(#wg)" stroke-width="3.2" stroke-linejoin="round"/>
-        <circle cx="17" cy="29" r="11" fill="none" stroke="url(#wg)" stroke-width="3.2"/>
-        <circle cx="17" cy="29" r="3.6" fill="url(#wg)"/>
-        <path d="M10 10l3 4M18 7v5M26 10l-3 4" stroke="#fde68a" stroke-width="2.4" stroke-linecap="round"/>
-      </svg>
-      <div><div class="b1" id="title">WHISTLE 2026</div><div class="b2" id="subtitle">ANNUAL SPORTS MEET</div></div>
+      <img class="crest" src="logo.png" alt="Calicut Girls' V&amp;HSS crest">
+      <div class="school">
+        <div class="s1">CALICUT GIRLS</div>
+        <div class="s2">VOCATIONAL &amp; HIGHER SECONDARY SCHOOL</div>
+      </div>
     </div>
-    <div class="scene-title"><div id="sceneName">LOADING…</div><div id="sceneSub"></div></div>
+    <div class="scene-title">
+      <div class="event-line"><b id="title">WHISTLE 2026</b><span id="subtitle">ANNUAL SPORTS MEET</span></div>
+      <div id="sceneName">LOADING…</div><div id="sceneSub"></div>
+    </div>
     <div class="hdr-right">
       <div id="clock">--:--:--</div>
       <div class="status retry" id="status"><i></i><span id="statusText">CONNECTING</span></div>
@@ -549,7 +557,9 @@
   function renderMain(el, entering) {
     var hs = D.houses;
     var noResults = awarded() === 0;
-    var tiles = hs.map(function (h) {
+    // Tiles in ranking order: leader first (standings are already sorted, ties keep house order).
+    var ranked = D.standings.map(function (s) { return house(s.house); });
+    var tiles = ranked.map(function (h) {
       var s = standing(h.name);
       var lead = !noResults && s.rank === 1;
       var gap;
