@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<script src="config.js"></script>
+<title>WHISTLE 2026 · Poster &amp; Reports</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --soft: #f8fafc;
+    --brand: #0f172a; --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+    --radius: 14px; --shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .hidden { display: none !important; }
+  .display { font-family: "Barlow Condensed", Inter, sans-serif; letter-spacing: .02em; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: var(--brand); color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+  .top-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 8px; margin-right: auto; }
+  .brand b { font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 800; letter-spacing: .04em; }
+  .brand span { font-size: 12px; opacity: .7; text-transform: uppercase; letter-spacing: .12em; }
+  .who { font-size: 13px; opacity: .9; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .who a, .who button { color: #fff; background: rgba(255,255,255,.12); border: 0; border-radius: 8px; padding: 6px 10px; text-decoration: none; font-size: 13px; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.12); }
+  .pill.live { background: #14532d; }
+  .pill.retry { background: #78350f; }
+  .pill.off { background: #7f1d1d; }
+  .tabs { max-width: 1200px; margin: 0 auto; display: flex; gap: 4px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { background: none; border: 0; color: rgba(255,255,255,.7); padding: 10px 14px 12px; font-weight: 600; border-bottom: 3px solid transparent; white-space: nowrap; }
+  .tabs button.on { color: #fff; border-bottom-color: #facc15; }
+  #busybar { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: #facc15; z-index: 100; transition: width .3s; }
+  #busybar.on { width: 70%; transition: width 8s cubic-bezier(.1,.8,.2,1); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 16px 16px 60px; }
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
+  h2.step { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .note { border-radius: 12px; padding: 10px 12px; margin-top: 10px; font-size: 13px; }
+  .note.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  .note.warn { background: #fffbeb; border: 1px solid #fde68a; color: #7c4a03; }
+  .sub { color: var(--muted); font-size: 12px; }
+
+  .basis-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .basis-row select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); min-width: 220px; flex: 1; }
+
+  .field { display: block; margin-top: 12px; }
+  .field span { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .field input[type=color] { padding: 4px; height: 42px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 16px; }
+
+  .btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: #e2e8f0; color: var(--ink); }
+  .btn.primary { background: var(--brand); color: #fff; }
+  .btn.ok { background: var(--ok); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .chk { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+
+  /* ---------- poster ---------- */
+  .poster-wrap { display: flex; justify-content: center; padding: 24px; background: repeating-conic-gradient(#eef1f6 0% 25%, #e6e9ef 0% 50%) 50% / 22px 22px; }
+  #posterCanvas { width: 100%; max-width: 420px; height: auto; border-radius: 10px; box-shadow: 0 10px 40px rgba(15,23,42,.25); background: #fff; }
+
+  /* ---------- whatsapp ---------- */
+  #waText { width: 100%; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13.5px; line-height: 1.5; resize: vertical; }
+
+  /* ---------- branding ---------- */
+  .logo-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+  .logo-preview { width: 64px; height: 64px; border-radius: 12px; border: 1px solid var(--line); object-fit: contain; background: var(--soft); padding: 6px; }
+  .social-input { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .social-input .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 12px; flex: none; }
+
+  /* ---------- toasts ---------- */
+  .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; width: calc(100% - 32px); max-width: 520px; pointer-events: none; }
+  .toast { background: #0f172a; color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); font-weight: 600; animation: pop .2s ease-out; }
+  .toast.ok { background: #166534; } .toast.error { background: #991b1b; }
+  @keyframes pop { from { transform: translateY(10px); opacity: 0; } }
+
+  /* ---------- printable report ---------- */
+  #reportRoot { display: none; }
+  #reportRoot .rp-head { display: flex; align-items: center; gap: 16px; border-bottom: 3px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+  #reportRoot .rp-head img { width: 56px; height: 56px; object-fit: contain; }
+  #reportRoot .rp-head h1 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-size: 30px; letter-spacing: .03em; }
+  #reportRoot .rp-head .rp-sub { color: #475569; font-size: 13px; }
+  #reportRoot .rp-head .rp-meta { margin-left: auto; text-align: right; font-size: 12px; color: #475569; }
+  #reportRoot h2 { font-family: "Barlow Condensed", sans-serif; font-size: 22px; letter-spacing: .03em; margin: 22px 0 8px; break-after: avoid; }
+  #reportRoot table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; break-inside: avoid; }
+  #reportRoot th, #reportRoot td { border: 1px solid #cbd5e1; padding: 5px 7px; text-align: left; }
+  #reportRoot th { background: #f1f5f9; text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; }
+  #reportRoot td.num, #reportRoot th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  #reportRoot tr.tot td { font-weight: 700; background: #f8fafc; }
+  #reportRoot .rp-sec { break-inside: avoid; margin-bottom: 10px; }
+  #reportRoot .rp-foot { margin-top: 24px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+  @media print {
+    body * { visibility: hidden; }
+    html.printing-report #reportRoot, html.printing-report #reportRoot * { visibility: visible; }
+    html.printing-report #reportRoot { display: block; position: absolute; left: 0; top: 0; width: 100%; }
+    @page { margin: 14mm; }
+  }
+
+  @media (max-width: 760px) {
+    .grid2, .grid4 { grid-template-columns: 1fr; }
+    .basis-row select { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="busybar"></div>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand"><b>WHISTLE 2026</b><span>Poster &amp; Reports</span></div>
+    <div class="who">
+      <span class="pill" id="syncPill">Loading…</span>
+      <a href="./admin.html">Admin Portal ↗</a>
+      <a href="./" target="_blank" rel="noopener">Live Dashboard ↗</a>
+      <button id="refreshBtn" type="button">↻ Refresh</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="poster" class="on">Poster Card</button>
+    <button data-tab="whatsapp">WhatsApp Text</button>
+    <button data-tab="report">PDF Report</button>
+    <button data-tab="branding">Branding</button>
+  </nav>
+</header>
+
+<main>
+  <div class="card" id="basisCard">
+    <h2 class="step">Content basis — what should this be about?</h2>
+    <div class="basis-row">
+      <select id="basisType">
+        <option value="latest">Latest declared result (auto-updates)</option>
+        <option value="event">A specific event…</option>
+        <option value="standings">Overall house standings</option>
+        <option value="section">A section's championship…</option>
+        <option value="progress">Progress / race update</option>
+      </select>
+      <select id="basisEvent" class="hidden"></select>
+      <select id="basisSection" class="hidden"></select>
+    </div>
+    <div class="note info" id="basisNote"></div>
+  </div>
+
+  <!-- ============ POSTER ============ -->
+  <section id="tab-poster">
+    <div class="card poster-wrap">
+      <canvas id="posterCanvas" width="1080" height="1350"></canvas>
+    </div>
+    <div class="card row">
+      <button class="btn primary" id="downloadPosterBtn">⬇ Download poster (PNG)</button>
+      <span class="sub">1080 × 1350 px — ready for WhatsApp Status, Instagram post/story, or print.</span>
+    </div>
+  </section>
+
+  <!-- ============ WHATSAPP ============ -->
+  <section id="tab-whatsapp" class="hidden">
+    <div class="card">
+      <textarea id="waText" rows="16" readonly></textarea>
+      <div class="row">
+        <button class="btn primary" id="copyWaBtn">📋 Copy text</button>
+        <label class="chk"><input type="checkbox" id="waHashtags" checked> Include hashtags</label>
+        <span class="sub" id="waCopiedNote"></span>
+      </div>
+      <div class="note info">Send this text alongside the downloaded poster image for the best result on WhatsApp/Status.</div>
+    </div>
+  </section>
+
+  <!-- ============ PDF REPORT ============ -->
+  <section id="tab-report" class="hidden">
+    <div class="card">
+      <h2 class="step">Consolidated results report</h2>
+      <p>One PDF with the overall standings, every section's results table and a participation summary — generated fresh from the live scoreboard data each time.</p>
+      <div class="row">
+        <button class="btn primary" id="printReportBtn">🖨 Open print-ready report</button>
+        <span class="sub">Opens your browser's print dialog — choose "Save as PDF" as the destination.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BRANDING ============ -->
+  <section id="tab-branding" class="hidden">
+    <div class="card">
+      <h2 class="step">Institution branding</h2>
+      <p class="sub">Stored on this device/browser only (not synced to the sheet). Set it once per device used to export posters or reports.</p>
+      <label class="field"><span>Institution name</span><input id="bInstitution" maxlength="80" placeholder="e.g. Calicut Girls' V&amp;HSS"></label>
+      <label class="field"><span>Tagline</span><input id="bTagline" maxlength="80" placeholder="e.g. Annual Sports Meet 2026"></label>
+      <div class="logo-row">
+        <img class="logo-preview" id="bLogoPreview" src="logo.png" alt="Logo preview">
+        <div>
+          <input type="file" id="bLogoFile" accept="image/*">
+          <div><button class="btn" id="bLogoReset" type="button">Use default logo.png</button></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>Poster primary colour</span><input id="bPrimary" type="color" value="#0f172a"></label>
+        <label class="field"><span>Poster accent colour</span><input id="bAccent" type="color" value="#facc15"></label>
+      </div>
+      <h2 class="step" style="margin-top:20px">Social media (shown on poster footer &amp; WhatsApp text)</h2>
+      <div class="social-input"><span class="ic" style="background:#1877F2">f</span><input id="bFacebook" placeholder="Facebook page URL or @handle"></div>
+      <div class="social-input"><span class="ic" style="background:#C13584">IG</span><input id="bInstagram" placeholder="Instagram @handle or URL"></div>
+      <div class="social-input"><span class="ic" style="background:#25D366">WA</span><input id="bWhatsapp" placeholder="WhatsApp number or wa.me link"></div>
+      <div class="social-input"><span class="ic" style="background:#0A66C2">in</span><input id="bLinkedin" placeholder="LinkedIn page URL"></div>
+      <div class="row"><button class="btn primary" id="bSaveBtn" type="button">Save branding</button></div>
+    </div>
+  </section>
+</main>
+
+<div id="reportRoot"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------ state
+  var S = { data: null, lastOk: 0, fails: 0, busy: 0,
+    basis: { type: 'latest', eventSection: '', eventName: '', section: '' },
+    branding: loadBranding() };
+  var logoImg = new Image();
+  var refreshTimer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ord(n) { var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+  function fmt(n) { n = Math.round(Number(n) * 100) / 100; return (n % 1 === 0 ? n.toFixed(0) : String(n)); }
+  function fmtDateTime(ms) {
+    if (!ms) return '—';
+    var d = new Date(ms);
+    return d.toLocaleDateString([], { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  function toast(msg, kind) {
+    var el = document.createElement('div');
+    el.className = 'toast ' + (kind || '');
+    el.textContent = msg;
+    $('toasts').appendChild(el);
+    setTimeout(function () { el.remove(); }, kind === 'error' ? 6000 : 3200);
+  }
+  function busy(on) { S.busy += on ? 1 : -1; $('busybar').className = S.busy > 0 ? 'on' : ''; }
+
+  // ------------------------------------------------------------------ branding storage
+  var LS_BRAND = 'whistle_share_branding_v1';
+  function defaultBranding() {
+    return { institution: '', tagline: '', logoDataUrl: '', primary: '#0f172a', accent: '#facc15',
+      facebook: '', instagram: '', whatsapp: '', linkedin: '' };
+  }
+  function loadBranding() {
+    try {
+      var raw = localStorage.getItem(LS_BRAND);
+      if (!raw) return defaultBranding();
+      var b = JSON.parse(raw), d = defaultBranding();
+      Object.keys(d).forEach(function (k) { if (b[k] == null) b[k] = d[k]; });
+      return b;
+    } catch (e) { return defaultBranding(); }
+  }
+  function saveBranding() {
+    try { localStorage.setItem(LS_BRAND, JSON.stringify(S.branding)); } catch (e) { toast('Could not save — the logo image may be too large for this browser.', 'error'); }
+  }
+
+  function fillBrandingForm() {
+    var b = S.branding;
+    $('bInstitution').value = b.institution;
+    $('bTagline').value = b.tagline;
+    $('bPrimary').value = b.primary;
+    $('bAccent').value = b.accent;
+    $('bFacebook').value = b.facebook;
+    $('bInstagram').value = b.instagram;
+    $('bWhatsapp').value = b.whatsapp;
+    $('bLinkedin').value = b.linkedin;
+    $('bLogoPreview').src = b.logoDataUrl || "logo.png";
+  }
+  fillBrandingForm();
+
+  $('bSaveBtn').addEventListener('click', function () {
+    var b = S.branding;
+    b.institution = $('bInstitution').value.trim();
+    b.tagline = $('bTagline').value.trim();
+    b.primary = $('bPrimary').value;
+    b.accent = $('bAccent').value;
+    b.facebook = $('bFacebook').value.trim();
+    b.instagram = $('bInstagram').value.trim();
+    b.whatsapp = $('bWhatsapp').value.trim();
+    b.linkedin = $('bLinkedin').value.trim();
+    saveBranding();
+    loadLogo();
+    toast('Branding saved on this device.', 'ok');
+    renderPoster();
+  });
+  $('bLogoFile').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    if (f.size > 1.5 * 1024 * 1024) { toast('Logo image is too large — pick one under 1.5 MB.', 'error'); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      S.branding.logoDataUrl = reader.result;
+      saveBranding();
+      $('bLogoPreview').src = S.branding.logoDataUrl;
+      loadLogo();
+      renderPoster();
+      toast('Logo updated.', 'ok');
+    };
+    reader.readAsDataURL(f);
+  });
+  $('bLogoReset').addEventListener('click', function () {
+    S.branding.logoDataUrl = '';
+    saveBranding();
+    $('bLogoPreview').src = "logo.png";
+    loadLogo();
+    renderPoster();
+  });
+  function loadLogo() {
+    logoImg = new Image();
+    logoImg.onload = function () { renderPoster(); };
+    logoImg.src = S.branding.logoDataUrl || "logo.png";
+  }
+  loadLogo();
+
+  // ------------------------------------------------------------------ tabs
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]'); if (!b) return;
+    var t = b.getAttribute('data-tab');
+    Array.prototype.forEach.call($('tabs').children, function (x) { x.classList.toggle('on', x === b); });
+    ['poster', 'whatsapp', 'report', 'branding'].forEach(function (x) { $('tab-' + x).classList.toggle('hidden', x !== t); });
+    $('basisCard').classList.toggle('hidden', t !== 'poster' && t !== 'whatsapp');
+    if (t === 'whatsapp') renderWhatsapp();
+    if (t === 'poster') renderPoster();
+  });
+
+  // ------------------------------------------------------------------ data fetch (same contract as index.html / admin.html)
+  function fetchDashboard() {
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var t = setTimeout(function () { if (!done) { done = true; reject(new Error('timeout')); } }, 12000);
+      var ok = function (v) { if (!done) { done = true; clearTimeout(t); resolve(v); } };
+      var fail = function (e) { if (!done) { done = true; clearTimeout(t); reject(e); } };
+      try {
+        if (window.google && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(ok).withFailureHandler(fail).getDashboardData();
+          return;
+        }
+        var url = window.WHISTLE_CONFIG && window.WHISTLE_CONFIG.apiUrl;
+        if (!/^https:\/\//.test(url || '')) throw new Error('API URL missing – set apiUrl in config.js');
+        fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'api=dashboard&t=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+          .then(ok, fail);
+      } catch (e) { fail(e); }
+    });
+  }
+
+  function refresh() {
+    busy(true);
+    fetchDashboard().then(function (json) {
+      var d = typeof json === 'string' ? JSON.parse(json) : json;
+      if (!d || !d.houses) throw new Error('bad payload');
+      S.fails = 0; S.lastOk = Date.now();
+      S.data = d;
+      onData();
+    }).catch(function (e) {
+      S.fails++;
+      if (window.console) console.warn('Poster/Reports: refresh failed', e && e.message || e);
+    }).then(function () { busy(false); updateSyncPill(); scheduleNext(); });
+  }
+  function scheduleNext() {
+    clearTimeout(refreshTimer);
+    var wait = S.fails ? Math.min(30000, 4000 * Math.pow(2, Math.min(S.fails, 3))) : 20000;
+    refreshTimer = setTimeout(refresh, wait);
+  }
+  function updateSyncPill() {
+    var el = $('syncPill');
+    if (S.lastOk && S.fails === 0) { el.className = 'pill live'; el.textContent = 'Live-synced · ' + fmtDateTime(S.lastOk); }
+    else if (S.lastOk) { el.className = 'pill retry'; el.textContent = 'Reconnecting… (last: ' + fmtDateTime(S.lastOk) + ')'; }
+    else { el.className = 'pill off'; el.textContent = 'Connecting…'; }
+  }
+  $('refreshBtn').addEventListener('click', function () { clearTimeout(refreshTimer); refresh(); });
+
+  function onData() {
+    updateSyncPill();
+    renderBasisOptions();
+    renderPoster();
+    if (!$('tab-whatsapp').classList.contains('hidden')) renderWhatsapp();
+  }
+
+  // ------------------------------------------------------------------ basis
+  function declaredEvents() {
+    var out = [];
+    (S.data.sections || []).forEach(function (sec) {
+      sec.events.forEach(function (e) { if (e.declared) out.push({ section: sec.name, name: e.name }); });
+    });
+    return out;
+  }
+  function renderBasisOptions() {
+    var evs = declaredEvents();
+    $('basisEvent').innerHTML = evs.map(function (e) {
+      return '<option value=\'' + esc(JSON.stringify([e.section, e.name])) + '\'>' + esc(e.section) + ' › ' + esc(e.name) + '</option>';
+    }).join('');
+    var secs = (S.data.sections || []).filter(function (s) { return s.declared > 0; });
+    $('basisSection').innerHTML = secs.map(function (s) { return '<option value="' + esc(s.name) + '">' + esc(s.name) + ' (' + s.declared + '/' + s.total + ' declared)</option>'; }).join('');
+    updateBasisVisibility();
+  }
+  function updateBasisVisibility() {
+    var t = $('basisType').value;
+    $('basisEvent').classList.toggle('hidden', t !== 'event');
+    $('basisSection').classList.toggle('hidden', t !== 'section');
+    var notes = {
+      latest: 'Always shows the most recently declared result — this poster updates itself as new results come in.',
+      event: 'Pick any declared event to make a poster/text for it.',
+      standings: 'Current overall house points table, ranked.',
+      section: 'Total points within one section, ranked by house.',
+      progress: 'How many events are declared, how many remain, and who is leading the race.'
+    };
+    $('basisNote').textContent = notes[t] || '';
+  }
+  $('basisType').addEventListener('change', function () {
+    S.basis.type = this.value; updateBasisVisibility(); renderPoster(); renderWhatsappIfVisible();
+  });
+  $('basisEvent').addEventListener('change', function () {
+    try { var v = JSON.parse(this.value); S.basis.eventSection = v[0]; S.basis.eventName = v[1]; } catch (e) {}
+    renderPoster(); renderWhatsappIfVisible();
+  });
+  $('basisSection').addEventListener('change', function () {
+    S.basis.section = this.value; renderPoster(); renderWhatsappIfVisible();
+  });
+  function renderWhatsappIfVisible() { if (!$('tab-whatsapp').classList.contains('hidden')) renderWhatsapp(); }
+
+  function findSectionEvent(sectionName, eventName) {
+    var sec = (S.data.sections || []).filter(function (s) { return s.name === sectionName; })[0];
+    if (!sec) return null;
+    var ev = sec.events.filter(function (e) { return e.name === eventName; })[0];
+    return ev ? { sec: sec, ev: ev } : null;
+  }
+  function eventEntries(sectionName, ev) {
+    var recent = (S.data.recent || []).filter(function (r) { return r.section === sectionName && r.event === ev.name; })[0];
+    var out;
+    if (recent) out = recent.entries.slice();
+    else {
+      out = [];
+      Object.keys(ev.positions || {}).forEach(function (h) {
+        var pos = ev.positions[h], best = pos && pos.length ? Math.min.apply(null, pos) : 0;
+        out.push({ house: h, position: best, points: ev.points[h] || 0 });
+      });
+    }
+    out.sort(function (a, b) { return a.position - b.position || b.points - a.points; });
+    return out;
+  }
+
+  // Normalises whichever basis is selected into one shape the poster / whatsapp / report renderers share.
+  function buildModel() {
+    var d = S.data;
+    if (!d) return { kind: 'empty', reason: 'Loading live scoreboard data…' };
+    var t = S.basis.type;
+
+    if (t === 'latest') {
+      if (!d.latest) return { kind: 'empty', reason: 'No result has been declared yet.' };
+      return eventModel(d.latest.section, d.latest.event);
+    }
+    if (t === 'event') {
+      if (!S.basis.eventSection) {
+        var first = declaredEvents()[0];
+        if (!first) return { kind: 'empty', reason: 'No declared events yet.' };
+        S.basis.eventSection = first.section; S.basis.eventName = first.name;
+      }
+      return eventModel(S.basis.eventSection, S.basis.eventName);
+    }
+    if (t === 'standings') return standingsModel();
+    if (t === 'section') {
+      var sname = S.basis.section || ((d.sections || []).filter(function (s) { return s.declared > 0; })[0] || {}).name;
+      if (!sname) return { kind: 'empty', reason: 'No section has a declared result yet.' };
+      S.basis.section = sname;
+      return sectionModel(sname);
+    }
+    if (t === 'progress') return progressModel();
+    return { kind: 'empty' };
+  }
+
+  function eventModel(sectionName, eventName) {
+    var found = findSectionEvent(sectionName, eventName);
+    if (!found) return { kind: 'empty', reason: 'That event was not found (it may have been hidden or edited).' };
+    var entries = eventEntries(sectionName, found.ev);
+    if (!entries.length) return { kind: 'empty', reason: 'That event has no declared result yet.' };
+    var rows = entries.slice(0, 8).map(function (e) { return { rank: e.position, house: e.house, value: e.points }; });
+    var winners = entries.filter(function (e) { return e.position === 1; }).map(function (e) { return e.house; });
+    var leader = (S.data.standings || [])[0];
+    var highlight = winners.length ?
+      (winners.length > 1 ? '🤝 A tie for 1st between ' + winners.join(' & ') + '!' : '🏆 ' + winners[0] + ' takes 1st place!') : '';
+    var overall = leader ? '📊 Overall: ' + leader.house + ' leads the meet with ' + fmt(leader.points) + ' pts' : '';
+    return {
+      kind: 'event', badge: 'RESULT DECLARED', title: found.sec.name, subtitle: eventName,
+      rows: rows, moreCount: Math.max(0, entries.length - rows.length),
+      highlight: highlight, footNote: overall,
+      section: sectionName, event: eventName
+    };
+  }
+
+  function standingsModel() {
+    var d = S.data;
+    var rows = (d.standings || []).map(function (s) {
+      return { rank: s.rank, house: s.house, value: s.points, sub: s.rank === 1 ? 'Leading' : ('−' + fmt(s.gapToLeader) + ' pts') };
+    });
+    var lead = rows.length > 1 ? (rows[0].value - rows[1].value) : 0;
+    var highlight = rows.length > 1 ?
+      (lead <= 0 ? '🤝 It is a tie at the top!' : '🔥 ' + rows[0].house + ' leads by ' + fmt(lead) + ' pts over ' + rows[1].house) :
+      (rows.length ? '🏆 ' + rows[0].house + ' is currently in the lead' : '');
+    return {
+      kind: 'standings', badge: 'HOUSE STANDINGS', title: d.meta.title || 'WHISTLE 2026', subtitle: 'Overall points table',
+      rows: rows, highlight: highlight,
+      footNote: '📈 ' + d.progress.declared + ' / ' + d.progress.total + ' events declared'
+    };
+  }
+
+  function sectionModel(name) {
+    var d = S.data;
+    var sec = (d.sections || []).filter(function (s) { return s.name === name; })[0];
+    if (!sec) return { kind: 'empty', reason: 'Section not found.' };
+    var list = (d.houses || []).map(function (h) { return { house: h.name, points: sec.totals[h.name] || 0 }; });
+    list.sort(function (a, b) { return b.points - a.points; });
+    var rank = 1;
+    list.forEach(function (r, i) { if (i > 0 && r.points === list[i - 1].points) r.rank = list[i - 1].rank; else r.rank = i + 1; });
+    var rows = list.map(function (r) { return { rank: r.rank, house: r.house, value: r.points }; });
+    var lead = rows.length > 1 ? (rows[0].value - rows[1].value) : 0;
+    var highlight = rows.length > 1 ?
+      (lead <= 0 && rows[0].value > 0 ? '🤝 Tied at the top of this section!' : (rows[0].value > 0 ? '🔥 ' + rows[0].house + ' leads ' + name + ' by ' + fmt(lead) + ' pts' : '')) : '';
+    return {
+      kind: 'section', badge: 'SECTION CHAMPIONSHIP', title: name, subtitle: 'Section-wise points',
+      rows: rows, highlight: highlight, footNote: sec.declared + ' / ' + sec.total + ' events declared in this section'
+    };
+  }
+
+  function progressModel() {
+    var d = S.data;
+    var leader = (d.standings || [])[0], second = (d.standings || [])[1];
+    var rows = (d.standings || []).slice(0, 3).map(function (s) { return { rank: s.rank, house: s.house, value: s.points }; });
+    var highlight = leader ? ('🏁 ' + d.race.remainingEvents + ' event(s) left — up to ' + fmt(d.race.pointsRemaining) + ' pts still up for grabs') : '';
+    var footNote = leader && second ? ('🔥 ' + leader.house + ' leads by ' + fmt(d.race.lead) + ' pts over ' + second.house) : '';
+    return {
+      kind: 'progress', badge: 'RACE UPDATE', title: d.meta.title || 'WHISTLE 2026', subtitle: 'Progress toward the trophy',
+      rows: rows, highlight: highlight, footNote: footNote,
+      stats: [
+        { label: 'Declared', value: d.progress.declared + ' / ' + d.progress.total },
+        { label: 'Remaining', value: String(d.race.remainingEvents) },
+        { label: 'Pts in play', value: fmt(d.race.pointsRemaining) }
+      ]
+    };
+  }
+
+  function houseByName(name) {
+    var h = (S.data.houses || []).filter(function (x) { return x.name === name; })[0];
+    return h || { name: name, color: '#64748b', ink: '#fff' };
+  }
+
+  // ================================================================== POSTER (canvas)
+  var CW = 1080, CH = 1350;
+  function renderPoster() {
+    var cv = $('posterCanvas'); if (!cv) return;
+    var ctx = cv.getContext('2d');
+    var model = buildModel();
+    var b = S.branding;
+
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#f4f6fb'; ctx.fillRect(0, 0, CW, CH);
+
+    // header band
+    var grad = ctx.createLinearGradient(0, 0, CW, 300);
+    grad.addColorStop(0, b.primary || '#0f172a');
+    grad.addColorStop(1, shade(b.primary || '#0f172a', -18));
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, CW, 300);
+
+    // crest
+    var cx = 130, cy = 140, cr = 76;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+    ctx.clip();
+    if (logoImg && logoImg.complete && logoImg.naturalWidth) {
+      var s = Math.max((cr * 2 - 16) / logoImg.naturalWidth, (cr * 2 - 16) / logoImg.naturalHeight);
+      var iw = logoImg.naturalWidth * s, ih = logoImg.naturalHeight * s;
+      ctx.drawImage(logoImg, cx - iw / 2, cy - ih / 2, iw, ih);
+    }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.stroke();
+
+    // title block
+    var tx = cx + cr + 34;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 54px "Barlow Condensed", sans-serif';
+    ctx.fillText(S.data && S.data.meta ? (S.data.meta.title || 'WHISTLE 2026') : 'WHISTLE 2026', tx, 100);
+    ctx.font = '600 22px "Barlow Condensed", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.fillText(letterSpace((S.data && S.data.meta && S.data.meta.subtitle) || 'ANNUAL SPORTS MEET'), tx, 134);
+    if (b.institution) {
+      ctx.font = '700 26px Inter, sans-serif';
+      ctx.fillStyle = '#fff';
+      wrapText(ctx, b.institution, tx, 178, CW - tx - 40, 30, 2);
+    }
+    if (b.tagline) {
+      ctx.font = '500 17px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.fillText(b.tagline, tx, b.institution ? 238 : 178);
+    }
+
+    // badge ribbon
+    var badgeText = model.badge || 'UPDATE';
+    ctx.font = '800 24px "Barlow Condensed", sans-serif';
+    var bw = ctx.measureText(letterSpace(badgeText)).width + 46;
+    roundRect(ctx, 60, 258, bw, 46, 23);
+    ctx.fillStyle = b.accent || '#facc15'; ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(letterSpace(badgeText), 60 + 23, 258 + 23);
+    ctx.textBaseline = 'alphabetic';
+
+    // content card
+    var cardY = 320, cardH = CH - cardY - 150;
+    ctx.save();
+    ctx.shadowColor = 'rgba(15,23,42,.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+    roundRect(ctx, 44, cardY, CW - 88, cardH, 26);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
+    ctx.restore();
+
+    var px = 84, py = cardY + 58, pw = CW - 88 - 80;
+    if (model.kind === 'empty') {
+      ctx.fillStyle = '#334155';
+      ctx.font = '700 30px "Barlow Condensed", sans-serif';
+      wrapText(ctx, model.reason || 'No data yet.', px, py + 30, pw, 38, 4);
+    } else {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '700 18px "Barlow Condensed", sans-serif';
+      ctx.fillText(letterSpace(model.title || ''), px, py);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 40px "Barlow Condensed", sans-serif';
+      var subY = py + 46;
+      subY = wrapText(ctx, model.subtitle || '', px, subY, pw, 44, 2);
+
+      var rowsTop = subY + 26;
+      if (model.stats && model.stats.length) {
+        rowsTop = drawStats(ctx, model.stats, px, rowsTop, pw);
+      }
+      rowsTop = drawRows(ctx, model.rows || [], px, rowsTop, pw);
+      if (model.moreCount) {
+        ctx.fillStyle = '#94a3b8'; ctx.font = '600 18px Inter, sans-serif';
+        ctx.fillText('+ ' + model.moreCount + ' more', px, rowsTop + 4);
+        rowsTop += 30;
+      }
+
+      if (model.highlight) {
+        var hh = 54;
+        roundRect(ctx, px, cardY + cardH - 150, pw, hh, 14);
+        ctx.fillStyle = hexA(b.accent || '#facc15', .18); ctx.fill();
+        ctx.fillStyle = '#0f172a'; ctx.font = '700 21px Inter, sans-serif';
+        wrapTextCentered(ctx, stripEmoji(model.highlight), px + pw / 2, cardY + cardH - 150 + hh / 2, pw - 30);
+      }
+      if (model.footNote) {
+        ctx.fillStyle = '#64748b'; ctx.font = '600 17px Inter, sans-serif';
+        ctx.fillText(stripEmoji(model.footNote), px, cardY + cardH - 74);
+      }
+    }
+
+    // footer band
+    var fy = CH - 150;
+    ctx.fillStyle = b.primary || '#0f172a'; ctx.fillRect(0, fy, CW, 150);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 20px Inter, sans-serif';
+    ctx.fillText('🕒 Updated: ' + fmtDateTime(S.data ? S.data.meta.generatedAt : Date.now()), 60, fy + 44);
+    ctx.font = '500 15px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.fillText('Live-synced from the WHISTLE 2026 scoreboard', 60, fy + 70);
+    if (b.institution) ctx.fillText(b.institution, 60, fy + 96);
+
+    drawSocialRow(ctx, CW - 60, fy + 62);
+  }
+
+  function drawStats(ctx, stats, x, y, w) {
+    var gap = 14, cw = (w - gap * (stats.length - 1)) / stats.length, h = 74;
+    stats.forEach(function (s, i) {
+      var sx = x + i * (cw + gap);
+      roundRect(ctx, sx, y, cw, h, 12);
+      ctx.fillStyle = '#f1f5f9'; ctx.fill();
+      ctx.fillStyle = '#0f172a'; ctx.font = '800 26px "Barlow Condensed", sans-serif';
+      ctx.fillText(s.value, sx + 14, y + 38);
+      ctx.fillStyle = '#64748b'; ctx.font = '600 12px Inter, sans-serif';
+      ctx.fillText(letterSpace(s.label), sx + 14, y + 58);
+    });
+    return y + h + 24;
+  }
+
+  function drawRows(ctx, rows, x, y, w) {
+    var rh = 78;
+    rows.forEach(function (r) {
+      var h = houseByName(r.house || '');
+      // rank badge
+      var medalColor = r.rank === 1 ? '#f59e0b' : r.rank === 2 ? '#cbd5e1' : r.rank === 3 ? '#d08a55' : '#e2e8f0';
+      ctx.beginPath(); ctx.arc(x + 26, y + 24, 26, 0, Math.PI * 2);
+      ctx.fillStyle = medalColor; ctx.fill();
+      ctx.fillStyle = r.rank <= 3 ? '#1f2937' : '#475569';
+      ctx.font = '800 22px "Barlow Condensed", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(r.rank ? String(r.rank) : '–', x + 26, y + 25);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+
+      // house pill
+      if (r.house) {
+        var name = r.house.toUpperCase();
+        ctx.font = '800 24px "Barlow Condensed", sans-serif';
+        var tw = ctx.measureText(letterSpace(name)).width + 34;
+        roundRect(ctx, x + 68, y + 2, tw, 44, 22);
+        ctx.fillStyle = h.color; ctx.fill();
+        ctx.fillStyle = h.ink;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(letterSpace(name), x + 68 + 17, y + 25);
+        ctx.textBaseline = 'alphabetic';
+      }
+
+      // value
+      ctx.fillStyle = '#0f172a'; ctx.font = '800 30px "Barlow Condensed", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmt(r.value) + ' pts', x + w, y + 30);
+      ctx.textAlign = 'left';
+      if (r.sub) {
+        ctx.fillStyle = '#94a3b8'; ctx.font = '600 15px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(r.sub, x + w, y + 50);
+        ctx.textAlign = 'left';
+      }
+      y += rh;
+    });
+    return y;
+  }
+
+  function drawSocialRow(ctx, rightX, cy) {
+    var icons = [
+      { key: 'facebook', bg: '#1877F2', label: 'f' },
+      { key: 'instagram', bg: '#C13584', label: 'IG' },
+      { key: 'whatsapp', bg: '#25D366', label: 'WA' },
+      { key: 'linkedin', bg: '#0A66C2', label: 'in' }
+    ];
+    var r = 24, gap = 14;
+    var x = rightX - r;
+    for (var i = icons.length - 1; i >= 0; i--) {
+      var ic = icons[i];
+      ctx.beginPath(); ctx.arc(x, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = ic.bg; ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '800 15px Inter, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(ic.label, x, cy + 1);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      x -= (r * 2 + gap);
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function letterSpace(s) { return String(s || '').toUpperCase().split('').join('  '); }
+  function stripEmoji(s) { return String(s || '').replace(/\p{Extended_Pictographic}️?\s*/gu, ''); }
+  function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+    var words = String(text || '').split(' '), line = '', lines = 0;
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, y); y += lineH; lines++;
+        if (maxLines && lines >= maxLines - 1) { line = words.slice(i).join(' '); break; }
+        line = words[i];
+      } else line = test;
+    }
+    if (line) { ctx.fillText(line, x, y); y += lineH; }
+    return y;
+  }
+  function wrapTextCentered(ctx, text, cx, cy, maxW) {
+    var prevAlign = ctx.textAlign, prevBaseline = ctx.textBaseline;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var words = String(text || '').split(' '), lines = [], line = '';
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = words[i]; } else line = test;
+    }
+    if (line) lines.push(line);
+    var startY = cy - ((lines.length - 1) * 24) / 2;
+    lines.forEach(function (l, i) { ctx.fillText(l, cx, startY + i * 24); });
+    ctx.textAlign = prevAlign; ctx.textBaseline = prevBaseline;
+  }
+  function shade(hex, pct) {
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return hex;
+    var adj = function (v) { v = parseInt(v, 16) + Math.round(255 * (pct / 100)); return Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0'); };
+    return '#' + adj(m[1]) + adj(m[2]) + adj(m[3]);
+  }
+  function hexA(hex, a) {
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return 'rgba(250,204,21,' + a + ')';
+    return 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',' + a + ')';
+  }
+
+  $('downloadPosterBtn').addEventListener('click', function () {
+    var cv = $('posterCanvas');
+    cv.toBlob(function (blob) {
+      if (!blob) { toast('Could not export the poster — try again.', 'error'); return; }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'whistle2026-poster-' + Date.now() + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      toast('Poster downloaded.', 'ok');
+    }, 'image/png');
+  });
+
+  // ================================================================== WHATSAPP TEXT
+  function socialLine() {
+    var b = S.branding, parts = [];
+    if (b.facebook) parts.push('Facebook: ' + b.facebook);
+    if (b.instagram) parts.push('Instagram: ' + b.instagram);
+    if (b.whatsapp) parts.push('WhatsApp: ' + b.whatsapp);
+    if (b.linkedin) parts.push('LinkedIn: ' + b.linkedin);
+    return parts.join('  |  ');
+  }
+  function medalEmoji(rank) { return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏅'; }
+  function slug(s) { return String(s || '').replace(/[^a-z0-9]+/gi, ''); }
+
+  function renderWhatsapp() {
+    var model = buildModel();
+    var d = S.data, b = S.branding;
+    var title = (d && d.meta && d.meta.title) || 'WHISTLE 2026';
+    var lines = [];
+    if (model.kind === 'empty') {
+      lines.push('*' + title + '*');
+      lines.push(model.reason || 'No data yet.');
+      $('waText').value = lines.join('\n');
+      return;
+    }
+    lines.push('🏆 *' + title + '*' + ((d.meta && d.meta.subtitle) ? ' — ' + d.meta.subtitle : ''));
+    lines.push('_' + model.badge + (model.title ? ' · ' + model.title : '') + '_');
+    if (model.subtitle) lines.push('*' + model.subtitle + '*');
+    lines.push('');
+    (model.rows || []).forEach(function (r) {
+      lines.push(medalEmoji(r.rank) + ' *' + (r.house || '') + '*' + (r.house ? ' — ' : '') + fmt(r.value) + ' pts' + (r.sub ? ' (' + r.sub + ')' : ''));
+    });
+    if (model.moreCount) lines.push('… + ' + model.moreCount + ' more');
+    lines.push('');
+    if (model.highlight) lines.push(model.highlight);
+    if (model.footNote) lines.push(model.footNote);
+    lines.push('');
+    lines.push('🕒 Updated: ' + fmtDateTime(d.meta.generatedAt));
+    if ($('waHashtags').checked) {
+      var tags = ['#' + slug(title) || '#WHISTLE2026'];
+      if (b.institution) tags.push('#' + slug(b.institution));
+      (model.rows || []).forEach(function (r) { if (r.house) { var h = '#' + slug(r.house); if (tags.indexOf(h) < 0) tags.push(h); } });
+      lines.push(tags.join(' '));
+    }
+    var sl = socialLine();
+    if (sl) { lines.push(''); lines.push('📲 Follow us — ' + sl); }
+    $('waText').value = lines.join('\n');
+  }
+  $('waHashtags').addEventListener('change', renderWhatsapp);
+  $('copyWaBtn').addEventListener('click', function () {
+    var ta = $('waText');
+    var done = function () { toast('Copied to clipboard.', 'ok'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(done, function () { fallbackCopy(ta, done); });
+    } else fallbackCopy(ta, done);
+  });
+  function fallbackCopy(ta, done) {
+    ta.removeAttribute('readonly'); ta.focus(); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('Could not copy — select the text manually.', 'error'); }
+    ta.setAttribute('readonly', 'readonly');
+  }
+
+  // ================================================================== PDF REPORT
+  function buildReportHtml() {
+    var d = S.data, b = S.branding;
+    if (!d) return '<p>Loading…</p>';
+    var head = '<div class="rp-head"><img src="' + (b.logoDataUrl || "logo.png") + '" alt="Logo">' +
+      '<div><h1>' + esc(d.meta.title || 'WHISTLE 2026') + '</h1>' +
+      '<div class="rp-sub">' + esc(d.meta.subtitle || '') + (b.institution ? ' · ' + esc(b.institution) : '') + '</div></div>' +
+      '<div class="rp-meta">Consolidated Results Report<br>Generated: ' + esc(fmtDateTime(d.meta.generatedAt)) + '<br>' +
+      d.progress.declared + ' / ' + d.progress.total + ' events declared</div></div>';
+
+    var standings = '<h2>Overall Standings</h2><table><thead><tr><th>Rank</th><th>House</th><th class="num">Points</th>' +
+      '<th class="num">1st</th><th class="num">2nd</th><th class="num">3rd</th><th class="num">Other</th><th class="num">Gap to leader</th></tr></thead><tbody>' +
+      (d.standings || []).map(function (s) {
+        return '<tr><td>' + s.rank + '</td><td>' + esc(s.house) + '</td><td class="num">' + fmt(s.points) + '</td>' +
+          '<td class="num">' + s.first + '</td><td class="num">' + s.second + '</td><td class="num">' + s.third + '</td><td class="num">' + s.other + '</td>' +
+          '<td class="num">' + (s.rank === 1 ? '—' : fmt(s.gapToLeader)) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+
+    var houseNames = (d.houses || []).map(function (h) { return h.name; });
+    var sections = (d.sections || []).map(function (sec) {
+      var rows = sec.events.map(function (e) {
+        if (!e.declared) return '<tr><td>' + esc(e.name) + '</td>' + houseNames.map(function () { return '<td class="num">—</td>'; }).join('') + '</tr>';
+        return '<tr><td>' + esc(e.name) + '</td>' + houseNames.map(function (h) {
+          var p = e.points[h] || 0, pos = e.positions[h];
+          var best = pos && pos.length ? Math.min.apply(null, pos) : 0;
+          return '<td class="num">' + (p || best ? ord(best) + ' · ' + fmt(p) : '—') + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+      var tot = '<tr class="tot"><td>SECTION TOTAL</td>' + houseNames.map(function (h) { return '<td class="num">' + fmt(sec.totals[h] || 0) + '</td>'; }).join('') + '</tr>';
+      return '<div class="rp-sec"><h2>' + esc(sec.name) + ' <span style="font-weight:400;font-size:13px;color:#64748b">(' + sec.declared + ' / ' + sec.total + ' declared)</span></h2>' +
+        '<table><thead><tr><th>Event</th>' + houseNames.map(function (h) { return '<th class="num">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + tot + '</tbody></table></div>';
+    }).join('');
+
+    var part = d.participation || {};
+    var partRows = (part.byHouse || []).map(function (h) { return '<tr><td>' + esc(h.house) + '</td><td class="num">' + h.athletes + '</td><td class="num">' + h.entries + '</td></tr>'; }).join('');
+    var participation = '<h2>Participation Summary</h2><p class="sub" style="color:#475569">' + (part.athletes || 0) + ' athletes · ' + (part.entries || 0) + ' event entries · ' + (part.eventsOffered || 0) + ' events offered</p>' +
+      '<table><thead><tr><th>House</th><th class="num">Athletes</th><th class="num">Entries</th></tr></thead><tbody>' + partRows + '</tbody></table>';
+
+    var sl = socialLine();
+    var foot = '<div class="rp-foot"><span>' + (b.institution ? esc(b.institution) + ' — ' : '') + esc(d.meta.title || 'WHISTLE 2026') + '</span>' +
+      '<span>' + esc(sl) + '</span><span>Generated by the WHISTLE 2026 Admin Portal · Poster &amp; Reports module</span></div>';
+
+    return head + standings + sections + participation + foot;
+  }
+
+  $('printReportBtn').addEventListener('click', function () {
+    if (!S.data) { toast('Still loading live data — try again in a second.', 'error'); return; }
+    $('reportRoot').innerHTML = buildReportHtml();
+    document.documentElement.classList.add('printing-report');
+    setTimeout(function () { window.print(); }, 30);
+  });
+  window.addEventListener('afterprint', function () { document.documentElement.classList.remove('printing-report'); });
+
+  // ================================================================== boot
+  updateBasisVisibility();
+  refresh();
+})();
+</script>
+</body>
+</html>

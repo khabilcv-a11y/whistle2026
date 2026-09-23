@@ -6,6 +6,7 @@ A Google Sheets + Apps Script backend with web pages hosted on Cloudflare Pages:
 |---|---|---|
 | **Live Dashboard** | `https://<your-site>/` | TV / projector |
 | **Score Admin portal** | `https://<your-site>/admin` | Officials (PIN protected) |
+| **Poster & Reports** | `https://<your-site>/share.html` | Officials / social media team |
 | API (Apps Script) | `https://script.google.com/macros/s/…/exec` | used by the pages only |
 
 It reads the existing **Registrations** tab and never writes to it. It keeps its own tabs:
@@ -25,6 +26,7 @@ apps-script/         → pasted into Google Apps Script (the backend / API)
 web/                 → hosted on Cloudflare Pages (build output directory)
   index.html         TV dashboard
   admin.html         officials' portal
+  share.html         Poster & Reports (self-contained module, see below)
   config.js          ← the Apps Script /exec URL goes here
   _headers           noindex + no-cache headers
 preview/             local test harness only
@@ -79,6 +81,13 @@ Protect the `Scores`, `Score_Events` and `Score_Audit` tabs (Data → Protect sh
 
 Timings, the rotation order and the points scheme are at the top of `web/index.html` (`CFG`) and `Code.gs` (`CONFIG`).
 
+**Poster & Reports (`web/share.html`):** a self-contained module, linked from the admin portal's top bar (*Poster & Reports ↗*), that turns the live scoreboard data into shareable output. It reads the same public `getDashboardData` endpoint the TV dashboard uses (no PIN needed, no writes), so it is always in sync with whatever has been declared — nothing here is typed in by hand.
+- **Content basis:** choose what the poster/text is about — the latest declared result (auto-updates), a specific event, overall house standings, one section's championship, or a progress/race update. Each basis computes a "trigger" headline (who's leading, by how much, or how many points are still up for grabs).
+- **Poster Card:** a 1080×1350 canvas-rendered poster (crest, event branding, ranked house/points list, highlight banner, updated timestamp, social icons) — **Download poster (PNG)** saves it, no server round-trip.
+- **WhatsApp Text:** the same content as ready-to-send WhatsApp-formatted text (bold/italic, medal emoji, hashtags, updated time, social handles) with a **Copy text** button. Send it together with the downloaded poster.
+- **PDF Report:** a full consolidated report (overall standings, every section's results table, participation summary) opened as a print-ready page — use the browser's **Save as PDF** in the print dialog. No PDF library is used, so it works offline.
+- **Branding tab:** institution name, tagline, logo (defaults to `web/logo.png`, or upload your own), poster colours and social links (Facebook/Instagram/WhatsApp/LinkedIn). This is saved in that browser's `localStorage` only — set it once per device used for exporting.
+
 ## Registration data assumptions
 
 Columns are matched by header name, and case or punctuation doesn't matter: `Section`, `House`, `Events`, `Class`, `Name`.
@@ -93,3 +102,4 @@ python -m http.server 8765
 
 Then open <http://localhost:8765/preview/>. The harness runs the real `Code.gs` in the browser against demo data: 420 athletes, 48 events, about 65% declared.
 Admin portal: <http://localhost:8765/preview/admin.html> (PIN **1234**). The top bar has buttons to simulate a new result, a network failure, or to reset the data.
+Poster & Reports: <http://localhost:8765/preview/share.html> (no PIN — it only reads the public dashboard feed).
