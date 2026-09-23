@@ -39,6 +39,8 @@
       var(--bg);
   }
   body.idle { cursor: none; }
+  body:not(.idle) #stage { cursor: pointer; }
+  body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .cond { font-family: var(--cond); }
   .num { font-family: var(--cond); font-variant-numeric: tabular-nums; }
 
@@ -66,6 +68,8 @@
   .status.offline { background: rgba(239,68,68,.16); color: #fca5a5; } .status.offline i { background: var(--bad); animation: none; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.6); } 70% { box-shadow: 0 0 0 .6rem rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
   .timer { height: .22rem; background: rgba(255,255,255,.05); margin: 0 2rem; border-radius: 1rem; overflow: hidden; }
+  .timer i.skip { animation: skipflash .5s ease-out; }
+  @keyframes skipflash { from { background: #fff; box-shadow: 0 0 1rem #fff; } }
   .timer i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #60a5fa, #a78bfa); }
 
   /* ---------------- stage / scenes ---------------- */
@@ -916,9 +920,22 @@
       try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (x) {}
     }
   });
-  document.addEventListener('dblclick', function () {
-    try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); } catch (x) {}
+  // Tap (phone) or click (desktop) → next screen. A double-click toggles full
+  // screen instead, so a single click waits briefly to rule out a second one.
+  var tapT = 0;
+  document.addEventListener('click', function () {
+    if (!D) return;
+    clearTimeout(tapT);
+    tapT = setTimeout(function () { tapHint(); next(); }, 280);
   });
+  document.addEventListener('dblclick', function () {
+    clearTimeout(tapT);
+    try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (x) {}
+  });
+  function tapHint() {
+    var bar = $('timerBar');
+    bar.classList.remove('skip'); void bar.offsetWidth; bar.classList.add('skip');
+  }
 
   // Safety net: if the rotation timer ever dies, restart it.
   setInterval(function () {
