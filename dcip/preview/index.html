@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>DCIP preview</title>
+<script>
+  // Loads a page from ../web with the real backend replaced by the in-browser stand-in.
+  var p = new URLSearchParams(location.search).get('p') || 'index.html';
+  var x = new XMLHttpRequest(); x.open('GET', '../web/' + p, false); x.send();
+  var html = x.responseText.replace('<head>', '<head><base href="../web/">').replace('<script src="config.js"><\/script>', '<script src="../preview/mock-gas.js"><\/script><script src="../preview/seed.js"><\/script><script src="../preview/boot.js"><\/script>');
+  document.open(); document.write(html); document.close();
+</script></head><body></body></html>

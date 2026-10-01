@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCIP Registration · District Collector's Internship Programme</title>
+<meta name="description" content="Apply for the District Collector's Internship Programme (DCIP), Kozhikode.">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .top { background: var(--brand); color: #fff; }
+  .top .in { max-width: 860px; margin: 0 auto; padding: 22px 16px 26px; display: flex; gap: 14px; align-items: center; }
+  .crest { width: 56px; height: 56px; border-radius: 50%; background: #fff; color: var(--brand); display: grid; place-items: center; font-weight: 800; letter-spacing: .5px; flex: none; border: 3px solid var(--accent); overflow: hidden; }
+  .crest img { width: 100%; height: 100%; object-fit: contain; }
+  .top small { letter-spacing: 1.5px; opacity: .8; font-size: 12px; text-transform: uppercase; }
+  .top h1 { font-size: 24px; }
+  main { max-width: 860px; margin: 0 auto; padding: 16px 16px 60px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-top: 16px; }
+  .card h2 { font-size: 17px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .card h2 .n { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+  .grid { display: grid; gap: 14px 16px; grid-template-columns: 1fr 1fr; }
+  .grid .full { grid-column: 1 / -1; }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } .card { padding: 16px; } }
+  .rules { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .rules li { display: flex; gap: 10px; align-items: flex-start; }
+  .rules li b.ic { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--info-bg); color: var(--info); display: grid; place-items: center; font-size: 12px; }
+  .verify { background: var(--soft); border: 1px dashed var(--line-2); border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .verify .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .verify input { max-width: 170px; letter-spacing: 6px; text-align: center; font-size: 18px; font-weight: 700; }
+  .verified { display: flex; gap: 8px; align-items: center; color: var(--ok); font-weight: 700; margin-top: 8px; }
+  .alert { border-radius: 8px; padding: 12px 14px; font-weight: 600; margin-top: 14px; }
+  .alert.bad { background: var(--bad-bg); color: var(--bad); }
+  .alert.warn { background: var(--warn-bg); color: var(--warn); }
+  .submit { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
+  .submit .btn { padding: 12px 26px; font-size: 16px; }
+  .done { text-align: center; padding: 30px 10px; }
+  .done .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--ok-bg); color: var(--ok); display: grid; place-items: center; font-size: 32px; margin: 0 auto 12px; }
+  .ref { display: inline-block; font-size: 26px; font-weight: 800; letter-spacing: 1px; background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 8px 18px; margin: 10px 0; }
+  .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding-bottom: 30px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="crest"><img src="logo.png" alt="" onerror="this.replaceWith(document.createTextNode('DCIP'))"></div>
+  <div><small>District Collector's Internship Programme</small><h1 id="title">Registration</h1></div>
+</div></header>
+
+<main id="main"><div class="card muted">Loading…</div></main>
+<footer>Having trouble? <span id="contact">Reply to the e-mail you receive from us.</span></footer>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="register.js"></script>
+</body>
+</html>
