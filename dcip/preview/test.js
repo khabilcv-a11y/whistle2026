@@ -17,8 +17,6 @@ const call = (fn, ...args) => {
 };
 const fails = (fn, re, ...args) => { try { call(fn, ...args); } catch (e) { assert.match(e.message, re, fn + ': ' + e.message); return; } assert.fail(fn + ' should have failed'); };
 const lastMail = () => env.store.mails[env.store.mails.length - 1];
-const codeFromMail = () => /letter-spacing:8px[^>]*>(\d{6})</.exec(lastMail().html)[1];
-
 let n = 0;
 const base = (o = {}) => Object.assign({
   fullName: 'Asha Menon', dob: '2002-04-10', gender: 'Female', email: 'asha@example.com', mobile: '98470 12345', altMobile: '',
@@ -27,36 +25,12 @@ const base = (o = {}) => Object.assign({
   motivation: 'I want to understand how district administration works on the ground.',
   cv: { name: 'cv.pdf', data: Buffer.from('%PDF-1.4 test').toString('base64') }
 }, o);
-function verifiedSubmit(over) {
-  const p = base(over);
-  call('sendEmailCode', p.email);
-  const v = call('verifyEmailCode', p.email, codeFromMail());
-  return call('submitApplication', Object.assign(p, { verifyToken: v.token }));
-}
+function verifiedSubmit(over) { return call('submitApplication', base(over)); }
 const test = (name, fn) => { fn(); n++; console.log('  ✓ ' + name); };
 
 test('public config exposes the rules', () => {
   const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
   assert.equal(c.open, true); assert.equal(c.maxAge, 30); assert.equal(c.intakeEnd, '2027-01-31'); assert.equal(c.ageAsOn, '2026-11-01');
-});
-
-test('email OTP: wrong code, then right code, token bound to the address', () => {
-  call('sendEmailCode', 'asha@example.com');
-  assert.match(lastMail().subject, /verification code/);
-  fails('verifyEmailCode', /Incorrect/, 'asha@example.com', '000000');
-  const v = call('verifyEmailCode', 'asha@example.com', codeFromMail());
-  assert.ok(v.token);
-  fails('submitApplication', /verify your e-mail/, Object.assign(base({ email: 'other@example.com' }), { verifyToken: v.token }));
-  fails('submitApplication', /verify your e-mail/, base());
-});
-
-test('OTP lockout after 5 wrong tries and send throttle', () => {
-  const e = 'lock@example.com';
-  call('sendEmailCode', e);
-  for (let i = 0; i < 5; i++) fails('verifyEmailCode', /Incorrect/, e, '111111');
-  fails('verifyEmailCode', /Too many wrong/, e, '111111');
-  call('sendEmailCode', e); call('sendEmailCode', e); call('sendEmailCode', e);
-  fails('sendEmailCode', /Too many codes/, e);
 });
 
 test('valid application is stored, CV saved to Drive, confirmation e-mail sent', () => {
@@ -73,18 +47,16 @@ test('valid application is stored, CV saved to Drive, confirmation e-mail sent',
   assert.equal(a.location, 'Kozhikode, Kozhikode Corporation'); assert.ok(a.cv.includes('drive.google.com')); assert.equal(a.cvFileId, undefined);
 });
 
-test('duplicate e-mail refused', () => fails('submitApplication', /already been received/, Object.assign(base(), { verifyToken: call('verifyEmailCode', (call('sendEmailCode', 'asha@example.com'), 'asha@example.com'), codeFromMail()).token })));
+test('duplicate e-mail refused', () => fails('submitApplication', /already been received/, base()));
 
 test('age limit: 30 on 1 Nov 2026 is OK, 31 is refused', () => {
   verifiedSubmit({ email: 'a30@example.com', mobile: '9000000030', dob: '1996-11-01', fullName: 'Thirty Year' });      // turns 30 on the reference date
   const p = base({ email: 'a31@example.com', mobile: '9000000031', dob: '1995-10-31', fullName: 'Thirtyone Year' });     // turned 31 the day before
-  call('sendEmailCode', p.email); p.verifyToken = call('verifyEmailCode', p.email, codeFromMail()).token;
   fails('submitApplication', /limit is 30/, p);
 });
 
 test('UG completion after the internship period is refused; inside the period is allowed and noted', () => {
   const late = base({ email: 'late@example.com', mobile: '9000000041', fullName: 'Late Finisher', qual: "Bachelor's Degree (final year – results pending)", completion: '2027-03-31' });
-  call('sendEmailCode', late.email); late.verifyToken = call('verifyEmailCode', late.email, codeFromMail()).token;
   fails('submitApplication', /after the internship period/, late);
   verifiedSubmit({ email: 'ok@example.com', mobile: '9000000042', fullName: 'Final Year', qual: "Bachelor's Degree (final year – results pending)", completion: '2026-12-15' });
   const a = call('getAdminState', call('adminLogin', 'T', pin).token).applications.find(x => x.email === 'ok@example.com');
@@ -113,7 +85,6 @@ test('duplicate mobile is flagged for review', () => {
 
 test('CV rules: required, type and size', () => {
   const p = base({ email: 'nocv@example.com', mobile: '9000000061', fullName: 'No Cv', cv: null });
-  call('sendEmailCode', p.email); p.verifyToken = call('verifyEmailCode', p.email, codeFromMail()).token;
   fails('submitApplication', /upload your CV/, p);
   p.cv = { name: 'cv.exe', data: 'AAAA' }; fails('submitApplication', /PDF, DOC or DOCX/, p);
   p.cv = { name: 'cv.pdf', data: 'A'.repeat(5 * 1024 * 1024) }; fails('submitApplication', /larger than/, p);
@@ -177,9 +148,9 @@ test('settings: validation and registration close/deadline', () => {
   fails('saveSettings', /number/, tok, { MAX_AGE: 'abc' });
   fails('saveSettings', /BLOCK or FLAG/, tok, { ENFORCE_AGE: 'MAYBE' });
   call('saveSettings', tok, { REG_DEADLINE: '2026-10-05T11:00' });
-  fails('sendEmailCode', /closed/, 'late@example.com');
+  fails('submitApplication', /closed/, base({ email: 'closed@example.com' }));
   call('saveSettings', tok, { REG_DEADLINE: '', REG_OPEN: 'FALSE' });
-  fails('sendEmailCode', /closed/, 'late@example.com');
+  fails('submitApplication', /closed/, base({ email: 'closed@example.com' }));
   call('saveSettings', tok, { REG_OPEN: 'TRUE' });
 });
 

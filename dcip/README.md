@@ -10,7 +10,7 @@ Public registration form + admin portal. **Google Sheets** is the database, **Ap
 > **Why CVs are not in GitHub:** CVs contain personal data. A GitHub repo (even private) is the wrong place for them and Apps Script cannot write to it safely. CVs are saved to a private Drive folder created automatically; the sheet stores the link. GitHub holds only this code.
 
 ## What it does
-- **Form**: all 19 columns of the 33rd-batch sheet. Live age/eligibility feedback, e-mail OTP verification, CV upload (PDF/DOC/DOCX ≤ 3 MB), draft kept in the browser, spam honeypot.
+- **Form**: all 19 columns of the 33rd-batch sheet. Live age/eligibility feedback, CV upload (PDF/DOC/DOCX ≤ 3 MB), draft kept in the browser, spam honeypot.
 - **Screening rules** (Settings tab / `Settings` sheet):
   - Age ≤ `MAX_AGE` (30) on `AGE_AS_ON` (default = `INTAKE_START`).
   - UG completion date ≤ `INTAKE_END`. Later → cannot submit (`ENFORCE_COMPLETION=BLOCK`) or accepted but marked **Suggest Disqualify** (`FLAG`). Same switch for age (`ENFORCE_AGE`).
@@ -29,7 +29,8 @@ Public registration form + admin portal. **Google Sheets** is the database, **Ap
 7. Code changes later: paste `Code.gs` → Deploy → Manage deployments → New version (URL unchanged).
 
 ## Things to know
-- **Mail quota**: each application sends 2 e-mails (OTP + confirmation). Consumer Gmail allows ~100/day (≈50 applications/day); Google Workspace ~1,500/day. Run the script from a Workspace account if you expect more. The portal shows the remaining quota.
+- **Mail quota**: each application sends 1 confirmation e-mail. Consumer Gmail allows ~100/day; Google Workspace ~1,500/day.
+- **No e-mail verification**: a mistyped address means the confirmation never arrives; applicants are told to double-check it, and you can correct the address in the portal and resend. Run the script from a Workspace account if you expect more. The portal shows the remaining quota.
 - **Dates assumed**: intake **1 Nov 2026 – 31 Jan 2027** (Settings → `INTAKE_START/END`). Age is counted on 1 Nov 2026.
 - Highest-qualification options are the three used last year; the completion rule is applied to the **UG completion date**.
 - Malayalam text is not rendered in PDFs (shows `?`); Excel is fine.
@@ -38,7 +39,7 @@ Public registration form + admin portal. **Google Sheets** is the database, **Ap
 ## Local preview / tests
 ```bash
 python3 -m http.server 8765      # from this folder
-# form:  http://localhost:8765/preview/index.html?p=index.html     (OTP appears in the "inbox" at bottom-left)
+# form:  http://localhost:8765/preview/index.html?p=index.html    
 # admin: http://localhost:8765/preview/index.html?p=admin.html     (PIN 1234, 120 demo applications)
 node preview/test.js             # backend tests against a mock of the Google services
 ```

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var D = window.DCIP, esc = D.esc, $ = function (s, r) { return (r || document).querySelector(s); };
-  var C = null, verified = null /* {email, token} */, cooldown = 0, timer = null, draftKey = 'dcip34_draft_v1';
+  var C = null, draftKey = 'dcip34_draft_v1';
   var LB_TYPES = ['Grama Panchayat', 'Municipality', 'Corporation'];
   var KOZ_MUNICIPALITIES = ['Koyilandy', 'Vadakara', 'Payyoli', 'Ramanattukara', 'Koduvally', 'Mukkam', 'Feroke'];
   var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
@@ -24,7 +24,7 @@
       '<li><b class="ic">1</b><span>Internship period: <b>' + D.fmtDate(C.intakeStart) + ' to ' + D.fmtDate(C.intakeEnd) + '</b>.</span></li>' +
       '<li><b class="ic">2</b><span>Age limit: <b>' + C.maxAge + ' years or below</b> on ' + D.fmtDate(C.ageAsOn) + '.</span></li>' +
       '<li><b class="ic">3</b><span>You must have a bachelor\'s degree, and the <b>UG course must be completed on or before ' + D.fmtDate(C.intakeEnd) + '</b> (the end of the internship period).</span></li>' +
-      '<li><b class="ic">4</b><span>Your e-mail address is verified with a code. <b>All further communication will be sent to this e-mail</b> and your mobile numbers, so use ones you check regularly.</span></li>' +
+      '<li><b class="ic">4</b><span>Enter your e-mail address <b>carefully</b>. <b>All further communication will be sent to this e-mail</b> and your mobile numbers, so use ones you check regularly.</span></li>' +
       (C.deadline ? '<li><b class="ic">5</b><span>Last date to apply: <b>' + D.fmtDateTime(C.deadline.replace(' ', 'T')) + '</b>.</span></li>' : '') +
       '</ul></div>' +
       '<form id="form" novalidate autocomplete="on">' +
@@ -32,26 +32,22 @@
         f('fullName', 'Full name', '<input type="text" id="fullName" autocomplete="name" maxlength="100">', 'full', 'As in your certificates.') +
         f('dob', 'Date of birth', '<input type="date" id="dob" min="1950-01-01" max="' + D.addDays(C.today, -365 * 15) + '" autocomplete="bday">', '', '<span id="ageNote"></span>') +
         f('gender', 'Gender', select('gender', C.genders, 'Select')) +
+        f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'Your confirmation will be sent here. Please double-check the spelling.') +
         f('mobile', 'Primary mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">') +
         f('altMobile', 'Alternate mobile number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
-      section(2, 'E-mail verification',
-        '<div class="field full" id="fld-email"><label class="f" for="email">E-mail address <span class="req">*</span></label>' +
-        '<input type="email" id="email" autocomplete="email" maxlength="120"><div class="err"></div>' +
-        '<div class="hint">We will send a 6-digit code to this address.</div>' +
-        '<div id="verifyBox"></div></div>') +
-      section(3, 'Where do you live?',
+      section(2, 'Where do you live?',
         f('district', 'District of residence', select('district', C.districts, 'Select')) +
         f('lbType', 'Local body type', select('lbType', LB_TYPES.concat(['Other / outside Kerala']), 'Select')) +
         f('lbName', 'Local body name', '<input type="text" id="lbName" list="lbList" maxlength="80" placeholder="e.g. Atholi, Vadakara, Kozhikode"><datalist id="lbList"></datalist>', 'full',
           'Your Grama Panchayat, Municipality or Corporation. For outside Kerala, enter your town / place and state.')) +
-      section(4, 'Education',
+      section(3, 'Education',
         f('qual', 'Highest educational qualification', select('qual', C.quals, 'Select'), 'full') +
         f('stream', 'UG / bachelor\'s degree stream', select('stream', STREAMS, 'Select')) +
         f('specialisation', 'UG specialisation / subject', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics, Computer Science">') +
         f('institution', 'Name of UG institution', '<input type="text" id="institution" maxlength="150" placeholder="College, University">', 'full') +
         f('completion', 'UG degree completion date', '<input type="date" id="completion" min="1980-01-01" max="2040-12-31">', 'full',
           '<span id="compNote">Actual date if completed; <b>expected date</b> if your final-year results are pending.</span>')) +
-      section(5, 'About you',
+      section(4, 'About you',
         f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" maxlength="1500" rows="5"></textarea><div class="hint"><span id="mcount">0</span>/1500 characters (minimum 30)</div>', 'full') +
         f('cv', 'Upload your CV', '<input type="file" id="cv" accept=".pdf,.doc,.docx,application/pdf">', 'full',
           'PDF, DOC or DOCX, up to ' + (C.cvMaxBytes / 1048576) + ' MB.' + (C.cvRequired ? '' : ' (optional)'))) +
@@ -60,7 +56,7 @@
       '<div id="formAlert"></div>' +
       '<div class="submit"><button type="submit" class="btn primary" id="submit">Submit application</button><span class="muted" id="submitNote"></span></div>' +
       '</form>';
-    bind(); restoreDraft(); updateLocalBody(); liveChecks(); renderVerify();
+    bind(); restoreDraft(); updateLocalBody(); liveChecks();
   }
 
   function section(n, title, body) { return '<div class="card"><h2><span class="n">' + n + '</span>' + title + '</h2><div class="grid">' + body + '</div></div>'; }
@@ -76,7 +72,7 @@
   function bind() {
     FIELDS.forEach(function (id) {
       var e = $('#' + id); if (!e) return;
-      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'email') emailChanged(); if (id === 'district' || id === 'lbType') updateLocalBody(); liveChecks(); }); });
+      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'district' || id === 'lbType') updateLocalBody(); liveChecks(); }); });
     });
     $('#motivation').addEventListener('input', function () { $('#mcount').textContent = this.value.length; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
@@ -132,49 +128,6 @@
   }
   function live(id, cls, text) { var e = $('#live-' + id); if (e) e.innerHTML = text ? '<div class="' + (cls === 'ok' ? 'okmsg' : cls) + '">' + esc(text) + '</div>' : ''; }
 
-  /* ---------- e-mail verification ---------- */
-  function emailChanged() {
-    var email = val('email').toLowerCase(), box = $('#verifyBox'), was = !!verified;
-    if (verified && verified.email !== email) verified = null;
-    if (was && !verified) { box.dataset.state = 'idle'; renderVerify(); }
-    else if (box.dataset.state === 'sent' && box.dataset.email !== email) { box.dataset.state = 'idle'; renderVerify(); }   // never re-render otherwise: it would swallow a click on "Send code"
-  }
-  function renderVerify(state) {
-    var box = $('#verifyBox'), email = val('email').toLowerCase();
-    if (verified && verified.email === email) { box.innerHTML = '<div class="verified">✓ E-mail verified</div>'; return; }
-    state = state || box.dataset.state || 'idle'; box.dataset.state = state;
-    if (state === 'sent') {
-      box.innerHTML = '<div class="verify"><div class="hint" style="margin:0 0 8px">A 6-digit code was sent to <b>' + esc(email) + '</b>. Check your inbox and spam folder.</div>' +
-        '<div class="row"><input type="text" id="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" aria-label="Verification code" placeholder="••••••">' +
-        '<button type="button" class="btn primary" id="btnVerify">Verify</button>' +
-        '<button type="button" class="btn small" id="btnResend"' + (cooldown ? ' disabled' : '') + '>' + (cooldown ? 'Resend in ' + cooldown + 's' : 'Resend code') + '</button></div><div id="verifyMsg" class="err" style="display:block"></div></div>';
-      $('#btnVerify').onclick = verifyCode; $('#btnResend').onclick = sendCode;
-      $('#code').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); verifyCode(); } });
-    } else {
-      box.innerHTML = '<div class="verify"><button type="button" class="btn primary" id="btnSend">Send verification code</button><span class="hint"> You must verify your e-mail to submit.</span><div id="verifyMsg" class="err" style="display:block"></div></div>';
-      $('#btnSend').onclick = sendCode;
-    }
-  }
-  function vmsg(t) { var e = $('#verifyMsg'); if (e) e.textContent = t || ''; }
-  function sendCode() {
-    var email = val('email').toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setErr('email', 'Please enter a valid e-mail address.'); return; }
-    clearErr('email');
-    var b = $('#btnSend') || $('#btnResend'); if (b) { b.disabled = true; b.textContent = 'Sending…'; }
-    D.call('sendEmailCode', email).then(function () {
-      cooldown = 30; $('#verifyBox').dataset.email = email; renderVerify('sent'); clearInterval(timer);
-      timer = setInterval(function () { cooldown--; if (cooldown <= 0) { cooldown = 0; clearInterval(timer); } if ($('#btnResend')) { $('#btnResend').disabled = cooldown > 0; $('#btnResend').textContent = cooldown ? 'Resend in ' + cooldown + 's' : 'Resend code'; } }, 1000);
-      var c = $('#code'); if (c) c.focus();
-    }, function (e) { renderVerify($('#verifyBox').dataset.state); vmsg(e.message); });
-  }
-  function verifyCode() {
-    var code = ($('#code').value || '').replace(/\D/g, ''), email = val('email').toLowerCase();
-    if (code.length !== 6) { vmsg('Enter the 6-digit code.'); return; }
-    $('#btnVerify').disabled = true;
-    D.call('verifyEmailCode', email, code).then(function (r) { verified = { email: email, token: r.token }; renderVerify(); clearErr('email'); },
-      function (e) { $('#btnVerify').disabled = false; vmsg(e.message); });
-  }
-
   /* ---------- validation + submit ---------- */
   function setErr(id, msg) { var fld = $('#fld-' + id); if (!fld) return; fld.classList.add('invalid'); var e = $('.err', fld); if (e) e.textContent = msg; }
   function clearErr(id) { var fld = $('#fld-' + id); if (fld) fld.classList.remove('invalid'); }
@@ -188,7 +141,6 @@
     if (!/^[6-9]\d{9}$/.test(m)) errs.mobile = 'Enter a valid 10-digit mobile number.';
     if (val('altMobile')) { var a = val('altMobile').replace(/\D/g, ''); if (a.length === 12 && a.indexOf('91') === 0) a = a.slice(2); if (!/^[6-9]\d{9}$/.test(a)) errs.altMobile = 'Enter a valid 10-digit mobile number or leave it blank.'; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email'))) errs.email = 'Please enter a valid e-mail address.';
-    else if (!verified || verified.email !== val('email').toLowerCase()) errs.email = 'Please verify your e-mail address with the code.';
     ['district', 'qual', 'stream'].forEach(function (k) { if (!val(k)) errs[k] = 'Please select.'; });
     if (!val('lbType')) errs.lbType = 'Please select.';
     if (!val('lbName')) errs.lbName = 'Please enter your local body.';
@@ -232,13 +184,12 @@
         fullName: val('fullName'), dob: val('dob'), gender: val('gender'), email: val('email').toLowerCase(), mobile: val('mobile'), altMobile: val('altMobile'),
         district: val('district'), localBody: localBody(), qual: val('qual'), stream: val('stream'), specialisation: val('specialisation'),
         institution: val('institution'), completion: val('completion'), motivation: val('motivation'), cv: cv,
-        verifyToken: verified.token, website: val('website')
+        website: val('website')
       });
     }).then(done, function (e) {
       btn.disabled = false; btn.textContent = 'Submit application';
       $('#formAlert').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
       $('#formAlert').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (/verify your e-mail/i.test(e.message)) { verified = null; renderVerify(); }
     });
   }
 

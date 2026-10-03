@@ -23,10 +23,6 @@ var APP = {
   SHEETS: { APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit' },
   CV_MAX_BYTES: 3 * 1024 * 1024,
   CV_EXT: ['pdf', 'doc', 'docx'],
-  OTP_TTL_S: 600,            // code valid 10 min
-  OTP_MAX_TRIES: 5,
-  OTP_MAX_SENDS_PER_HOUR: 4,
-  VERIFY_TTL_S: 3600,        // e-mail verification is valid for 1 hour
   ADMIN_TTL_S: 12 * 3600,    // admin session length
   AUDIT_LIMIT: 600
 };
@@ -122,8 +118,6 @@ var RESCREEN_ON = ['dob', 'district', 'localBody', 'qual', 'completion', 'mobile
  * ========================================================================= */
 
 var PUBLIC_API = {
-  sendEmailCode: sendEmailCode,
-  verifyEmailCode: verifyEmailCode,
   submitApplication: submitApplication,
   adminLogin: adminLogin
 };
@@ -217,52 +211,12 @@ function publicConfig_() {
   };
 }
 
-/** Step 1 of e-mail verification: mail a 6-digit code. */
-function sendEmailCode(email) {
-  var s = settings_();
-  if (!regOpen_(s)) throw new Error('Registration is closed.');
-  email = normEmail_(email);
-  if (!validEmail_(email)) throw new Error('Please enter a valid e-mail address.');
-  var cache = CacheService.getScriptCache();
-  var hk = hash_(email);
-  var sendKey = 'otps:' + hk;
-  var sends = Number(cache.get(sendKey) || 0);
-  if (sends >= APP.OTP_MAX_SENDS_PER_HOUR) throw new Error('Too many codes requested for this address. Please try again in an hour.');
-  var code = String(100000 + Math.floor(Math.random() * 900000));
-  cache.put('otp:' + hk, hash_(code + ':' + email), APP.OTP_TTL_S);
-  cache.put('otpt:' + hk, '0', APP.OTP_TTL_S);
-  cache.put(sendKey, String(sends + 1), 3600);
-  var html = emailShell_(s, 'Verify your e-mail',
-    '<p>Your verification code for the <b>' + esc_(s.PROGRAMME) + ' – ' + esc_(s.BATCH_LABEL) + '</b> registration is:</p>' +
-    '<p style="font-size:30px;letter-spacing:8px;font-weight:700;margin:18px 0">' + code + '</p>' +
-    '<p>The code is valid for ' + (APP.OTP_TTL_S / 60) + ' minutes. If you did not request it, you can ignore this e-mail.</p>');
-  sendMail_(s, email, 'Your DCIP verification code: ' + code, html,
-    'Your DCIP verification code is ' + code + ' (valid ' + (APP.OTP_TTL_S / 60) + ' minutes).');
-  return { sent: true, ttlSeconds: APP.OTP_TTL_S };
-}
-
-/** Step 2: check the code; returns a signed token the form sends with the application. */
-function verifyEmailCode(email, code) {
-  email = normEmail_(email);
-  var cache = CacheService.getScriptCache();
-  var hk = hash_(email);
-  var expected = cache.get('otp:' + hk);
-  if (!expected) throw new Error('That code has expired. Please request a new one.');
-  var tries = Number(cache.get('otpt:' + hk) || 0) + 1;
-  if (tries > APP.OTP_MAX_TRIES) { cache.remove('otp:' + hk); throw new Error('Too many wrong attempts. Please request a new code.'); }
-  cache.put('otpt:' + hk, String(tries), APP.OTP_TTL_S);
-  if (hash_(String(code || '').replace(/\D/g, '') + ':' + email) !== expected) throw new Error('Incorrect code. Please check and try again.');
-  cache.remove('otp:' + hk);
-  return { verified: true, token: sign_('v|' + email + '|' + (nowS_() + APP.VERIFY_TTL_S)) };
-}
-
 function submitApplication(p) {
   p = p || {};
   if (p.website) throw new Error('Submission rejected.');                   // honeypot field
   var s = settings_();
   if (!regOpen_(s)) throw new Error('Registration is closed.');
   var d = cleanApplication_(p, s);
-  assertVerified_(p.verifyToken, d.email);
 
   var cvFile = null;
   if (p.cv && p.cv.data) cvFile = checkCv_(p.cv);
@@ -286,7 +240,7 @@ function submitApplication(p) {
     }
     d.submittedAt = nowIso_();
     d.status = 'Received';
-    d.emailVerified = 'Yes';
+    d.emailVerified = 'No';
     applyScreening_(d, scr);
     d.updatedAt = d.submittedAt; d.updatedBy = 'Applicant';
     appendRow_(sh, FIELDS, d);
@@ -666,7 +620,7 @@ function sendConfirmation_(d, s) {
   var rows = [
     ['Reference number', '<b>' + esc_(d.id) + '</b>'],
     ['Full name', esc_(d.fullName)], ['Date of birth', esc_(fmtDate_(d.dob)) + ' (age ' + esc_(d.age) + ' on ' + esc_(fmtDate_(ageAsOn_(s))) + ')'],
-    ['Gender', esc_(d.gender)], ['E-mail', esc_(d.email) + ' (verified)'],
+    ['Gender', esc_(d.gender)], ['E-mail', esc_(d.email)],
     ['Primary mobile', esc_(d.mobile)], ['Alternate mobile', esc_(d.altMobile || '—')],
     ['District', esc_(d.district)], ['Local body', esc_(d.localBody)],
     ['Highest qualification', esc_(d.qual)], ['UG stream', esc_(d.stream)], ['UG subject', esc_(d.specialisation)],
@@ -855,10 +809,6 @@ function verify_(token) {
   var sig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(t[0], secret));
   if (sig !== t[1]) return null;
   return Utilities.newBlob(Utilities.base64DecodeWebSafe(t[0])).getDataAsString().split('|');
-}
-function assertVerified_(token, email) {
-  var p = verify_(token);
-  if (!p || p[0] !== 'v' || p[1] !== email || Number(p[2]) < nowS_()) throw new Error('Please verify your e-mail address again (the verification expired or the e-mail was changed).');
 }
 function hash_(s) {
   return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s))).slice(0, 32);
