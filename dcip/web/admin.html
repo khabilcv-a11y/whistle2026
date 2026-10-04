@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>DCIP Admin</title>
+<link rel="icon" href="logo.png">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 <div id="login" class="login hidden">
   <form class="card login-card" id="loginForm">
-    <div class="crest">DCIP</div>
+    <img class="logo-lg" src="logo.png" alt="DCIP Kozhikode">
     <h1>DCIP Admin</h1>
     <p class="muted">Selection management portal</p>
     <div class="field"><label class="f" for="lname">Your name</label><input type="text" id="lname" autocomplete="name" required><div class="hint">Recorded in the audit trail with every change.</div></div>
@@ -23,7 +24,7 @@
 
 <div id="app" class="hidden">
   <header class="bar">
-    <div class="brand"><div class="crest sm">DCIP</div><div><b id="hTitle">DCIP</b><small id="hSub">Admin</small></div></div>
+    <div class="brand"><img class="logo-sm" src="logo.png" alt=""><div><b id="hTitle">DCIP</b><small id="hSub">Admin</small></div></div>
     <div class="grow"></div>
     <span class="live" id="live" title="Data refreshes automatically"><i></i><span id="liveText">Live</span></span>
     <button class="btn small" id="btnRefresh">Refresh</button>
