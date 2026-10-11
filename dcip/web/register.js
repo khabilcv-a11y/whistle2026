@@ -1,30 +1,87 @@
 /* Public registration form */
 (function () {
   'use strict';
-  var D = window.DCIP, esc = D.esc, $ = function (s, r) { return (r || document).querySelector(s); };
-  var C = null, draftKey = 'dcip34_draft_v1';
+  var D = window.DCIP, esc = D.esc, $ = function (s, r) { return (r || document).querySelector(s); }, $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var C = null, draftKey = 'dcip_draft_v2';
   var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
+  var HEARD = ['Instagram', 'Facebook', 'College / University', 'DCIP Alumni', 'Friend / Family', 'DCIP Website', 'Newspaper / Media', 'WhatsApp', 'Other'];
+  var WA_YES = 'Yes, it is', WA_NO = 'No, I use a different number';
 
-  D.getConfig().then(function (c) { C = c; render(); if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(c); }, function (e) {
-    $('#main').innerHTML = '<div class="card"><div class="alert bad">' + esc(e.message) + '</div></div>';
+  D.getConfig().then(function (c) { C = c; render(); heroFx(); renderBanners(c.banners || []); if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(c); }, function (e) {
+    $('#main').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
   });
 
+  function calm() { return document.documentElement.classList.contains('a11y-calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function ageText() { return C.minAge ? C.minAge + ' to ' + C.maxAge + ' years' : 'Up to ' + C.maxAge + ' years'; }
+  function ageRule() { return C.minAge ? 'between ' + C.minAge + ' and ' + C.maxAge + ' years old' : 'not older than ' + C.maxAge + ' years'; }
+
+  /* ------------------------------------------ landing page ------------------------------------------ */
+  function heroFx() {
+    var items = $$('#rotor span'), i = 0;
+    if (items.length > 1 && !calm()) setInterval(function () { if (calm()) return; items[i].classList.remove('on'); i = (i + 1) % items.length; items[i].classList.add('on'); }, 2800);
+    $$('[data-count]').forEach(function (el) {
+      var target = +el.dataset.count, plus = el.dataset.plus ? '+' : '';
+      if (calm()) { el.textContent = target + plus; return; }
+      var t0 = null; el.textContent = '0';
+      function tick(t) { if (t0 === null) t0 = t; var p = Math.min(1, (t - t0) / 1400); el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + (p === 1 ? plus : ''); if (p < 1) requestAnimationFrame(tick); }
+      setTimeout(function () { requestAnimationFrame(tick); }, 1300);
+    });
+  }
+
+  function renderBanners(list) {
+    var box = $('#banners'); if (!box || !list.length) return;
+    box.hidden = false;
+    box.innerHTML = '<div class="bn" id="bn">' + list.map(function (b, i) {
+      return '<figure class="slide' + (i === 0 ? ' on' : '') + '" aria-hidden="' + (i === 0 ? 'false' : 'true') + '" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || 'DCIP highlight ' + (i + 1)) + '"' + (i ? ' loading="lazy"' : '') + '>' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
+    }).join('') + (list.length > 1 ? '<button type="button" class="nav prev" aria-label="Previous image">‹</button><button type="button" class="nav next" aria-label="Next image">›</button><div class="dots">' +
+      list.map(function (b, i) { return '<button type="button" aria-label="Show image ' + (i + 1) + '" aria-current="' + (i === 0) + '"></button>'; }).join('') + '</div><button type="button" class="pp" id="bnPause">❚❚ Pause</button>' : '') + '</div>';
+    var slides = $$('.slide', box), dots = $$('.dots button', box), at = 0, paused = calm(), timer = null;
+    // an image that fails to load is dropped quietly
+    $$('img', box).forEach(function (im) { im.addEventListener('error', function () { var s = im.closest('.slide'); s.dataset.bad = '1'; s.remove(); slides = $$('.slide', box); if (!slides.length) box.hidden = true; else show(0); }); });
+    function show(n) {
+      if (!slides.length) return; at = (n + slides.length) % slides.length;
+      slides.forEach(function (s, i) { s.classList.toggle('on', i === at); s.setAttribute('aria-hidden', i === at ? 'false' : 'true'); });
+      dots.forEach(function (d, i) { d.setAttribute('aria-current', i === at); });
+    }
+    function play() { clearInterval(timer); if (!paused && slides.length > 1) timer = setInterval(function () { show(at + 1); }, 5000); }
+    if (list.length > 1) {
+      $('.prev', box).onclick = function () { show(at - 1); play(); }; $('.next', box).onclick = function () { show(at + 1); play(); };
+      dots.forEach(function (d, i) { d.onclick = function () { show(i); play(); }; });
+      var pp = $('#bnPause'); function label() { pp.textContent = paused ? '▶ Play' : '❚❚ Pause'; }
+      pp.onclick = function () { paused = !paused; label(); play(); }; label();
+      var bn = $('#bn'), sx = null;
+      bn.addEventListener('mouseenter', function () { clearInterval(timer); }); bn.addEventListener('mouseleave', play);
+      bn.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; clearInterval(timer); }, { passive: true });
+      bn.addEventListener('touchend', function (e) { if (sx !== null) { var dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) show(at + (dx < 0 ? 1 : -1)); } sx = null; play(); }, { passive: true });
+      play();
+    }
+  }
+
+  function renderFooter() {
+    var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
+    var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
+    if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
+    parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
+    $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
+  }
+
+  /* --------------------------------------------- the form --------------------------------------------- */
   function render() {
     $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
-    if (C.contactEmail || C.contactPhone) $('#contact').textContent = 'Contact: ' + [C.contactEmail, C.contactPhone].filter(Boolean).join(' · ');
-    var facts = [['Internship', D.fmtDate(C.intakeStart) + ' – ' + D.fmtDate(C.intakeEnd)], ['Age', (C.minAge ? C.minAge + ' to ' + C.maxAge : C.maxAge + ' or below') + ' years'], ['Degree', 'UG completed by ' + D.fmtDate(C.intakeEnd)]];
+    renderFooter();
+    var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
     if (C.deadline) facts.push(['Last date', D.fmtDateTime(C.deadline.replace(' ', 'T'))]);
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
     if (!C.open) {
-      $('#badge').classList.add('closed'); $('#badgeText').textContent = 'Applications closed'; $('#cta').classList.add('hidden');
+      $('#badge').classList.add('closed'); $('#badgeText').textContent = 'Applications closed';
       $('#main').innerHTML = '<h2>Registration is closed</h2><p>The registration for the DCIP ' + esc(C.batch) + ' is not open at the moment. Thank you for your interest.</p>';
       return;
     }
     $('#main').removeAttribute('style');
     $('#main').innerHTML =
       '<form id="form" novalidate autocomplete="on">' +
-      '<ol class="progress" id="progress"></ol>' +
+      '<ol class="progress" id="progress" role="tablist" aria-label="Application steps"></ol>' +
       step(1, 'Your CV', 'Start with your CV', C.cvRequired ? 'Upload your CV and we\'ll fill in what we can. You only check it and complete the rest.' : 'Upload your CV and we\'ll fill in what we can (optional).',
         '<div class="full"><div class="field" id="fld-cv"><label class="drop" for="cv" id="drop"><span class="drop-ic" aria-hidden="true">📄</span><b id="dropTitle">Choose your CV</b><span class="muted" id="dropSub">or drop it here · PDF, DOC or DOCX · up to ' + (C.cvMaxBytes / 1048576) + ' MB</span>' +
         '<input type="file" id="cv" class="sr" accept=".pdf,.doc,.docx,application/pdf"></label><div class="err"></div>' +
@@ -34,23 +91,27 @@
       step(2, 'About you', 'Let\'s start with you', 'Use your name as it is on your certificates.',
         f('fullName', 'Full name', '<input type="text" id="fullName" autocomplete="name" maxlength="100">', 'full') +
         f('dob', 'Date of birth', '<input type="date" id="dob" min="1950-01-01" max="' + D.addDays(C.today, -365 * 15) + '" autocomplete="bday">', '', '<span id="ageNote"></span>') +
-        f('gender', 'Gender', select('gender', C.genders, 'Select')) +
+        f('gender', 'Gender', choice('gender', C.genders)) +
         f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.') +
-        f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">') +
-        f('altMobile', 'Alternate mobile <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
-      step(3, 'Home', 'Where are you from?', 'This helps us understand the reach of the programme.',
-        f('district', 'District of residence', select('district', C.districts, 'Select')) +
+        f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">', 'full') +
+        '<div class="field full wa hidden" id="fld-waSame"><span class="q" id="lbl-waSame">Is this number on WhatsApp? <span class="req">*</span></span>' + choice('waSame', [WA_YES, WA_NO]) + '<div class="err"></div></div>' +
+        f('whatsapp', 'Your WhatsApp number', '<input type="tel" id="whatsapp" inputmode="numeric" maxlength="14" placeholder="10-digit WhatsApp number">', 'full hidden', 'We may send interview updates on WhatsApp.') +
+        f('altMobile', 'Another number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', 'full', null, true)) +
+      step(3, 'Home', 'Where are you from?', 'You can be from anywhere, as long as you can do the internship in Kozhikode.',
+        f('district', 'District of residence', select('district', C.districts, 'Select your district'), 'full') +
         f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full',
           'Type a few letters and pick your local body from the list that appears.')) +
-      step(4, 'Education', 'Tell us about your studies', 'A bachelor\'s degree is needed, completed by ' + D.fmtDate(C.intakeEnd) + '.',
-        f('qual', 'Highest educational qualification', select('qual', C.quals, 'Select'), 'full') +
-        f('stream', 'UG / bachelor\'s degree stream', select('stream', C.streams || STREAMS, 'Select')) +
+      step(4, 'Education', 'Tell us about your studies', 'Graduation in any field. Your UG degree must be completed on or before ' + D.fmtDate(C.ugBy) + '.',
+        f('qual', 'Highest educational qualification', choice('qual', C.quals), 'full') +
+        f('mastersInstitution', 'Where did you complete your master\'s degree?', '<div class="acwrap"><input type="text" id="mastersInstitution" autocomplete="off" maxlength="150" placeholder="Start typing the college / university"></div>', 'full hidden', 'Tell us the college or university for your master\'s.') +
+        f('stream', 'UG / bachelor\'s degree stream', choice('stream', C.streams || STREAMS), 'full') +
         f('specialisation', 'UG subject / specialisation', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics">') +
-        f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', 'full', 'Pick from the list if you see your college; otherwise type its full name.') +
+        f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', '', 'Pick from the list if you see your college; otherwise type its full name.') +
         f('completion', 'UG degree completion date', '<input type="date" id="completion" min="1980-01-01" max="2040-12-31">', 'full',
-          '<span id="compNote">The actual date if completed; the <b>expected date</b> if your final-year results are pending.</span>')) +
+          '<span id="compNote">The actual date if completed; the <b>expected date</b> if you are in your final year (it must be on or before ' + esc(D.fmtDate(C.ugBy)) + ').</span>')) +
       step(5, 'Your story', 'Almost there – tell us why', 'A few honest lines are enough.',
         f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" maxlength="1500" rows="5"></textarea><div class="hint"><span id="mcount">0</span>/1500 characters (minimum 30)</div>', 'full') +
+        f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true), 'full', 'Select all that apply.') +
         '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>') +
       '<div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>' +
       '<div id="formAlert" role="alert"></div>' +
@@ -58,13 +119,37 @@
       '<button type="button" class="btn primary" id="next">Next →</button><button type="submit" class="btn submit" id="submit">Submit application</button></div>' +
       '<div class="muted" id="submitNote" style="margin-top:10px;font-size:13px"></div>' +
       '</form>';
-    bind(); restoreDraft(); updateLocalBody(); liveChecks();
+    bind(); bindChoices(); restoreDraft(); syncChoices(); updateLocalBody(); updateWa(); updateMasters(); liveChecks();
     typeahead($('#lbName'), (window.DCIP_LISTS || {}).kozhikodeLocalBodies || []);
     typeahead($('#institution'), (window.DCIP_LISTS || {}).colleges || []);
+    typeahead($('#mastersInstitution'), (window.DCIP_LISTS || {}).colleges || []);
     $('#back').onclick = function () { showStep(cur - 1); };
     bindCv();
     $('#next').onclick = next;
     showStep(1, true);
+  }
+
+  /* ------------------------------------- button choices instead of dropdowns ------------------------------------- */
+  function choice(id, list, multi) {
+    return '<input type="hidden" id="' + id + '" data-options="' + esc(JSON.stringify(list)) + '"><div class="opts" id="opts-' + id + '" role="' + (multi ? 'group' : 'radiogroup') + '" aria-labelledby="lbl-' + id + '" data-for="' + id + '"' + (multi ? ' data-multi="1"' : '') + '>' +
+      list.map(function (o) { return '<button type="button" class="opt" role="' + (multi ? 'checkbox' : 'radio') + '" aria-checked="false" data-v="' + esc(o) + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+  }
+  function chosenList(id) { var v = ($('#' + id) || {}).value; return v ? String(v).split('|') : []; }
+  function syncChoice(id) {
+    var g = $('#opts-' + id); if (!g) return; var vals = chosenList(id);
+    $$('.opt', g).forEach(function (b) { b.setAttribute('aria-checked', vals.indexOf(b.dataset.v) >= 0 ? 'true' : 'false'); });
+  }
+  function syncChoices() { $$('.opts').forEach(function (g) { syncChoice(g.dataset.for); }); }
+  function bindChoices() {
+    $$('.opts').forEach(function (g) {
+      var id = g.dataset.for, hid = $('#' + id), multi = !!g.dataset.multi;
+      g.addEventListener('click', function (e) {
+        var b = e.target.closest('.opt'); if (!b) return;
+        if (multi) { var cur = chosenList(id), i = cur.indexOf(b.dataset.v); if (i >= 0) cur.splice(i, 1); else cur.push(b.dataset.v); hid.value = cur.join('|'); } else hid.value = b.dataset.v;
+        hid.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      hid.addEventListener('input', function () { syncChoice(id); });
+    });
   }
 
   var applying = false, cvBusy = false, autoIds = {};
@@ -81,11 +166,12 @@
       if (id === 'lbName' && (val('district') !== 'Kozhikode')) return;
       var cur = String(el.value || '').trim(); if (cur && !autoIds[id]) return;
       if (el.tagName === 'SELECT' && ![].some.call(el.options, function (o) { return o.value === v; })) return;
+      if (el.dataset && el.dataset.options) { var opts = []; try { opts = JSON.parse(el.dataset.options); } catch (x) {} if (opts.indexOf(v) < 0) return; }
       el.value = v; autoIds[id] = true; mark(id); filled.push(k);
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
     applying = false;
-    if (f.completionYear && !f.completion && !val('completion') && $('#compNote')) $('#compNote').innerHTML = 'Your CV mentions <b>' + esc(f.completionYear) + '</b>. Please enter the exact completion date (the expected date if your results are pending).';
+    if (f.completionYear && !f.completion && !val('completion') && $('#compNote')) $('#compNote').innerHTML = 'Your CV mentions <b>' + esc(f.completionYear) + '</b>. Please enter the exact completion date (the expected date if you are in your final year).';
     return filled;
   }
 
@@ -125,26 +211,40 @@
       askServer: function (text) { return D.call('parseCv', text); } });
   }
 
+  /* ------------------------------------ steps and the clickable tabs ------------------------------------ */
   var cur = 1, LABELS = ['Your CV', 'About you', 'Home', 'Education', 'Your story'];
-  var STEP_FIELDS = { 1: ['cv'], 2: ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile'], 3: ['district', 'lbName'], 4: ['qual', 'stream', 'specialisation', 'institution', 'completion'], 5: ['motivation', 'declare'] };
+  var STEP_FIELDS = { 1: ['cv'], 2: ['fullName', 'dob', 'gender', 'email', 'mobile', 'waSame', 'whatsapp', 'altMobile'], 3: ['district', 'lbName'], 4: ['qual', 'mastersInstitution', 'stream', 'specialisation', 'institution', 'completion'], 5: ['motivation', 'heardFrom', 'declare'] };
   function step(n, label, title, sub, body) {
-    return '<div class="step" data-step="' + n + '"' + (n > 1 ? ' hidden' : '') + '><div class="stephead"><small>Step ' + n + ' of 5 · ' + label + '</small><h2>' + title + '</h2><p>' + sub + '</p></div><div class="grid">' + body + '</div></div>';
+    return '<div class="step" id="step' + n + '" role="tabpanel" data-step="' + n + '"' + (n > 1 ? ' hidden' : '') + '><div class="stephead"><small>Step ' + n + ' of 5 · ' + label + '</small><h2>' + title + '</h2><p>' + sub + '</p></div><div class="grid">' + body + '</div></div>';
   }
   function showStep(n, quiet) {
     cur = Math.max(1, Math.min(5, n));
-    [].forEach.call(document.querySelectorAll('.step'), function (s) { s.hidden = +s.dataset.step !== cur; });
+    $$('.step').forEach(function (s) { s.hidden = +s.dataset.step !== cur; });
     $('#progress').innerHTML = LABELS.map(function (l, i) {
-      var go = i + 1 < cur;
-      return '<li class="' + (go ? 'done' : i + 1 === cur ? 'now' : '') + '"' + (go ? ' data-go="' + (i + 1) + '" role="button" tabindex="0" aria-label="Go back to step ' + (i + 1) + ': ' + l + '"' : '') + '><div class="bar"></div><div class="lbl">' + l + '</div></li>';
+      return '<li role="presentation" class="' + (i + 1 < cur ? 'done' : i + 1 === cur ? 'now' : '') + '"><button type="button" role="tab" id="tab' + (i + 1) + '" aria-controls="step' + (i + 1) + '" aria-selected="' + (i + 1 === cur) + '"' + (i + 1 === cur ? ' aria-current="step"' : '') + ' data-go="' + (i + 1) + '" title="' + l + '"><div class="bar"></div><div class="lbl">' + l + '</div></button></li>';
     }).join('');
-    [].forEach.call(document.querySelectorAll('[data-go]'), function (b) {
-      b.onclick = function () { showStep(+b.dataset.go); };
-      b.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStep(+b.dataset.go); } };
-    });
+    $$('[data-go]').forEach(function (b) { b.onclick = function () { goTo(+b.dataset.go); }; });
     $('#back').style.visibility = cur === 1 ? 'hidden' : 'visible';
     $('#next').classList.toggle('hidden', cur === 5); $('#submit').classList.toggle('hidden', cur !== 5);
     $('#formAlert').innerHTML = '';
-    if (!quiet) { $('#apply').scrollIntoView({ behavior: 'smooth', block: 'start' }); var first = $('.step:not([hidden]) input, .step:not([hidden]) select'); if (first && window.matchMedia('(min-width: 700px)').matches) first.focus({ preventScroll: true }); }
+    if (!quiet) { $('#apply').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'start' }); var first = $('.step:not([hidden]) input:not([type=hidden]), .step:not([hidden]) select'); if (first && window.matchMedia('(min-width: 700px)').matches) first.focus({ preventScroll: true }); }
+  }
+  /** Tabs: going back is always allowed; going ahead only when every earlier step is filled in correctly. */
+  function goTo(n) {
+    if (n === cur) return;
+    if (n < cur) { showStep(n); return; }
+    if (cvBusy) { $('#formAlert').innerHTML = '<div class="alert warn">One moment – we are still reading your CV…</div>'; return; }
+    var errs = validate();
+    for (var s = 1; s < n; s++) {
+      var keys = Object.keys(errs).filter(function (k) { return STEP_FIELDS[s].indexOf(k) >= 0; });
+      if (keys.length) {
+        showStep(s, true); keys.forEach(function (k) { setErr(k, errs[k]); });
+        $('#formAlert').innerHTML = '<div class="alert warn">Please complete this step before moving ahead.</div>';
+        var el = $('#fld-' + keys[0]); if (el) el.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
+        return;
+      }
+    }
+    showStep(n);
   }
   function next() {
     if (cur === 1 && cvBusy) { $('#formAlert').innerHTML = '<div class="alert warn">One moment – we are still reading your CV…</div>'; return; }
@@ -152,42 +252,58 @@
     $('#formAlert').innerHTML = '';
     if (keys.length) {
       keys.forEach(function (k) { setErr(k, errs[k]); });
-      var el = $('#fld-' + keys[0]); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var el = $('#fld-' + keys[0]); if (el) el.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
       return;
     }
     showStep(cur + 1);
   }
   function f(id, label, control, cls, hint, optional) {
-    return '<div class="field ' + (cls || '') + '" id="fld-' + id + '"><label class="f" for="' + id + '">' + label + (optional ? '' : ' <span class="req">*</span>') + '</label>' + control +
+    return '<div class="field ' + (cls || '') + '" id="fld-' + id + '"><label class="f" id="lbl-' + id + '" for="' + id + '">' + label + (optional ? '' : ' <span class="req">*</span>') + '</label>' + control +
       '<div class="err"></div>' + (hint ? '<div class="hint">' + hint + '</div>' : '') + '<div id="live-' + id + '"></div></div>';
   }
   function select(id, list, ph) { return '<select id="' + id + '"><option value="">' + ph + '</option>' + list.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select>'; }
 
-  var FIELDS = ['fullName', 'dob', 'gender', 'mobile', 'altMobile', 'email', 'district', 'lbName', 'qual', 'stream', 'specialisation', 'institution', 'completion', 'motivation'];
+  var FIELDS = ['fullName', 'dob', 'gender', 'mobile', 'waSame', 'whatsapp', 'altMobile', 'email', 'district', 'lbName', 'qual', 'mastersInstitution', 'stream', 'specialisation', 'institution', 'completion', 'motivation', 'heardFrom'];
   function val(id) { var e = $('#' + id); return e ? String(e.value).replace(/\s+/g, ' ').trim() : ''; }
 
   function bind() {
     FIELDS.forEach(function (id) {
       var e = $('#' + id); if (!e) return;
-      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { if (!applying) unmark(id); clearErr(id); saveDraft(); if (id === 'district') updateLocalBody(); liveChecks(); }); });
+      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () {
+        if (!applying) unmark(id); clearErr(id); saveDraft();
+        if (id === 'district') updateLocalBody(); if (id === 'mobile') updateWa(); if (id === 'waSame') updateWa(); if (id === 'qual') updateMasters();
+        liveChecks();
+      }); });
     });
     $('#motivation').addEventListener('input', function () { $('#mcount').textContent = this.value.length; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); if (cur < 5) next(); else submit(); });
   }
 
-  /* ---------- draft (kept in this browser only; never the CV or the verification) ---------- */
+  /* ---------- draft (kept in this browser only; never the CV) ---------- */
   function saveDraft() { try { var o = {}; FIELDS.forEach(function (id) { o[id] = $('#' + id).value; }); localStorage.setItem(draftKey, JSON.stringify(o)); } catch (e) {} }
   function restoreDraft() {
-    try { var o = JSON.parse(localStorage.getItem(draftKey) || 'null'); if (o) FIELDS.forEach(function (id) { if (o[id] != null) $('#' + id).value = o[id]; }); $('#mcount').textContent = $('#motivation').value.length; } catch (e) {}
+    try { var o = JSON.parse(localStorage.getItem(draftKey) || 'null'); if (o) FIELDS.forEach(function (id) { if (o[id] != null && $('#' + id)) $('#' + id).value = o[id]; }); $('#mcount').textContent = $('#motivation').value.length; } catch (e) {}
   }
 
-  /* ---------- local body (asked only from Kozhikode residents) ---------- */
+  /* ---------- conditional parts ---------- */
   function updateLocalBody() {
     var koz = val('district') === 'Kozhikode', fld = $('#fld-lbName');
     fld.classList.toggle('hidden', !koz);
     if (!koz) { $('#lbName').value = ''; clearErr('lbName'); }
   }
   function localBody() { return val('district') === 'Kozhikode' ? val('lbName') : ''; }
+  function phoneOk(s) { var d = String(s || '').replace(/\D/g, ''); if (d.length === 12 && d.indexOf('91') === 0) d = d.slice(2); if (d.length === 11 && d[0] === '0') d = d.slice(1); return /^[6-9]\d{9}$/.test(d); }
+  /** The WhatsApp question appears as soon as a valid 10-digit number has been entered. */
+  function updateWa() {
+    var ok = phoneOk(val('mobile')), same = val('waSame');
+    $('#fld-waSame').classList.toggle('hidden', !ok);
+    $('#fld-whatsapp').classList.toggle('hidden', !(ok && same === WA_NO));
+    if (same !== WA_NO) $('#whatsapp').value = '';
+  }
+  function updateMasters() {
+    var m = /^master/i.test(val('qual')), fld = $('#fld-mastersInstitution');
+    fld.classList.toggle('hidden', !m); if (!m) { $('#mastersInstitution').value = ''; clearErr('mastersInstitution'); }
+  }
 
   /* ---------- type-ahead: a list that appears only while the typed text matches ---------- */
   function typeahead(input, entries) {
@@ -234,15 +350,18 @@
     var dob = val('dob');
     if (D.isIso(dob)) {
       var a = D.ageOn(dob, C.ageAsOn); out.age = a;
-      if (a > C.maxAge) { var m = 'You will be ' + a + ' on ' + D.fmtDate(C.ageAsOn) + '. The age limit is ' + C.maxAge + ' years.'; if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' You may apply, but the application will be marked for review.'; }
-      else if (C.minAge && a < C.minAge) out.ageBlock = 'Please check the date of birth. The minimum age is ' + C.minAge + ' years.';
+      var rule = 'Applicants must be ' + ageRule() + ' on ' + D.fmtDate(C.ageAsOn) + '.';
+      if (a > C.maxAge || (C.minAge && a < C.minAge)) {
+        var m = 'You will be ' + a + ' on ' + D.fmtDate(C.ageAsOn) + '. ' + rule;
+        if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' You may apply, but the application will be marked for review.';
+      }
     }
     var comp = val('completion'), q = val('qual'), pending = /pending/i.test(q);
     if (D.isIso(comp)) {
-      if (comp > C.intakeEnd) { var m2 = 'The UG course must be completed by ' + D.fmtDate(C.intakeEnd) + ', the end of the internship period.'; if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' You may apply, but the application will be marked for review.'; }
-      else if (q && !pending && comp > C.today) out.compBlock = 'You have chosen "completed", so the completion date cannot be in the future. If your results are pending, choose "final year – results pending".';
+      if (comp > C.ugBy) { var m2 = 'The UG degree must be completed on or before ' + D.fmtDate(C.ugBy) + '.'; if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' You may apply, but the application will be marked for review.'; }
+      else if (q && !pending && comp > C.today) out.compBlock = 'You have chosen "completed", so the completion date cannot be in the future. If you are in your final year, choose "final year – results pending".';
       else if (pending && comp < D.addDays(C.today, -180)) out.compWarn = 'You have chosen "results pending" but the date is long past. Please check the qualification and the date.';
-      else if (pending) out.compNote = 'UG completes on ' + D.fmtDate(comp) + ' – within the internship period. Your final result will need to be confirmed.';
+      else if (pending) out.compNote = 'UG completes on ' + D.fmtDate(comp) + '. Your final result will need to be confirmed.';
     }
     return out;
   }
@@ -253,7 +372,7 @@
     if (r.ageBlock) setErr('dob', r.ageBlock); if (r.compBlock) setErr('completion', r.compBlock);
     var blocked = !!(r.ageBlock || r.compBlock);
     $('#submit').disabled = blocked;
-    $('#submitNote').textContent = blocked ? 'You are not eligible to apply based on the details entered.' : '';
+    $('#submitNote').textContent = blocked ? 'Based on the details entered, you are not eligible to apply.' : '';
   }
   function live(id, cls, text) { var e = $('#live-' + id); if (e) e.innerHTML = text ? '<div class="' + (cls === 'ok' ? 'okmsg' : cls) + '">' + esc(text) + '</div>' : ''; }
 
@@ -265,23 +384,24 @@
     var errs = {}, r = check();
     if (val('fullName').length < 3) errs.fullName = 'Please enter your full name.';
     if (!D.isIso(val('dob'))) errs.dob = 'Please enter your date of birth.'; else if (r.ageBlock) errs.dob = r.ageBlock;
-    if (!val('gender')) errs.gender = 'Please select.';
-    var m = val('mobile').replace(/\D/g, ''); if (m.length === 12 && m.indexOf('91') === 0) m = m.slice(2); if (m.length === 11 && m[0] === '0') m = m.slice(1);
-    if (!/^[6-9]\d{9}$/.test(m)) errs.mobile = 'Enter a valid 10-digit mobile number.';
-    if (val('altMobile')) { var a = val('altMobile').replace(/\D/g, ''); if (a.length === 12 && a.indexOf('91') === 0) a = a.slice(2); if (!/^[6-9]\d{9}$/.test(a)) errs.altMobile = 'Enter a valid 10-digit mobile number or leave it blank.'; }
+    if (!val('gender')) errs.gender = 'Please choose one.';
+    if (!phoneOk(val('mobile'))) errs.mobile = 'Enter a valid 10-digit mobile number.';
+    else if (!val('waSame')) errs.waSame = 'Please tell us whether this number is on WhatsApp.';
+    else if (val('waSame') === WA_NO && !phoneOk(val('whatsapp'))) errs.whatsapp = 'Enter your 10-digit WhatsApp number.';
+    if (val('altMobile') && !phoneOk(val('altMobile'))) errs.altMobile = 'Enter a valid 10-digit mobile number or leave it blank.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email'))) errs.email = 'Please enter a valid e-mail address.';
-    ['district', 'qual', 'stream'].forEach(function (k) { if (!val(k)) errs[k] = 'Please select.'; });
+    if (!val('district')) errs.district = 'Please select your district.';
+    if (!val('qual')) errs.qual = 'Please choose one.';
+    if (/^master/i.test(val('qual')) && !val('mastersInstitution')) errs.mastersInstitution = 'Please enter where you completed your master\'s degree.';
+    if (!val('stream')) errs.stream = 'Please choose one.';
     if (val('district') === 'Kozhikode' && !val('lbName')) errs.lbName = 'Please enter your local body.';
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
     if (!D.isIso(val('completion'))) errs.completion = 'Please enter the completion date.'; else if (r.compBlock) errs.completion = r.compBlock;
     if (val('motivation').length < 30) errs.motivation = 'Please write at least 30 characters.';
+    if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     var file = $('#cv').files[0];
     if (!file) { if (C.cvRequired) errs.cv = 'Please upload your CV.'; }
-    else {
-      var ext = file.name.split('.').pop().toLowerCase();
-      if (C.cvExt.indexOf(ext) < 0) errs.cv = 'The CV must be a PDF, DOC or DOCX file.';
-      else if (file.size > C.cvMaxBytes) errs.cv = 'The file is larger than ' + (C.cvMaxBytes / 1048576) + ' MB.';
-    }
+    else { var bad = checkFile(file); if (bad) errs.cv = bad; }
     if (!$('#declare').checked) errs.declare = 'Please accept the declaration.';
     return errs;
   }
@@ -302,7 +422,7 @@
     if (keys.length) {
       for (var s = 1; s <= 5; s++) if (keys.some(function (k) { return STEP_FIELDS[s].indexOf(k) >= 0; })) { if (s !== cur) showStep(s, true); break; }
       keys.forEach(function (k) { setErr(k, errs[k]); });
-      var first = $('#fld-' + keys.filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; })[0]); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var first = $('#fld-' + keys.filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; })[0]); if (first) first.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
       $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + (cur < 5 ? ' on this step' : '') + '.</div>';
       return;
     }
@@ -310,26 +430,26 @@
     var file = $('#cv').files[0];
     (file ? readFile(file) : Promise.resolve(null)).then(function (cv) {
       return D.call('submitApplication', {
-        fullName: val('fullName'), dob: val('dob'), gender: val('gender'), email: val('email').toLowerCase(), mobile: val('mobile'), altMobile: val('altMobile'),
-        district: val('district'), localBody: localBody(), qual: val('qual'), stream: val('stream'), specialisation: val('specialisation'),
-        institution: val('institution'), completion: val('completion'), motivation: val('motivation'), cv: cv,
+        fullName: val('fullName'), dob: val('dob'), gender: val('gender'), email: val('email').toLowerCase(), mobile: val('mobile'),
+        whatsappSame: val('waSame') === WA_YES, whatsapp: val('whatsapp'), altMobile: val('altMobile'),
+        district: val('district'), localBody: localBody(), qual: val('qual'), mastersInstitution: val('mastersInstitution'), stream: val('stream'), specialisation: val('specialisation'),
+        institution: val('institution'), completion: val('completion'), motivation: val('motivation'), heardFrom: chosenList('heardFrom'), cv: cv,
         website: val('website')
       });
     }).then(done, function (e) {
       btn.disabled = false; btn.textContent = 'Submit application';
       $('#formAlert').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
-      $('#formAlert').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('#formAlert').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
     });
   }
 
   function done(r) {
     try { localStorage.removeItem(draftKey); } catch (e) {}
     $('#main').innerHTML = '<div class="success"><div class="tick">✓</div><h2>You\'re in! Application received</h2>' +
-      '<p>Thank you for applying to DCIP. Please note your reference number:</p><div class="ref">' + esc(r.id) + '</div>' +
+      '<p>Thank you for applying to DCIP.</p>' +
       (r.mailed ? '<p>A confirmation with the details you submitted is on its way to <b>' + esc(r.email) + '</b>. Check your spam folder if you don\'t see it.</p>'
-                : '<p>We could not send the confirmation e-mail right now, but your application is recorded. Keep your reference number safe.</p>') +
-      '<div class="next"><b>What happens next</b><ol style="margin:0;padding-left:20px"><li>We screen applications for eligibility.</li><li>Shortlisted applicants are contacted on this e-mail and mobile number.</li><li>Interview, document verification and final selection follow.</li></ol></div></div>';
-    $('#cta').classList.add('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+                : '<p>Your application is safely recorded. The confirmation e-mail could not be sent just now; we will send it shortly. </p>') +
+      '<div class="next"><b>What happens next</b><ol style="margin:0;padding-left:20px"><li>Every application is reviewed as a whole: your responses, CV and details together.</li><li>Shortlisted applicants are contacted on this e-mail address and on WhatsApp / mobile.</li><li>Interview, document verification and final selection follow.</li></ol></div></div>';
+    window.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' });
   }
 })();

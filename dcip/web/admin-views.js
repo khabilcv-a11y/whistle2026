@@ -4,12 +4,12 @@
   var A = w.A, D = w.DCIP, esc = D.esc, $ = A.$, $$ = A.$$, V = A.views;
   var S = A.S;
   S.scope = 'all'; S.f = { q: '', pill: '', district: '', session: '', sort: 'submittedAt', dir: -1, limit: 60 };
-  S.sel = {}; S.isSess = ''; S.isTab = 'score'; S.shLimit = 80;
+  S.sel = {}; S.onlyConf = true; S.isSess = ''; S.isTab = 'score'; S.shLimit = 80;
 
   A.TABS = [
     ['overview', 'Overview'], ['applications', 'Applications'], ['screening', 'Screening'], ['shortlist', 'Shortlist'],
-    ['interviews', 'Interviews'], ['selection', 'Selection'], ['reports', 'Reports'], ['settings', 'Settings'],
-    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs']
+    ['interviews', 'Interviews'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['settings', 'Settings'],
+    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls']
   ];
   function dl(rep, label) { return '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>'; }
   function bindDl(root, makeRep) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(makeRep(), b.dataset.dl); }; }); }
@@ -117,7 +117,7 @@
         '<div class="acts"><button class="btn small" data-open="' + esc(a.id) + '">Open</button>' + (a.cv ? '<a class="btn small" target="_blank" rel="noopener" href="' + esc(a.cv) + '">CV ↗</a>' : '') +
         '<button class="btn small" data-clear="' + esc(a.id) + '">Clear – eligible</button><button class="btn small danger" data-dq="' + esc(a.id) + '">Disqualify</button></div></div>';
     }
-    el.innerHTML = head('Application screening', 'Rules: age up to <b>' + esc(s.MAX_AGE) + '</b> on ' + esc(D.fmtDate(c.ageAsOn)) + ' · UG course completed on or before <b>' + esc(D.fmtDate(s.INTAKE_END)) + '</b> (' + esc(s.ENFORCE_COMPLETION === 'FLAG' ? 'flagged' : 'blocked at submission') + ').',
+    el.innerHTML = head('Application screening', 'Each candidature is looked at <b>as a whole</b>: responses, CV and details together. The system pre-checks the basics and flags what needs a human look – age ' + esc(c.minAge ? c.minAge + ' to ' + c.maxAge : 'up to ' + c.maxAge) + ' on ' + esc(D.fmtDate(c.ageAsOn)) + ', UG completed by <b>' + esc(D.fmtDate(c.ugBy)) + '</b> (' + esc(s.ENFORCE_COMPLETION === 'FLAG' ? 'flagged' : 'blocked at submission') + '), duplicates and so on. You then clear, flag or disqualify, and give a screen score in the Shortlist tab.',
       '<button class="btn" id="btnRescreen">Re-screen all</button><button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
       (dq.length ? '<div class="toolbar"><h3 style="font-size:16px">Suggested to disqualify (' + dq.length + ')</h3><span class="grow"></span><button class="btn danger" id="btnDqAll">Disqualify all ' + dq.length + '</button></div><div class="cards">' + dq.map(function (a) { return card(a, 'bad'); }).join('') + '</div>' : '') +
       (rev.length ? '<h3 style="font-size:16px;margin:18px 0 8px">Needs review (' + rev.length + ')</h3><div class="cards">' + rev.map(function (a) { return card(a, ''); }).join('') + '</div>' : '') +
@@ -148,7 +148,7 @@
     var tie = scored.length > n && A.num(scored[n].screenScore) === A.num(scored[n - 1].screenScore);
     var shortlisted = S.apps.filter(function (a) { return a.shortlisted === 'Yes'; }).length;
     var rows = scored.concat(unscored), shown = rows.slice(0, S.shLimit);
-    el.innerHTML = head('Shortlist – top ' + n, 'Enter a screen score for each eligible application. The top ' + n + ' by score are shortlisted for interview.',
+    el.innerHTML = head('Shortlist – top ' + n, '<b>Screen score</b> = the marks <i>you</i> give each candidate after reading their responses, CV and details together (nothing is scored automatically; use any scale you like, e.g. out of 10). The top ' + n + ' by score are shortlisted for interview.',
       '<button class="btn small" data-dl="xlsx">Excel rank list</button><button class="btn small" data-dl="pdf">PDF</button><button class="btn accent" id="btnShort">Shortlist top ' + n + '</button>') +
       '<div class="kv"><div><b>' + shortlisted + ' / ' + n + '</b>shortlisted</div><div><b>' + scored.length + '</b>scored</div><div><b>' + unscored.length + '</b>awaiting score</div></div>' +
       (tie ? '<div class="alert warn" style="margin:0 0 12px;padding:10px 14px;background:var(--warn-bg);color:var(--warn);border-radius:8px;font-weight:600">Tie at the cut-off: ranks ' + n + ' and ' + (n + 1) + ' both have a score of ' + esc(scored[n - 1].screenScore) + '. Only the earlier application will be shortlisted – decide the tie manually (change a score) before shortlisting.</div>' : '') +
@@ -178,6 +178,8 @@
     var m = A.modal('<h3>' + (s.id ? 'Edit session' : 'Add interview session') + '</h3><div class="fgrid">' +
       '<div><label class="f">Date</label><input type="date" id="sDate" value="' + esc(s.date || '') + '"></div>' +
       '<div><label class="f">Slot</label><select id="sSlot">' + A.opts(slots, s.slot || 'Forenoon') + '</select></div>' +
+      '<div><label class="f">Mode</label><select id="sMode">' + A.opts(['In person', 'Online'], s.mode || 'In person') + '</select></div>' +
+      '<div><label class="f">Map / meeting link</label><input type="url" id="sLink" placeholder="https://" value="' + esc(s.link || '') + '"></div>' +
       '<div class="full"><label class="f">Venue</label><input type="text" id="sVenue" value="' + esc(s.venue || '') + '"></div>' +
       '<div><label class="f">Interviewer / panel</label><input type="text" id="sIv" value="' + esc(s.interviewer || '') + '"></div>' +
       '<div><label class="f">Capacity</label><input type="number" id="sCap" min="0" value="' + esc(s.capacity === undefined ? 25 : s.capacity) + '"></div>' +
@@ -185,7 +187,7 @@
       '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Save</button></div>');
     $('#cNo', m).onclick = A.closeModal;
     $('#cYes', m).onclick = function () {
-      A.api('saveSession', { originalId: s.id || '', date: $('#sDate', m).value, slot: $('#sSlot', m).value, venue: $('#sVenue', m).value, interviewer: $('#sIv', m).value, capacity: $('#sCap', m).value, notes: $('#sNotes', m).value })
+      A.api('saveSession', { originalId: s.id || '', date: $('#sDate', m).value, slot: $('#sSlot', m).value, venue: $('#sVenue', m).value, mode: $('#sMode', m).value, link: $('#sLink', m).value, interviewer: $('#sIv', m).value, capacity: $('#sCap', m).value, notes: $('#sNotes', m).value })
         .then(function (r) { A.closeModal(); if (!S.isSess || S.isSess === s.id) S.isSess = r.id; D.toast('Session saved', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); });
     };
   }
@@ -218,19 +220,21 @@
   V.interviews = function (el) {
     var sessions = A.sortSessions(S.sessions);
     if (!S.isSess || (['__all', '__none'].indexOf(S.isSess) < 0 && !sessions.some(function (s) { return s.id === S.isSess; }))) S.isSess = sessions.length ? sessions[0].id : '__all';
-    var sid = S.isSess, list = A.sessionApps(sid), tab = S.isTab, unassigned = A.sessionApps('__none').length;
+    var sid = S.isSess, tab = S.isTab, list = tab === 'call' ? A.sessionApps(sid) : A.docApps(sid), unassigned = A.sessionApps('__none').length;
     var sel = sessions.filter(function (s) { return s.id === sid; })[0];
     el.innerHTML = head('Interview day', 'Sessions, score sheets, attendance, call chart and document verification.',
       '<button class="btn" id="btnAuto"' + (unassigned ? '' : ' disabled') + '>Auto-assign (' + unassigned + ' unassigned)</button><button class="btn primary" id="btnAddS">+ Add session</button>') +
-      (sessions.length ? '<div class="tw" style="margin-bottom:16px"><table class="t"><thead><tr><th>Session</th><th>Venue</th><th>Interviewer</th><th class="num">Capacity</th><th class="num">Assigned</th><th class="num">Present</th><th></th></tr></thead><tbody>' + sessions.map(function (s) {
+      (sessions.length ? '<div class="tw" style="margin-bottom:16px"><table class="t"><thead><tr><th>Session</th><th>Mode</th><th>Venue</th><th>Interviewer</th><th class="num">Capacity</th><th class="num">Assigned</th><th class="num">Present</th><th></th></tr></thead><tbody>' + sessions.map(function (s) {
         var l = A.sessionApps(s.id);
-        return '<tr><td><b>' + esc(A.sessionLabel(s)) + '</b></td><td>' + esc(s.venue) + '</td><td>' + esc(s.interviewer) + '</td><td class="num">' + esc(s.capacity) + '</td><td class="num">' + l.length + '</td><td class="num">' + l.filter(function (a) { return a.attendance === 'Present'; }).length + '</td>' +
+        return '<tr><td><b>' + esc(A.sessionLabel(s)) + '</b></td><td>' + esc(s.mode || 'In person') + '</td><td>' + esc(s.venue) + '</td><td>' + esc(s.interviewer) + '</td><td class="num">' + esc(s.capacity) + '</td><td class="num">' + l.length + '</td><td class="num">' + l.filter(function (a) { return a.attendance === 'Present'; }).length + '</td>' +
           '<td class="nowrap"><button class="btn small" data-es="' + esc(s.id) + '">Edit</button> <button class="btn small danger" data-ds="' + esc(s.id) + '">Delete</button></td></tr>';
       }).join('') + '</tbody></table></div>' : '<div class="empty">No sessions yet. Add a session (date, slot, venue, interviewer), then assign the shortlisted candidates.</div>') +
       '<div class="toolbar"><select id="isSel" style="max-width:300px" aria-label="Session">' + sessions.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === sid ? ' selected' : '') + '>' + esc(A.sessionLabel(s)) + '</option>'; }).join('') +
       '<option value="__all"' + (sid === '__all' ? ' selected' : '') + '>All shortlisted candidates</option><option value="__none"' + (sid === '__none' ? ' selected' : '') + '>Not yet assigned (' + unassigned + ')</option></select>' +
       '<div class="seg" role="group">' + [['score', 'Score sheet'], ['attendance', 'Attendance'], ['call', 'Call chart'], ['docs', 'Doc verification']].map(function (t) { return '<button aria-pressed="' + (tab === t[0]) + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
-      '<span class="grow"></span>' + dl() + '<button class="btn small" id="btnMailS">E-mail all</button></div>' + '<div id="isBody"></div>';
+      '<span class="grow"></span>' + dl() + '<button class="btn small" id="btnMailS">E-mail all</button></div>' +
+      (tab !== 'call' ? '<label class="chk"><input type="checkbox" id="onlyConf"' + (S.onlyConf ? ' checked' : '') + '> Only candidates <b>confirmed on the call</b> (' + A.sessionApps(sid).filter(function (a) { return a.callStatus === 'Confirmed'; }).length + ' of ' + A.sessionApps(sid).length + ')</label>' : '') + '<div id="isBody"></div>';
+    if ($('#onlyConf', el)) $('#onlyConf', el).onchange = function () { S.onlyConf = this.checked; A.render(); };
     $('#btnAddS', el).onclick = function () { sessionForm(); };
     $('#btnAuto', el).onclick = autoAssign;
     $$('[data-es]', el).forEach(function (b) { b.onclick = function () { sessionForm(sessions.filter(function (s) { return s.id === b.dataset.es; })[0]); }; });
@@ -252,8 +256,11 @@
         '<td><select data-id="' + esc(a.id) + '" data-k="attendance"><option value="">—</option>' + A.opts(['Present', 'Absent'], a.attendance) + '</select></td><td><input type="time" data-id="' + esc(a.id) + '" data-k="reportingTime" value="' + esc(a.reportingTime) + '"></td>' +
         '<td><button class="btn small" data-now="' + esc(a.id) + '">Mark present now</button></td></tr>'; });
     } else if (tab === 'call') {
-      thead = '<th class="num">#</th><th>Name</th><th>Contact</th><th>Session</th><th>Call status</th><th>Note</th>';
-      rows = list.map(function (a, i) { return '<tr><td class="num">' + (i + 1) + '</td><td><b>' + esc(a.fullName) + '</b><small>' + esc(a.location) + '</small></td><td class="nowrap">' + [a.mobile, a.altMobile].filter(Boolean).map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') + '</td><td>' + esc(a.session) + '</td>' +
+      thead = '<th class="num">#</th><th>Name</th><th>Contact</th><th>Session</th><th>Mode</th><th>Caller</th><th>Call status</th><th>Note</th>';
+      rows = list.map(function (a, i) { return '<tr><td class="num">' + (i + 1) + '</td><td><b>' + esc(a.fullName) + '</b><small>' + esc(a.location) + '</small></td><td class="nowrap">' + [a.mobile, a.altMobile].filter(Boolean).map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') + (a.whatsapp && a.whatsapp !== a.mobile ? '<small>WhatsApp ' + esc(a.whatsapp) + '</small>' : '') + '</td>' +
+        '<td><select data-id="' + esc(a.id) + '" data-k="session" title="Move to another session">' + A.sessionOpts(a.session) + '</select></td>' +
+        '<td><select data-id="' + esc(a.id) + '" data-k="interviewMode" title="Change to online / in person">' + A.opts(['In person', 'Online'], a.interviewMode, '(' + esc((sel && sel.mode) || 'per session') + ')') + '</select></td>' +
+        '<td><select data-id="' + esc(a.id) + '" data-k="caller">' + A.callerOpts(a.caller, '— none —') + '</select></td>' +
         '<td><select data-id="' + esc(a.id) + '" data-k="callStatus"><option value="">—</option>' + A.opts(A.CALL.slice(1), a.callStatus) + '</select></td><td><input type="text" data-id="' + esc(a.id) + '" data-k="callNote" value="' + esc(a.callNote) + '"></td></tr>'; });
     } else {
       thead = '<th class="num">#</th><th>Name</th><th>UG</th><th>UG certificate</th><th>Other documents presented</th><th>Remarks</th>';
@@ -320,7 +327,7 @@
     function ctl(k) {
       var v = s[k] == null ? '' : s[k];
       if (sel[k]) return '<select data-s="' + k + '">' + A.opts(sel[k], String(v).toUpperCase()) + '</select>';
-      if (/^(INTAKE_START|INTAKE_END|AGE_AS_ON)$/.test(k)) return '<input type="date" data-s="' + k + '" value="' + esc(v) + '">';
+      if (/^(INTAKE_START|INTAKE_END|UG_COMPLETE_BY|AGE_AS_ON)$/.test(k)) return '<input type="date" data-s="' + k + '" value="' + esc(v) + '">';
       if (k === 'REG_DEADLINE') return '<input type="datetime-local" data-s="' + k + '" value="' + esc(v) + '">';
       if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE)$/.test(k)) return '<input type="number" data-s="' + k + '" value="' + esc(v) + '">';
       return '<input type="text" data-s="' + k + '" value="' + esc(v) + '">';
@@ -347,19 +354,25 @@
     return out;
   }
   function copy(text) { try { navigator.clipboard.writeText(text).then(function () { D.toast('Copied', 'ok'); }); } catch (e) { D.toast('Press Ctrl+C to copy', ''); } }
-  function credentialsDialog(title, username, password) {
-    var m = A.modal('<h3>' + esc(title) + '</h3><p>Share these details with the person. They can change the password under <b>My account</b>.</p>' +
-      '<div class="note-box" style="font-family:ui-monospace,Menlo,monospace">Username: ' + esc(username) + '\nPassword: ' + esc(password) + '</div>' +
+  function loginUrl() { return location.origin + location.pathname; }
+  function shareText(name, username, password, role) {
+    return 'Hello' + (name ? ' ' + name : '') + ',\n\nYour ' + (role === 'caller' ? 'caller' : role === 'super' ? 'super admin' : 'admin') + ' login for DCIP Application Processing & Management:\n\nLink: ' + loginUrl() + '\nUsername: ' + username + '\nPassword: ' + password +
+      '\n\nPlease sign in and change your password under "My account".\n\nTeam DCIP';
+  }
+  function credentialsDialog(title, username, password, name, role) {
+    var txt = shareText(name, username, password, role);
+    var m = A.modal('<h3>' + esc(title) + '</h3><p>Copy this message and send it to the person. They can change the password under <b>My account</b>.</p>' +
+      '<div class="note-box" style="white-space:pre-wrap;font-size:14px">' + esc(txt) + '</div>' +
       '<p class="hint">The password cannot be shown again after you close this window.</p>' +
-      '<div class="acts"><button class="btn" id="cCopy">Copy details</button><button class="btn primary" id="cYes">Done</button></div>');
-    $('#cCopy', m).onclick = function () { copy('Username: ' + username + '\nPassword: ' + password); };
+      '<div class="acts"><button class="btn" id="cCopy">Copy message</button><button class="btn primary" id="cYes">Done</button></div>');
+    $('#cCopy', m).onclick = function () { copy(txt); };
     $('#cYes', m).onclick = A.closeModal;
   }
   function userDialog() {
     var m = A.modal('<h3>Add a user</h3><div class="fgrid">' +
       '<div><label class="f">Username</label><input type="text" id="nuUser" autocapitalize="none" spellcheck="false" placeholder="e.g. meera.k"><div class="hint">Letters, numbers, dot, dash, underscore</div></div>' +
       '<div><label class="f">Full name</label><input type="text" id="nuName"></div>' +
-      '<div><label class="f">Role</label><select id="nuRole"><option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option></select></div>' +
+      '<div><label class="f">Role</label><select id="nuRole" ' + '>' + ((S.me || {}).role === 'super' ? '<option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option>' : '') + '<option value="caller">Caller – sees only the call list given to them</option></select></div>' +
       '<div><label class="f">Password</label><div style="display:flex;gap:6px"><input type="text" id="nuPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="nuGen">Generate</button></div><div class="hint">At least 8 characters</div></div></div>' +
       '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Create user</button></div>');
     $('#nuPass', m).value = genPassword();
@@ -367,19 +380,21 @@
     $('#cNo', m).onclick = A.closeModal;
     $('#cYes', m).onclick = function () {
       var u = $('#nuUser', m).value, pw = $('#nuPass', m).value;
-      A.api('createUser', u, $('#nuName', m).value, pw, $('#nuRole', m).value).then(function () { A.closeModal(); credentialsDialog('User created', u.trim().toLowerCase(), pw); V.users($('#view')); }, function (e) { D.toast(e.message, 'err'); });
+      A.api('createUser', u, $('#nuName', m).value, pw, $('#nuRole', m).value).then(function () { A.closeModal(); credentialsDialog('User created', u.trim().toLowerCase(), pw, $('#nuName', m).value.trim(), $('#nuRole', m).value); V.users($('#view')); }, function (e) { D.toast(e.message, 'err'); });
     };
   }
   V.users = function (el) {
-    el.innerHTML = head('Users', 'Create admin accounts. People sign in with their own username and password.', '<button class="btn primary" id="uAdd">+ Add user</button>') +
+    el.innerHTML = head('Users', 'Create accounts for admins and callers. People sign in with their own username and password.' + ((S.me || {}).role === 'super' ? '' : ' You can manage caller accounts.'), '<button class="btn primary" id="uAdd">+ Add user</button>') +
       '<div class="tw"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Created</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>' +
-      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs.</p>';
+      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs. <b>Caller</b>: sees only the candidates assigned to them (name, basic profile and contact details) and marks call status and remarks.</p>';
     $('#uAdd', el).onclick = userDialog;
+    var rowsByUser = {};
     A.api('listUsers').then(function (rows) {
+      rows.forEach(function (u) { rowsByUser[u.username] = u; });
       var b = $('#uBody', el); if (!b) return;
       b.innerHTML = rows.map(function (u) {
         var me = S.me && S.me.user === u.username;
-        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : 'Admin') + '</span></td>' +
+        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : u.role === 'caller' ? 'Caller' : 'Admin') + '</span></td>' +
           '<td>' + (u.active === 'Yes' ? '<span class="chip ok">Active</span>' : '<span class="chip bad">Disabled</span>') + '</td><td class="nowrap">' + esc(u.lastLogin ? D.fmtDateTime(u.lastLogin) : '—') + '</td><td class="nowrap"><small style="display:inline">' + esc(D.fmtDate(String(u.created).slice(0, 10))) + ' · ' + esc(u.createdBy) + '</small></td>' +
           '<td class="nowrap"><button class="btn small" data-reset="' + esc(u.username) + '">Reset password</button> ' + (me ? '' : '<button class="btn small" data-tog="' + esc(u.username) + '" data-on="' + (u.active === 'Yes' ? '0' : '1') + '">' + (u.active === 'Yes' ? 'Disable' : 'Enable') + '</button> <button class="btn small danger" data-del="' + esc(u.username) + '">Delete</button>') + '</td></tr>';
       }).join('');
@@ -387,7 +402,7 @@
         var u = x.dataset.reset, pw = genPassword();
         var m = A.modal('<h3>Reset password for ' + esc(u) + '</h3><div class="field"><label class="f">New password</label><div style="display:flex;gap:6px"><input type="text" id="rpPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="rpGen">Generate</button></div><div class="hint">At least 8 characters</div></div><div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Reset</button></div>');
         $('#rpPass', m).value = pw; $('#rpGen', m).onclick = function () { $('#rpPass', m).value = genPassword(); }; $('#cNo', m).onclick = A.closeModal;
-        $('#cYes', m).onclick = function () { var np = $('#rpPass', m).value; A.api('setUserPassword', u, np).then(function () { A.closeModal(); credentialsDialog('Password reset', u, np); }, function (e) { D.toast(e.message, 'err'); }); };
+        $('#cYes', m).onclick = function () { var np = $('#rpPass', m).value; A.api('setUserPassword', u, np).then(function () { A.closeModal(); credentialsDialog('Password reset', u, np, (rowsByUser[u] || {}).name, (rowsByUser[u] || {}).role); }, function (e) { D.toast(e.message, 'err'); }); };
       }; });
       $$('[data-tog]', b).forEach(function (x) { x.onclick = function () { A.api('setUserActive', x.dataset.tog, x.dataset.on === '1').then(function () { D.toast('Updated', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }; });
       $$('[data-del]', b).forEach(function (x) { x.onclick = function () { A.confirm('Delete ' + x.dataset.del + '?', 'The account is removed for good. (Consider <b>Disable</b> instead, which keeps it on record.) Their past actions stay in the logs.', 'Delete', true).then(function (ok) { if (ok) A.api('deleteUser', x.dataset.del).then(function () { D.toast('Deleted', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }); }; });

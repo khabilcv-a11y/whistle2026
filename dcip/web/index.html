@@ -19,7 +19,7 @@
   body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--ink); }
 
   /* ---------- hero ---------- */
-  .hero { position: relative; overflow: hidden; color: #fff; padding: 28px 18px 110px;
+  .hero { position: relative; overflow: hidden; color: #fff; padding: 30px 18px 70px;
     background: radial-gradient(900px 420px at 88% -10%, rgba(246,168,28,.28), transparent 60%), radial-gradient(700px 380px at -5% 110%, rgba(211,32,47,.32), transparent 60%), linear-gradient(135deg, var(--navy-900), var(--navy-700) 55%, var(--navy-500)); }
   .hero::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1.2px, transparent 1.2px); background-size: 22px 22px; mask-image: linear-gradient(to bottom, #000, transparent 85%); pointer-events: none; }
   .hero .in { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
@@ -39,17 +39,8 @@
   @media (max-width: 640px) { .hero .in { grid-template-columns: 1fr; } .hero .logo { order: -1; height: 96px; } }
   @media (prefers-reduced-motion: reduce) { .hero .logo { animation: none; } .cta { transition: none; } }
 
-  /* ---------- how it works ---------- */
-  .how { max-width: 920px; margin: -70px auto 0; padding: 0 16px; position: relative; z-index: 2; }
-  .how ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .how li { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: 0 6px 20px rgba(11,33,64,.08); }
-  .how li b { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--navy-700); color: #fff; font-size: 14px; margin-bottom: 8px; }
-  .how li:nth-child(2) b { background: var(--red); } .how li:nth-child(3) b { background: var(--gold); color: #261800; } .how li:nth-child(4) b { background: #1aa366; }
-  .how li strong { display: block; font-size: 15px; } .how li span { color: var(--muted); font-size: 13px; }
-  @media (max-width: 700px) { .how ol { grid-template-columns: 1fr 1fr; } }
-
   /* ---------- form ---------- */
-  main { max-width: 760px; margin: 0 auto; padding: 26px 16px 70px; }
+  main { max-width: 760px; margin: 0 auto; padding: 26px 16px 70px; position: relative; z-index: 2; } main:focus { outline: none; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 10px 40px rgba(11,33,64,.08); padding: 26px; }
   .progress { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; list-style: none; margin: 0 0 6px; padding: 0; }
   .progress { align-items: start; }
@@ -150,30 +141,79 @@
   .chat-note { text-align: center; font-size: 11px; color: var(--muted); padding: 0 12px 8px; background: #fff; }
   @media (max-width: 560px) { .chat-panel { right: 0; bottom: 0; width: 100vw; height: 82vh; border-radius: 22px 22px 0 0; } .chat-fab-tx { display: none; } .chat-fab { padding: 14px; } body.chat-open { overflow: hidden; } }
   @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
-  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 36px; }
+
+  .skip { position: absolute; left: 8px; top: -60px; z-index: 200; background: #fff; color: var(--navy-900); font-weight: 800; padding: 10px 16px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.3); } .skip:focus { top: 8px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; } .badge.gold { background: linear-gradient(135deg, #f6a81c, #ffd27a); color: #2a1c00; border-color: transparent; }
+  .decade { font-size: clamp(34px, 7vw, 62px); line-height: 1.04; letter-spacing: -.025em; margin: 18px 0 10px; font-weight: 800; }
+  .decade .w { display: inline-block; opacity: 0; transform: translateY(18px); animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; }
+  .decade .w:nth-child(1) { animation-delay: .05s } .decade .w:nth-child(2) { animation-delay: .15s } .decade .w:nth-child(3) { animation-delay: .25s } .decade .w:nth-child(4) { animation-delay: .35s } .decade .w:nth-child(5) { animation-delay: .5s } .decade .w:nth-child(6) { animation-delay: .65s }
+  .decade .hl { background: linear-gradient(90deg, #f6a81c, #ffe0a0, #f6a81c); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: rise .7s .5s cubic-bezier(.2,.8,.2,1) forwards, shimmer 4s 1.2s linear infinite; }
+  .decade .hl2 { color: #ff8a80; }
+  @keyframes rise { to { opacity: 1; transform: none; } } @keyframes shimmer { to { background-position: -200% 0; } }
+  .slogan { font-size: clamp(20px, 3.6vw, 28px); margin: 0 0 8px; color: #ffe3a6; font-weight: 600; opacity: 0; animation: rise .8s .9s forwards; } .slogan b { color: #fff; border-bottom: 3px solid var(--gold); }
+  .hero .lead { opacity: 0; animation: rise .8s 1.05s forwards; }
+  .rotor { margin: 0 0 18px; font-size: clamp(16px, 2.4vw, 19px); color: #fff; font-weight: 700; opacity: 0; animation: rise .8s 1.2s forwards; }
+  .rot { display: inline-grid; vertical-align: bottom; } .rot span { grid-area: 1 / 1; color: var(--gold); opacity: 0; transform: translateY(10px); transition: opacity .45s, transform .45s; } .rot span.on { opacity: 1; transform: none; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 4px; opacity: 0; animation: rise .8s 1.35s forwards; }
+  .stats div { display: grid; } .stats b { font-size: 30px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; } .stats span { font-size: 12px; color: #c9d8ef; text-transform: uppercase; letter-spacing: .5px; margin-top: 3px; }
+  .hero .facts { opacity: 0; animation: rise .8s 1.3s forwards; margin-bottom: 18px; }
+  /* banners */
+  .banners { max-width: 960px; margin: -36px auto 0; padding: 0 16px; position: relative; z-index: 3; }
+  .bn { position: relative; border-radius: 22px; overflow: hidden; box-shadow: 0 18px 50px rgba(11,33,64,.28); background: #0b2140; aspect-ratio: 8 / 3; border: 4px solid #fff; }
+  .bn .slide { position: absolute; inset: 0; opacity: 0; transition: opacity .8s ease; } .bn .slide.on { opacity: 1; z-index: 1; }
+  .bn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bn .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 18px 14px; color: #fff; font-weight: 700; font-size: clamp(14px, 2.2vw, 18px); background: linear-gradient(to top, rgba(8,20,40,.78), transparent); }
+  .bn .nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255,255,255,.85); color: var(--navy-900); font-size: 18px; font-weight: 800; cursor: pointer; } .bn .prev { left: 10px; } .bn .next { right: 10px; }
+  .bn .dots { position: absolute; z-index: 3; left: 0; right: 0; bottom: 8px; display: flex; gap: 7px; justify-content: center; } .bn .dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; background: rgba(255,255,255,.55); cursor: pointer; } .bn .dots button[aria-current=true] { background: var(--gold); width: 24px; border-radius: 6px; }
+  .bn .pp { position: absolute; z-index: 3; top: 10px; right: 10px; border: 0; border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,.85); font-weight: 800; font-size: 12px; cursor: pointer; }
+  @media (max-width: 700px) { .bn { aspect-ratio: 16 / 9; border-width: 3px; border-radius: 18px; } .bn .nav { width: 34px; height: 34px; } }
+  /* form tabs */
+  .progress button { all: unset; display: block; width: 100%; box-sizing: border-box; cursor: pointer; border-radius: 8px; } .progress button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .progress li.now button .lbl { color: var(--ink); } .progress button:hover .bar { background: #cdd8ea; }
+  /* choice buttons */
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt { border: 1.5px solid var(--line-2); background: #fbfcfe; color: var(--ink); border-radius: 999px; padding: 10px 16px; font: 700 15px/1.2 inherit; font-family: inherit; cursor: pointer; min-height: 44px; transition: background .12s, border-color .12s, color .12s, transform .1s; text-align: left; }
+  .opt:hover { border-color: var(--navy-500); } .opt:active { transform: scale(.97); }
+  .opt[aria-checked=true] { background: var(--navy-700); border-color: var(--navy-700); color: #fff; } .opt[aria-checked=true]::before { content: '✓ '; }
+  .field.invalid .opts { outline: 2px solid var(--red); outline-offset: 4px; border-radius: 14px; }
+  .wa { background: #f1fbf6; border: 1px solid #bfe6cf; border-radius: 16px; padding: 14px; } .wa .q { font-weight: 800; margin-bottom: 8px; display: block; } .wa .who { margin-top: 10px; }
+  /* footer */
+  .foot { background: var(--navy-900); color: #d6e2f5; padding: 28px 16px 90px; margin-top: 10px; text-align: center; } .foot-in { max-width: 760px; margin: 0 auto; display: grid; gap: 8px; } .foot b { color: #fff; font-size: 17px; }
+  .foot a { color: var(--gold); font-weight: 700; text-decoration: none; } .foot a:hover { text-decoration: underline; } .foot .sep { opacity: .4; margin: 0 8px; }
+  /* accessibility options */
+  .a11y-fab { position: fixed; left: 14px; bottom: 14px; z-index: 80; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #fff; background: var(--navy-900); color: #fff; font: 800 18px/1 inherit; font-family: inherit; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.35); }
+  .a11y-panel { position: fixed; left: 14px; bottom: 70px; z-index: 81; width: min(300px, calc(100vw - 28px)); background: #fff; color: var(--ink); border: 1px solid var(--line-2); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(11,33,64,.35); } .a11y-panel[hidden] { display: none; }
+  .a11y-panel h2 { font-size: 16px; margin: 0 0 10px; } .a11y-panel .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; } .a11y-panel .row > b { width: 100%; font-size: 13px; }
+  .a11y-panel button.o { border: 1.5px solid var(--line-2); background: #fff; border-radius: 10px; padding: 8px 12px; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; } .a11y-panel button.o[aria-pressed=true] { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
+  html.a11y-lg body { zoom: 1.12; } html.a11y-xl body { zoom: 1.25; }
+  html.a11y-calm *, html.a11y-calm *::before, html.a11y-calm *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  html.a11y-calm .decade .w, html.a11y-calm .slogan, html.a11y-calm .lead, html.a11y-calm .rotor, html.a11y-calm .stats, html.a11y-calm .hero .facts { opacity: 1; transform: none; } html.a11y-calm .decade .hl { color: var(--gold); -webkit-text-fill-color: var(--gold); background: none; }
+  html.a11y-hc { --bg: #fff; --ink: #000; --ink-2: #000; --muted: #1a1a1a; --line: #000; --line-2: #000; --focus: #0033cc; --info-bg: #fff; --info: #000; --gold-soft: #fff; }
+  html.a11y-hc body { background: #fff; color: #000; } html.a11y-hc .hero { background: #000; } html.a11y-hc .hero::after { display: none; } html.a11y-hc .card, html.a11y-hc .fact, html.a11y-hc .bn { border: 2px solid #000; }
+  html.a11y-hc a { text-decoration: underline; } html.a11y-hc .opt, html.a11y-hc input, html.a11y-hc select, html.a11y-hc textarea { border-width: 2px; border-color: #000; background: #fff; } html.a11y-hc .opt[aria-checked=true], html.a11y-hc .btn.primary { background: #000; color: #fff; border-color: #000; } html.a11y-hc .btn.submit { background: #7a0000; }
+  html.a11y-hc .field.autofilled label.f::after { background: #fff; color: #000; border: 1px solid #000; } html.a11y-hc .cchip { border-color: #000; color: #000; } html.a11y-hc .chat-fab { background: #000; }
+
 </style>
 </head>
 <body>
+<a class="skip" href="#apply">Skip to the application form</a>
 <header class="hero"><div class="in">
   <div>
-    <span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span>
-    <h1>See how a district <em>really</em> runs.</h1>
-    <p class="lead">Apply to the District Collector's Internship Programme, Kozhikode, and be part of the <b id="batchName">34th batch</b>.</p>
+    <div class="badges"><span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span><span class="badge gold">10 Years of Compassion</span></div>
+    <h1 class="decade" aria-label="A Decade of Shaping Tomorrow, Today."><span class="w">A</span> <span class="w">Decade</span> <span class="w">of</span> <span class="w">Shaping</span> <span class="w hl">Tomorrow,</span> <span class="w hl2">Today.</span></h1>
+    <p class="slogan">Quit complaining. <b>Start creating.</b></p>
+    <p class="lead">Apply to the District Collector's Internship Programme, Kozhikode, and join the <b id="batchName">34th Batch</b>. Work with the District Administration on real projects for real people.</p>
+    <p class="rotor" aria-live="off">Experience governance <span class="rot" id="rotor" aria-hidden="true"><span class="on">from within</span><span>under the District Collector</span><span>with compassion at its core</span><span>for a better Kozhikode</span></span><span class="sr"> from within, with compassion at its core.</span></p>
     <div class="facts" id="facts"></div>
-    <a class="cta" href="#apply" id="cta">Start your application <span aria-hidden="true">→</span></a>
+    <div class="stats" aria-label="DCIP in numbers"><div><b data-count="10">10</b><span>years of compassion</span></div><div><b data-count="30" data-plus="1">30+</b><span>batches of interns</span></div><div><b>#</b><span>compassionisthekey</span></div></div>
   </div>
-  <img class="logo" src="logo.png" alt="DCIP Kozhikode">
+  <img class="logo" src="logo.png" alt="DCIP Kozhikode crest">
 </div></header>
 
-<section class="how" aria-label="How it works"><ol>
-  <li><b>1</b><strong>Apply online</strong><span>About 5 minutes. Upload your CV and we pre-fill the form.</span></li>
-  <li><b>2</b><strong>Screening</strong><span>We check eligibility and shortlist.</span></li>
-  <li><b>3</b><strong>Interview</strong><span>Shortlisted applicants are called by e-mail and phone.</span></li>
-  <li><b>4</b><strong>Join the batch</strong><span>Selected interns confirm after document verification.</span></li>
-</ol></section>
+<section class="banners" id="banners" hidden aria-roledescription="carousel" aria-label="DCIP highlights"></section>
 
-<main id="apply"><div class="card" id="main" style="color:var(--muted)">Loading…</div></main>
-<footer>Having trouble? <span id="contact">Reply to the e-mail you receive from us.</span></footer>
+<main id="apply" tabindex="-1"><div class="card" id="main" style="color:var(--muted)">Loading…</div></main>
+<footer class="foot" id="foot"><div class="foot-in"><b>Need help? We are happy to talk.</b><div id="contact">Reply to the e-mail you receive from us, or visit <a href="https://www.dcip.co.in">www.dcip.co.in</a>.</div></div></footer>
 
 <script type="text/plain" id="lib-pdfjs" data-src="vendor/pdf.min.js"></script>
 <script type="text/plain" id="lib-pdfworker" data-src="vendor/pdf.worker.min.js"></script>
@@ -182,6 +222,7 @@
 <script src="common.js"></script>
 <script src="lists.js"></script>
 <script src="cv.js"></script>
+<script src="a11y.js"></script>
 <script src="register.js"></script>
 <script src="chat.js"></script>
 </body>

@@ -5,7 +5,7 @@
   var KEY = 'dcip_admin_session', pollTimer = null, lastCount = null, failures = 0;
 
   /* ---------- session ---------- */
-  function saveSession() { try { sessionStorage.setItem(KEY, JSON.stringify({ token: S.token, user: S.user, tab: S.tab })); } catch (e) {} }
+  function saveSession() { try { sessionStorage.setItem(KEY, JSON.stringify({ token: S.token, user: S.user, tab: S.tab, me: S.me })); } catch (e) {} }
   A.logout = function (msg) {
     S.token = ''; try { sessionStorage.removeItem(KEY); } catch (e) {}
     clearInterval(pollTimer); A.closeDrawer(); A.closeModal();
@@ -15,7 +15,7 @@
   $('#loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var btn = $('#lbtn'); btn.disabled = true; btn.textContent = 'Signing in…'; $('#lerr').textContent = '';
-    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; saveSession(); start(); },
+    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; S.tab = r.role === 'caller' ? 'mycalls' : 'overview'; saveSession(); start(); },
       function (err) { $('#lerr').textContent = err.message; }).then(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
   });
   $('#btnLogout').onclick = function () { A.logout(); };
@@ -23,20 +23,27 @@
   $('#btnAccount').onclick = function () { A.changePasswordDialog(); };
   A.tabAllowed = function (id) {
     var role = (S.me || {}).role;
-    if (id === 'users' || id === 'logs') return role === 'super';
+    if (role === 'caller') return id === 'mycalls';
+    if (id === 'mycalls') return false;
+    if (id === 'logs') return role === 'super';
     if (id === 'chats') return role === 'super' || !!S.canChats;
     return true;
   };
 
   /* ---------- state ---------- */
   A.loadState = function (manual) {
+    if ((S.me || {}).role === 'caller') return A.api('getMyCalls').then(function (r) {
+      S.my = r; S.stamp = r.stamp; failures = 0; live(true);
+      $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = 'Caller · ' + (r.name || S.user);
+      A.renderSoft(); if (manual) D.toast('Refreshed', 'ok');
+    }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
     return A.api('getAdminState').then(function (st) {
       var firstLoad = lastCount === null;
       S.apps = st.applications; S.sessions = st.sessions; S.settings = st.settings; S.meta = st.settingsMeta; S.config = st.config; S.statuses = st.statuses;
-      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats;
+      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats; S.callers = st.callers || []; S.callStatuses = (st.config || {}).callStatuses;
       if (!firstLoad && st.applications.length > lastCount) D.toast((st.applications.length - lastCount) + ' new application' + (st.applications.length - lastCount > 1 ? 's' : '') + ' received', 'ok');
       lastCount = st.applications.length; failures = 0; live(true);
-      $('#hTitle').textContent = 'DCIP ' + (S.settings.BATCH_LABEL || ''); document.title = 'DCIP ' + (S.settings.BATCH_LABEL || '') + ' · Admin';
+      $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = S.settings.BATCH_LABEL || ''; document.title = 'DCIP ' + (S.settings.BATCH_LABEL || '') + ' · Admin';
       A.renderSoft(); A.refreshDrawer(); if (manual) D.toast('Refreshed', 'ok');
     }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
   };
@@ -54,9 +61,9 @@
   A.render = function () {
     A.pendingRender = false;
     var me = S.me || { user: S.user, name: S.user, role: 'admin' };
-    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : 'Admin') + '</span>';
+    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : me.role === 'caller' ? 'Caller' : 'Admin') + '</span>';
     var tabs = A.TABS.filter(function (t) { return A.tabAllowed(t[0]); });
-    if (!tabs.some(function (t) { return t[0] === S.tab; })) S.tab = 'overview';
+    if (!tabs.some(function (t) { return t[0] === S.tab; })) S.tab = tabs[0][0];
     $('#tabs').innerHTML = tabs.map(function (t) { return '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" data-tab="' + t[0] + '">' + esc(t[1]) + badge(t[0]) + '</button>'; }).join('');
     A.$$('#tabs button').forEach(function (b) { b.onclick = function () { S.tab = b.dataset.tab; saveSession(); window.scrollTo(0, 0); A.render(); }; });
     var v = $('#view'), top = window.scrollY;
@@ -78,6 +85,6 @@
   }
 
   var saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
-  if (saved && saved.token) { S.token = saved.token; S.user = saved.user; if (saved.tab && A.TABS.some(function (t) { return t[0] === saved.tab; })) S.tab = saved.tab; start(); }
+  if (saved && saved.token) { S.token = saved.token; S.user = saved.user; S.me = saved.me || null; if (saved.tab && A.TABS.some(function (t) { return t[0] === saved.tab; })) S.tab = saved.tab; start(); }
   else $('#login').classList.remove('hidden');
 })(window);

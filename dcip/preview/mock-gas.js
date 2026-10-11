@@ -179,12 +179,13 @@
       }
     };
     var LockService = { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } };
+    var quota = opts.mailQuota || 100;
     var MailApp = {
       sendEmail: function (o) {
-        if (store.mails.length >= (opts.mailQuota || 100)) throw new Error('Service invoked too many times for one day: email.');
+        if (store.mails.length >= quota) throw new Error('Service invoked too many times for one day: email.');
         store.mails.push({ to: o.to, subject: o.subject, html: o.htmlBody, text: o.body, replyTo: o.replyTo, name: o.name, at: now() }); save();
       },
-      getRemainingDailyQuota: function () { return (opts.mailQuota || 100) - store.mails.length; }
+      getRemainingDailyQuota: function () { return quota - store.mails.length; }
     };
     function folderObj(id) {
       return {
@@ -215,6 +216,7 @@
     var Logger = { log: function (s) { if (opts.log) opts.log(s); } };
 
     return {
+      setQuota: function (n) { quota = n; },
       store: store,
       globals: { SpreadsheetApp: SpreadsheetApp, Utilities: Utilities, CacheService: CacheService, PropertiesService: PropertiesService,
         LockService: LockService, MailApp: MailApp, UrlFetchApp: UrlFetchApp, DriveApp: DriveApp, ContentService: ContentService, Logger: Logger }

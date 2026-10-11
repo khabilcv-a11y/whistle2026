@@ -13,7 +13,7 @@
     .apply(null, names.map(function (n) { return env.globals[n]; }));
   if (fresh || !env.store.props.TOKEN_SECRET) {
     api.setup(); var I = api.internals;
-    I.setPasswordRow_(I.findUser_('superadmin'), 'Super@1234'); I.insertUser_('officer1', 'Officer One', 'admin', 'Officer@123', 'demo');
+    I.setPasswordRow_(I.findUser_('superadmin'), 'Super@1234'); I.insertUser_('officer1', 'Officer One', 'admin', 'Officer@123', 'demo'); I.insertUser_('caller1', 'Caller One', 'caller', 'Caller@123', 'demo');
     if (window.seedDemo) window.seedDemo(api.internals, env);
     [['demo1', [['u', 'is there any stipend?', 'typed'], ['b', 'FAQ: Will I get a stipend?', 'faq:F31'], ['u', 'what about hostel', 'typed'], ['b', 'FAQ: Will I be provided lodging during the internship?', 'faq:F33']]],
      ['demo2', [['u', 'can i apply with a diploma', 'typed'], ['b', 'I do not have that information yet.', 'none'], ['u', 'is it ok to apply in my final year', 'typed'], ['b', 'FAQ: I am in my final year. Can I apply?', 'faq:F08']]],
@@ -40,7 +40,7 @@
   window.addEventListener('DOMContentLoaded', function () {
     var bar = document.createElement('div');
     bar.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;font:12px system-ui;background:#111827;color:#e5e7eb;border-radius:8px;padding:6px 10px;max-width:430px;box-shadow:0 4px 18px rgba(0,0,0,.4)';
-    bar.innerHTML = '<b style="color:#facc15">PREVIEW</b> super admin <b>superadmin / Super@1234</b> · admin <b>officer1 / Officer@123</b> · <a href="#" id="pvMail" style="color:#93c5fd">inbox (<span id="pvN">0</span>)</a> · <a href="#" id="pvReset" style="color:#fca5a5">reset</a><div id="pvBox" style="display:none;max-height:50vh;overflow:auto;margin-top:6px"></div>';
+    bar.innerHTML = '<b style="color:#facc15">PREVIEW</b> super admin <b>superadmin / Super@1234</b> · admin <b>officer1 / Officer@123</b> · caller <b>caller1 / Caller@123</b> · <a href="#" id="pvMail" style="color:#93c5fd">inbox (<span id="pvN">0</span>)</a> · <a href="#" id="pvReset" style="color:#fca5a5">reset</a><div id="pvBox" style="display:none;max-height:50vh;overflow:auto;margin-top:6px"></div>';
     document.body.appendChild(bar);
     var box = bar.querySelector('#pvBox');
     function paint() {

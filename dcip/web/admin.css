@@ -128,3 +128,23 @@ table.bars tr { border-bottom: 1px solid var(--line); }
 .bubble.u { background: var(--brand); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; } .bubble.b { background: var(--soft); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .bubble small { display: block; opacity: .7; font-size: 11px; margin-top: 4px; }
 .subtabs { margin-bottom: 12px; }
+
+/* bulk bar controls stay readable on the dark bar */
+.bulk select { background: #fff; color: var(--ink); border: 1px solid var(--line-2); }
+.bulk .btn { background: #fff; color: var(--ink); border-color: #fff; }
+.bulk .btn:hover { background: #eef1f6; }
+.bulk b { color: #fff; white-space: nowrap; }
+.chk { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 14px; }
+.chk input { width: auto; min-height: 0; }
+.pbar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; } .pbar i { display: block; height: 100%; background: var(--bar); }
+.brow { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: start; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; margin-bottom: 10px; }
+.bthumb { aspect-ratio: 8/3; background: var(--line); border-radius: 8px; overflow: hidden; } .bthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bf { display: grid; gap: 6px; } .bact { display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 700px) { .brow { grid-template-columns: 1fr; } .bact { flex-direction: row; } }
+.callcard { display: block; } .callcard .callbtns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.callform { display: grid; gap: 8px; margin-top: 10px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { border: 1.5px solid var(--line-2); background: #fff; color: var(--ink); border-radius: 999px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; min-height: 40px; }
+.opt[aria-checked=true] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.opts.compact .opt { padding: 5px 11px; min-height: 34px; font-size: 14px; }
+.rolechip.caller { background: #e0f2fe; color: #075985; }

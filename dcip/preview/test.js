@@ -11,6 +11,8 @@ const ctx = vm.createContext(Object.assign({ Date: D, console }, env.globals));
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../apps-script/Code.gs'), 'utf8'), ctx);
 vm.runInContext('setup()', ctx);
 const superPw = /password: (\S+)/.exec(logs.join('\n'))[1];
+const _reset = () => vm.runInContext('_settingsCache = null', ctx);
+const CacheServiceClear = () => { Object.keys(env.store.cache).forEach(k => delete env.store.cache[k]); };
 const login = (u = 'superadmin', pw = superPw) => call('adminLogin', u, pw).token;
 
 const call = (fn, ...args) => {
@@ -20,12 +22,12 @@ const call = (fn, ...args) => {
 };
 const fails = (fn, re, ...args) => { try { call(fn, ...args); } catch (e) { assert.match(e.message, re, fn + ': ' + e.message); return; } assert.fail(fn + ' should have failed'); };
 const lastMail = () => env.store.mails[env.store.mails.length - 1];
-let n = 0;
+let n = 0, adm2;
 const base = (o = {}) => Object.assign({
   fullName: 'Asha Menon', dob: '2002-04-10', gender: 'Female', email: 'asha@example.com', mobile: '98470 12345', altMobile: '',
   district: 'Kozhikode', localBody: 'Kozhikode Corporation', qual: "Bachelor's Degree (completed)", stream: 'B.A',
   specialisation: 'Political Science', institution: 'Devagiri College', completion: '2025-05-20',
-  motivation: 'I want to understand how district administration works on the ground.',
+  motivation: 'I want to understand how district administration works on the ground.', whatsappSame: true, heardFrom: ['Friend / Family'],
   cv: { name: 'cv.pdf', data: Buffer.from('%PDF-1.4 test').toString('base64') }
 }, o);
 function verifiedSubmit(over) { return call('submitApplication', base(over)); }
@@ -33,15 +35,15 @@ const test = (name, fn) => { fn(); n++; console.log('  ✓ ' + name); };
 
 test('public config exposes the rules', () => {
   const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
-  assert.equal(c.open, true); assert.equal(c.maxAge, 30); assert.equal(c.intakeEnd, '2027-01-31'); assert.equal(c.ageAsOn, '2026-11-01');
+  assert.equal(c.open, true); assert.equal(c.maxAge, 30); assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.ugBy, '2026-11-01'); assert.equal(c.period, 'Nov 2026 – Feb 2027'); assert.equal(c.minAge, 20); assert.ok(c.contactEmail && c.contactPhone); assert.equal(c.ageAsOn, '2026-11-01');
 });
 
 test('valid application is stored, CV saved to Drive, confirmation e-mail sent', () => {
   const r = verifiedSubmit();
   assert.equal(r.id, 'DCIP34-0001'); assert.equal(r.mailed, true);
   const mail = lastMail();
-  assert.equal(mail.to, 'asha@example.com'); assert.match(mail.subject, /Application received – DCIP34-0001/);
-  assert.match(mail.html, /9847012345/); assert.match(mail.html, /All further communication/);
+  assert.equal(mail.to, 'asha@example.com'); assert.match(mail.subject, /Application received/);
+  assert.match(mail.html, /9847012345/); assert.match(mail.html, /further updates will be sent/);
   assert.equal(Object.keys(env.store.files).length, 1);
   const st = call('adminLogin', 'superadmin', superPw);
   const s = call('getAdminState', st.token);
@@ -62,15 +64,15 @@ test('duplicate e-mail refused', () => fails('submitApplication', /already been 
 test('age limit: 30 on 1 Nov 2026 is OK, 31 is refused', () => {
   verifiedSubmit({ email: 'a30@example.com', mobile: '9000000030', dob: '1996-11-01', fullName: 'Thirty Year' });      // turns 30 on the reference date
   const p = base({ email: 'a31@example.com', mobile: '9000000031', dob: '1995-10-31', fullName: 'Thirtyone Year' });     // turned 31 the day before
-  fails('submitApplication', /limit is 30/, p);
+  fails('submitApplication', /between 20 and 30/, p);
 });
 
 test('UG completion after the internship period is refused; inside the period is allowed and noted', () => {
   const late = base({ email: 'late@example.com', mobile: '9000000041', fullName: 'Late Finisher', qual: "Bachelor's Degree (final year – results pending)", completion: '2027-03-31' });
-  fails('submitApplication', /after the internship period/, late);
-  verifiedSubmit({ email: 'ok@example.com', mobile: '9000000042', fullName: 'Final Year', qual: "Bachelor's Degree (final year – results pending)", completion: '2026-12-15' });
+  fails('submitApplication', /on or before 1 Nov 2026/, late);
+  verifiedSubmit({ email: 'ok@example.com', mobile: '9000000042', fullName: 'Final Year', qual: "Bachelor's Degree (final year – results pending)", completion: '2026-10-20' });
   const a = call('getAdminState', call('adminLogin', 'superadmin', superPw).token).applications.find(x => x.email === 'ok@example.com');
-  assert.equal(a.screening, 'Eligible'); assert.match(a.screeningNotes, /during the internship period/);
+  assert.equal(a.screening, 'Eligible'); assert.match(a.screeningNotes, /Final-year student/);
 });
 
 test('FLAG mode accepts but marks Suggest Disqualify; rescreen applies new rules to old rows', () => {
@@ -79,7 +81,7 @@ test('FLAG mode accepts but marks Suggest Disqualify; rescreen applies new rules
   verifiedSubmit({ email: 'old@example.com', mobile: '9000000051', fullName: 'Older Person', dob: '1990-01-01' });
   let s = call('getAdminState', tok);
   const old = s.applications.find(x => x.email === 'old@example.com');
-  assert.equal(old.screening, 'Suggest Disqualify'); assert.match(old.screeningNotes, /limit is 30/);
+  assert.equal(old.screening, 'Suggest Disqualify'); assert.match(old.screeningNotes, /between 20 and 30/);
   call('saveSettings', tok, { ENFORCE_AGE: 'BLOCK', MAX_AGE: '37' });
   const r = call('rescreenAll', tok);
   assert.ok(r.changed >= 1);
@@ -268,7 +270,7 @@ test('accounts: super creates admins; admins sign in, cannot reach super functio
   fails('createUser', /already exists/, sup, 'meera', 'x', 'Password@1', 'admin');
   const adm = login('meera', 'Meera@12345');
   const st = call('getAdminState', adm); assert.equal(st.me.role, 'admin'); assert.equal(st.me.user, 'meera'); assert.equal(st.canChats, false);
-  ['listUsers', 'getAudit', 'getLoginLog'].forEach(fn => fails(fn, /Only a super admin/, adm));
+  ['getAudit', 'getLoginLog'].forEach(fn => fails(fn, /Only a super admin/, adm));
   fails('createUser', /Only a super admin/, adm, 'x1x1', 'X', 'Password@1', 'admin');
   const id = call('getAdminState', adm).applications[0].id;
   call('updateApplications', adm, [id], { remarks: 'checked by meera' });
@@ -277,6 +279,7 @@ test('accounts: super creates admins; admins sign in, cannot reach super functio
   fails('getAdminState', /SESSION_EXPIRED/, adm); fails('adminLogin', /Incorrect username or password/, 'meera', 'Meera@12345');
   call('setUserActive', sup, 'meera', true); assert.ok(login('meera', 'Meera@12345'));
   assert.ok(call('listUsers', sup).every(u => !('hash' in u) && !('salt' in u)));
+  assert.ok(call('listUsers', adm2 = login('meera', 'Meera@12345')).every(u => u.role === 'caller'), 'an admin only sees caller accounts');
 });
 
 test('accounts: guards (own account), password reset and change, delete', () => {
@@ -369,6 +372,104 @@ test('setup: an older Chat_Log layout is moved aside (rows kept) instead of fail
   const old = Object.keys(env.store.sheets).find(k => /^Chat_Log_old_/.test(k)); assert.ok(old); assert.equal(env.store.sheets[old][1][1], 'old question');
   assert.ok(logs.join('\n').includes('✓ Chat log tab') && !logs.join('\n').includes('✗'));
   env.store.sheets.Chat_Log = keep; delete env.store.sheets.Chat_Log_backup; delete env.store.sheets[old];
+});
+
+test('form fields: WhatsApp, how they heard, master\'s college, legacy master\'s value', () => {
+  const mk = (o) => base(Object.assign({ email: 'f' + (++n) + '@example.com', mobile: '90000' + String(10000 + n), fullName: 'Field Test' + n }, o));
+  fails('submitApplication', /WhatsApp number/, mk({ whatsappSame: false, whatsapp: '' }));
+  fails('submitApplication', /WhatsApp number/, mk({ whatsappSame: false, whatsapp: '12345' }));
+  fails('submitApplication', /how you heard/, mk({ heardFrom: [] }));
+  fails('submitApplication', /how you heard/, mk({ heardFrom: ['Carrier pigeon'] }));
+  fails('submitApplication', /master's degree/i, mk({ qual: "Master's Degree (completed)", mastersInstitution: '' }));
+  call('submitApplication', mk({ whatsappSame: false, whatsapp: '+91 98470 77777', heardFrom: ['Instagram', 'Friend / Family', 'Instagram'], qual: "Master's Degree (completed)", mastersInstitution: 'University of Delhi' }));
+  const a = call('getAdminState', login()).applications.filter(x => x.fullName.startsWith('Field Test')).pop();
+  assert.equal(a.whatsapp, '9847077777'); assert.equal(a.heardFrom, 'Instagram, Friend / Family'); assert.equal(a.mastersInstitution, 'University of Delhi'); assert.equal(a.qual, "Master's Degree (completed)");
+  const same = call('getAdminState', login()).applications.find(x => x.email === 'asha@example.com'); assert.equal(same.whatsapp, same.mobile);
+  call('updateApplications', login(), [a.id], { qual: "Master's Degree" });   // an older value is accepted and upgraded
+  assert.equal(call('getAdminState', login()).applications.find(x => x.id === a.id).qual, "Master's Degree (completed)");
+  assert.match(env.store.mails[env.store.mails.length - 1].html, /WhatsApp Number/);
+});
+
+test('settings: our older defaults are upgraded, UG_COMPLETE_BY is its own rule', () => {
+  const rows = env.store.sheets.Settings; const set = (k, v) => { rows.find(r => r[0] === k)[1] = v; };
+  set('INTAKE_END', '2027-01-31'); set('MIN_AGE', '18'); _reset();
+  const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result; assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.minAge, 20);
+  set('MIN_AGE', '19'); _reset(); assert.equal(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.minAge, 19, 'a value someone chose is never overwritten'); set('MIN_AGE', '20'); _reset();
+  const tok = login(); call('saveSettings', tok, { UG_COMPLETE_BY: '2026-12-31' });
+  const ok = base({ email: 'ug1@example.com', mobile: '9000011111', fullName: 'Ug Window', qual: "Bachelor's Degree (final year – results pending)", completion: '2026-12-20' }); assert.ok(call('submitApplication', ok).id);
+  fails('submitApplication', /on or before 31 Dec 2026/, base({ email: 'ug2@example.com', mobile: '9000011112', fullName: 'Ug Late', qual: "Bachelor's Degree (final year – results pending)", completion: '2027-01-05' }));
+  call('saveSettings', tok, { UG_COMPLETE_BY: '2026-11-01' });
+});
+
+test('faq: untouched starter rows are corrected for the new dates, edited ones are left alone', () => {
+  const rows = env.store.sheets.FAQ; const r8 = rows.find(r => r[0] === 'F08'), r5 = rows.find(r => r[0] === 'F05');
+  r8[3] = 'Yes, if your degree will be completed on or before {{INTAKE_END}}.'; r5[3] = 'My own edited answer about {{INTAKE_END}}'; r5[2] = 'Who can apply (edited)?'; env.store.props.FAQ_MIG = '1'; _reset(); CacheServiceClear();
+  const f = call('chatInit').faq;
+  assert.match(f.find(x => x.id === 'F08').answer, /1 Nov 2026/); assert.equal(f.find(x => x.id === 'F05').answer, 'My own edited answer about 28 Feb 2027');
+  assert.match(f.find(x => x.id === 'F28').answer, /Nov 2026 – Feb 2027/); assert.match(f.find(x => x.id === 'F29').answer, /four months/);
+});
+
+test('sessions: mode and meeting link; interview mode per candidate', () => {
+  const tok = login(); call('saveSession', tok, { date: '2026-11-25', slot: 'Forenoon', venue: 'Collectorate', mode: 'Online', link: 'https://meet.example.com/abc' });
+  const s = call('getAdminState', tok).sessions.find(x => x.id === '2026-11-25 Forenoon'); assert.equal(s.mode, 'Online'); assert.equal(s.link, 'https://meet.example.com/abc');
+  call('saveSession', tok, { originalId: '2026-11-25 Forenoon', date: '2026-11-25', slot: 'Forenoon', mode: 'Teleport' }); assert.equal(call('getAdminState', tok).sessions.find(x => x.id === '2026-11-25 Forenoon').mode, 'In person');
+  const id = call('getAdminState', tok).applications[0].id;
+  call('updateApplications', tok, [id], { interviewMode: 'Online' }); fails('updateApplications', /In person or Online/, tok, [id], { interviewMode: 'Zoom' });
+  call('updateApplications', tok, [id], { interviewMode: '' }); call('deleteSession', tok, '2026-11-25 Forenoon');
+});
+
+test('banners: admin saves image links, Drive links are converted, only active ones reach the public form', () => {
+  const tok = login(), adm = (call('createUser', tok, 'banner1', 'B', 'Banner@1234', 'admin'), login('banner1', 'Banner@1234'));
+  fails('saveBanners', /https/, adm, [{ url: 'http://insecure.example.com/a.jpg' }]); fails('saveBanners', /https/, adm, [{ url: 'javascript:alert(1)' }]);
+  call('saveBanners', adm, [{ url: 'https://example.com/one.jpg', caption: 'First', active: true }, { url: 'https://drive.google.com/file/d/ABC123_x-y/view?usp=sharing', caption: 'From Drive', active: true }, { url: 'https://example.com/hidden.jpg', active: false }]);
+  const pub = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.banners;
+  assert.deepEqual(pub, [{ url: 'https://example.com/one.jpg', caption: 'First' }, { url: 'https://lh3.googleusercontent.com/d/ABC123_x-y', caption: 'From Drive' }]);
+  assert.equal(call('getBanners', adm).length, 3);
+  call('saveBanners', adm, [{ url: 'https://example.com/only.jpg', active: true }]); assert.equal(call('getBanners', adm).length, 1);
+  call('saveBanners', adm, []); assert.deepEqual(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.banners, []);
+  call('deleteUser', tok, 'banner1');
+});
+
+test('callers: admins create caller accounts and assign calls; callers see only their own basic list and can only set status + note', () => {
+  const sup = login(), adm = (call('createUser', sup, 'office1', 'Office One', 'Office@12345', 'admin'), login('office1', 'Office@12345'));
+  fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'admin'); fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'super');
+  call('createUser', adm, 'caller1', 'Caller One', 'Caller@1234', 'caller'); call('createUser', adm, 'caller2', 'Caller Two', 'Caller@5678', 'caller');
+  fails('setUserPassword', /Only a super admin/, adm, 'superadmin', 'Another@1234'); fails('setUserActive', /Only a super admin/, adm, 'meera', false);
+  assert.deepEqual(call('listCallers', adm).map(c => c.username).sort(), ['caller1', 'caller2']);
+  const apps = call('getAdminState', adm).applications.filter(a => a.shortlisted === 'Yes'); assert.ok(apps.length >= 3);
+  call('saveSession', adm, { date: '2026-11-26', slot: 'Afternoon', venue: 'Hall 3', mode: 'In person' });
+  call('assignSessions', adm, { [apps[0].id]: '2026-11-26 Afternoon', [apps[1].id]: '2026-11-26 Afternoon' });
+  fails('updateApplications', /active caller/, adm, [apps[0].id], { caller: 'meera' }); fails('updateApplications', /active caller/, adm, [apps[0].id], { caller: 'ghost' });
+  call('updateApplications', adm, [apps[0].id, apps[1].id], { caller: 'caller1' }); call('updateApplications', adm, [apps[2].id], { caller: 'caller2' });
+  const c1 = login('caller1', 'Caller@1234'), mine = call('getMyCalls', c1);
+  assert.deepEqual(mine.calls.map(c => c.id).sort(), [apps[0].id, apps[1].id].sort()); assert.ok(mine.statuses.includes('Confirmed'));
+  const sample = mine.calls.find(c => c.id === apps[0].id);
+  ['screenScore', 'interviewScore', 'motivation', 'cv', 'remarks', 'flagged', 'status', 'screening', 'dob'].forEach(k => assert.ok(!(k in sample), k + ' must not be visible to a caller'));
+  assert.ok(sample.mobile && sample.whatsapp && sample.fullName && sample.ug !== undefined && sample.venue === 'Hall 3' && sample.mode === 'In person');
+  ['getAdminState', 'updateApplications', 'listUsers', 'getAudit', 'getBanners', 'sendEmails', 'chatSessions'].forEach(fn => fails(fn, /only use the call list/, c1, [], {}));
+  call('updateMyCall', c1, apps[0].id, { callStatus: 'Confirmed', callNote: 'Will come with father' });
+  const after = call('getAdminState', adm).applications.find(a => a.id === apps[0].id); assert.equal(after.callStatus, 'Confirmed'); assert.equal(after.callNote, 'Will come with father'); assert.equal(after.updatedBy, 'caller1');
+  fails('updateMyCall', /not on your call list/, c1, apps[2].id, { callStatus: 'Confirmed' }); fails('updateMyCall', /Unknown call status/, c1, apps[0].id, { callStatus: 'Selected' });
+  call('updateMyCall', c1, apps[0].id, { status: 'Not Selected', screenScore: '1' });   // other fields are ignored
+  const same = call('getAdminState', adm).applications.find(a => a.id === apps[0].id); assert.equal(same.status, after.status); assert.equal(same.screenScore, after.screenScore);
+  fails('getMyCalls', /only for caller accounts/, adm);
+  assert.equal(call('getMyCalls', login('caller2', 'Caller@5678')).calls.length, 1);
+  call('deleteUser', adm, 'caller2'); assert.equal(call('getAdminState', adm).applications.find(a => a.id === apps[2].id).caller, '');
+  assert.ok(env.store.sheets.Audit.some(r => r[2] === 'CALL_UPDATE' && r[1] === 'caller1'));
+  call('deleteUser', adm, 'caller1'); call('deleteUser', sup, 'office1'); call('updateApplications', sup, apps.map(a => a.id), { caller: '' });
+});
+
+test('confirmation e-mails: tracked, and re-sent in bulk once the daily limit allows', () => {
+  const before = env.store.mails.length, sup = login();
+  const ok = call('submitApplication', base({ email: 'track1@example.com', mobile: '9000022221', fullName: 'Track One' }));
+  let a = call('getAdminState', sup).applications.find(x => x.id === ok.id); assert.equal(a.confirmMailed, 'Yes');
+  const keepQuota = env.store.mails.length; env.setQuota(keepQuota);   // the daily limit is used up
+  const r = call('submitApplication', base({ email: 'track2@example.com', mobile: '9000022222', fullName: 'Track Two' })); assert.equal(r.mailed, false);
+  a = call('getAdminState', sup).applications.find(x => x.id === r.id); assert.equal(a.confirmMailed, 'No');
+  let res = call('resendConfirmations', sup, []); assert.equal(res.sent, 0); assert.ok(res.notSent >= 1);
+  env.setQuota(100); res = call('resendConfirmations', sup, []); assert.ok(res.sent >= 1 && res.notSent === 0);
+  assert.equal(call('getAdminState', sup).applications.find(x => x.id === r.id).confirmMailed, 'Yes');
+  assert.match(env.store.mails[env.store.mails.length - 1].subject, /Application received/);
 });
 
 console.log(`\n${n} tests passed`);

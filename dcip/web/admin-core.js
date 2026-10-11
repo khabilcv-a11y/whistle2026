@@ -40,6 +40,12 @@
       return a.session === sid;
     }).sort(A.nameCmp);
   };
+  /** Documents for the day (score sheet, attendance, document verification): only candidates confirmed on the call, once any call has been confirmed. */
+  A.docApps = function (sid) {
+    var all = A.sessionApps(sid);
+    if (!A.S.onlyConf || !all.some(function (a) { return a.callStatus === 'Confirmed'; })) return all;
+    return all.filter(function (a) { return a.callStatus === 'Confirmed'; });
+  };
   var SLOT = { Forenoon: 1, Afternoon: 2, Evening: 3, 'Full day': 0 };
   A.sortSessions = function (list) { return list.slice().sort(function (a, b) { return a.date.localeCompare(b.date) || (SLOT[a.slot] || 9) - (SLOT[b.slot] || 9); }); };
   A.sessionLabel = function (s) { return D.fmtDate(s.date) + ' · ' + s.slot; };
@@ -55,6 +61,7 @@
     return '<span class="chip ok">Eligible</span>';
   };
   A.opts = function (list, cur, blank) { return (blank != null ? '<option value="">' + esc(blank) + '</option>' : '') + list.map(function (x) { return '<option' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); };
+  A.callerOpts = function (cur, blank) { return '<option value="">' + esc(blank || '— none —') + '</option>' + (A.S.callers || []).map(function (c) { return '<option value="' + esc(c.username) + '"' + (c.username === cur ? ' selected' : '') + (c.active === 'Yes' ? '' : ' disabled') + '>' + esc(c.name) + ' (' + esc(c.username) + ')</option>'; }).join(''); };
   A.sessionOpts = function (cur, blank) {
     return '<option value="">' + esc(blank || '— none —') + '</option>' + A.sortSessions(A.S.sessions).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === cur ? ' selected' : '') + '>' + esc(A.sessionLabel(s)) + '</option>'; }).join('');
   };
@@ -82,7 +89,7 @@
   /* ---------- application drawer ---------- */
   var openId = null;
   var DOC_CERT = ['', 'Verified', 'Pending', 'Not available', 'Mismatch'];
-  var CALL = ['', 'Not called', 'Confirmed', 'Not reachable', 'Call back', 'Declined'];
+  var CALL = ['', 'Not called', 'Confirmed', 'Not reachable', 'Call back', 'Wants online', 'Reschedule requested', 'Declined'];
   A.DOC_CERT = DOC_CERT; A.CALL = CALL;
 
   A.openDrawer = function (id) { openId = id; A.refreshDrawer(true); };
@@ -105,19 +112,21 @@
       '<h4' + (issues ? '' : ' style="margin-top:0"') + '>Quick actions</h4><div style="display:flex;gap:6px;flex-wrap:wrap">' +
       ['Shortlisted', 'Selected', 'Confirmed', 'Waitlisted', 'Not Selected', 'Disqualified', 'Received'].map(function (s) { return '<button class="btn small' + (s === 'Disqualified' ? ' danger' : '') + '" data-quick="' + s + '"' + (a.status === s ? ' disabled' : '') + '>' + (s === 'Received' ? 'Reset to Received' : s === 'Disqualified' ? 'Disqualify' : s) + '</button>'; }).join('') + '</div>' +
       '<h4>Applicant</h4><dl class="dl">' +
-      '<dt>E-mail</dt><dd><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a> ' + (a.emailVerified === 'Yes' ? '<span class="chip ok">verified</span>' : '') + '</dd>' +
-      '<dt>Mobile</dt><dd><a href="tel:' + esc(a.mobile) + '">' + esc(a.mobile) + '</a>' + (a.altMobile ? ' · <a href="tel:' + esc(a.altMobile) + '">' + esc(a.altMobile) + '</a>' : '') + '</dd>' +
+      '<dt>E-mail</dt><dd><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a> ' + '' + '</dd>' +
+      '<dt>Mobile</dt><dd><a href="tel:' + esc(a.mobile) + '">' + esc(a.mobile) + '</a>' + (a.altMobile ? ' · <a href="tel:' + esc(a.altMobile) + '">' + esc(a.altMobile) + '</a>' : '') + '</dd><dt>WhatsApp</dt><dd>' + esc(a.whatsapp || a.mobile) + (a.whatsapp ? '' : ' <span class="muted">(same as mobile)</span>') + '</dd>' +
       '<dt>Date of birth</dt><dd>' + esc(D.fmtDate(a.dob)) + ' (age ' + esc(a.age) + ')</dd><dt>Gender</dt><dd>' + esc(a.gender) + '</dd>' +
-      '<dt>Location</dt><dd>' + esc(a.location) + '</dd><dt>Qualification</dt><dd>' + esc(a.qual) + '</dd>' +
+      '<dt>Location</dt><dd>' + esc(a.location) + '</dd><dt>Qualification</dt><dd>' + esc(a.qual) + (a.mastersInstitution ? ' · ' + esc(a.mastersInstitution) : '') + '</dd><dt>Heard about DCIP</dt><dd>' + esc(String(a.heardFrom || '—').replace(/\|/g, ', ')) + '</dd>' +
       '<dt>UG</dt><dd>' + esc(A.ugText(a)) + '</dd><dt>UG completion</dt><dd>' + esc(D.fmtDate(a.completion)) + '</dd>' +
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
       '<h4>Evaluation</h4><div class="fgrid">' +
       '<div><label class="f">Status</label><select data-f="status">' + A.opts(S.statuses, a.status || 'Received') + '</select></div>' +
       '<div><label class="f">Screening result</label><select data-f="screening">' + A.opts(['Eligible', 'Review', 'Suggest Disqualify', 'Cleared'], a.screening) + '</select></div>' +
-      inp('screenScore', 'Screen score', 'number', 'step="0.5" min="0"') + inp('interviewScore', 'Interview score', 'number', 'step="0.5" min="0"') +
+      inp('screenScore', 'Screen score (marks given by you)', 'number', 'step="0.5" min="0"') + inp('interviewScore', 'Interview score', 'number', 'step="0.5" min="0"') +
       '<div><label class="f"><input type="checkbox" data-f="flagged"' + (a.flagged === 'Yes' ? ' checked' : '') + '> Flagged</label><input type="text" data-f="flagNote" placeholder="Why is this flagged?" value="' + esc(a.flagNote) + '"></div>' +
       '<div><label class="f">Interview session</label><select data-f="session">' + A.sessionOpts(a.session) + '</select></div>' +
+      '<div><label class="f">Interview mode</label><select data-f="interviewMode">' + A.opts(['In person', 'Online'], a.interviewMode, '— as per session —') + '</select></div>' +
+      '<div><label class="f">Caller</label><select data-f="caller">' + A.callerOpts(a.caller, '— not assigned —') + '</select></div>' +
       '<div class="full"><label class="f">Remarks</label><textarea data-f="remarks" rows="3">' + esc(a.remarks) + '</textarea></div></div>' +
       '<h4>Interview day</h4><div class="fgrid">' +
       '<div><label class="f">Attendance</label><select data-f="attendance">' + A.opts(['Present', 'Absent'], a.attendance, '—') + '</select></div>' + inp('reportingTime', 'Reporting time', 'time') +
@@ -125,7 +134,7 @@
       '<div><label class="f">UG certificate</label><select data-f="docCert">' + A.opts(DOC_CERT.slice(1), a.docCert, '—') + '</select></div>' + inp('docOther', 'Other documents presented') +
       '<div class="full">' + inp('docRemarks', 'Document remarks') + '</div></div>' +
       '<details style="margin-top:18px"><summary style="cursor:pointer;font-weight:700">Correct applicant details</summary><div class="fgrid" style="margin-top:10px">' +
-      inp('fullName', 'Full name') + inp('dob', 'Date of birth', 'date') +
+      inp('fullName', 'Full name') + inp('dob', 'Date of birth', 'date') + inp('whatsapp', 'WhatsApp number', 'tel') +
       '<div><label class="f">Gender</label><select data-f="gender">' + A.opts(S.config.genders, a.gender) + '</select></div>' + inp('email', 'E-mail', 'email') + inp('mobile', 'Mobile', 'tel') + inp('altMobile', 'Alternate mobile', 'tel') +
       '<div><label class="f">District</label><select data-f="district">' + A.opts(S.config.districts, a.district) + '</select></div>' + inp('localBody', 'Local body') +
       '<div class="full"><label class="f">Qualification</label><select data-f="qual">' + A.opts(S.config.quals, a.qual) + '</select></div>' +
@@ -163,6 +172,7 @@
       '<button class="btn small" id="bkFlag">⚑ Flag</button><button class="btn small" id="bkUnflag">Unflag</button>' +
       '<button class="btn small" id="bkClear" title="Mark the screening result as cleared by an official">Clear screening</button>' +
       '<select id="bkSession">' + A.sessionOpts('', 'Assign session…') + '</select>' +
+      '<select id="bkCaller">' + A.callerOpts('', 'Assign caller…') + '</select>' +
       '<button class="btn small" id="bkMail">E-mail…</button><button class="btn small" id="bkX">Excel</button><button class="btn small" id="bkP">PDF</button>' +
       '<span class="grow"></span><button class="btn small" id="bkNone">Clear selection</button></div>';
     var done = function (m) { return function () { D.toast(m, 'ok'); if (opts.after) opts.after(); }; };
@@ -178,6 +188,7 @@
     $('#bkUnflag', host).onclick = function () { A.save(ids, { flagged: '', flagNote: '' }, 'Bulk').then(done('Unflagged')); };
     $('#bkClear', host).onclick = function () { A.save(ids, { screening: 'Cleared' }, 'Bulk').then(done('Screening cleared')); };
     $('#bkSession', host).onchange = function () { if (this.value) A.api('assignSessions', ids.reduce(function (m, id) { m[id] = $('#bkSession', host).value; return m; }, {})).then(function () { return A.refresh(); }).then(done('Session assigned'), function (e) { D.toast(e.message, 'err'); }); };
+    $('#bkCaller', host).onchange = function () { var v = this.value; if (v) A.save(ids, { caller: v }, 'Bulk caller').then(done('Assigned to caller')); };
     $('#bkMail', host).onclick = function () { A.compose(ids); };
     $('#bkX', host).onclick = function () { A.download(A.reports.applications(ids.map(A.byId), 'Selected applications'), 'xlsx'); };
     $('#bkP', host).onclick = function () { A.download(A.reports.applications(ids.map(A.byId), 'Selected applications'), 'pdf'); };
@@ -185,17 +196,18 @@
   };
 
   /* ---------- e-mail composer ---------- */
+  var SIGN = '\n\n--\nTeam DCIP\nNammude Kozhikode, District Mission Room,\nKozhikode District Collectorate,\nKozhikode - 673020\n0495 2370200.';
   A.TEMPLATES = {
-    interview: { name: 'Interview schedule', subject: 'DCIP {{batch}} – Interview schedule ({{id}})',
-      body: 'Dear {{name}},\n\nCongratulations! You have been shortlisted for the interview of the {{programme}} – {{batch}}.\n\nYour interview session: {{session}}\nVenue: {{venue}}\n\nPlease report at least 30 minutes before the session. Bring a photo ID and your original certificates (UG degree / provisional certificate) for verification.\n\nPlease reply to this e-mail to confirm that you will attend.\n\nRegards,' },
-    docs: { name: 'Document verification', subject: 'DCIP {{batch}} – Document verification ({{id}})',
-      body: 'Dear {{name}},\n\nYou have been selected for the {{programme}} – {{batch}} subject to verification of your documents.\n\nPlease report with the originals of your educational certificates and a photo ID on: {{session}} at {{venue}}.\n\nRegards,' },
-    selected: { name: 'Selected', subject: 'DCIP {{batch}} – Selection ({{id}})',
-      body: 'Dear {{name}},\n\nWe are pleased to inform you that you have been selected for the {{programme}} – {{batch}}.\n\nFurther instructions on joining will follow on this e-mail address.\n\nRegards,' },
-    waitlist: { name: 'Waitlisted', subject: 'DCIP {{batch}} – Waiting list ({{id}})',
-      body: 'Dear {{name}},\n\nThank you for attending the interview for the {{programme}} – {{batch}}. You are on the waiting list. We will contact you on this e-mail address if a place becomes available.\n\nRegards,' },
-    notselected: { name: 'Not selected', subject: 'DCIP {{batch}} – Application outcome ({{id}})',
-      body: 'Dear {{name}},\n\nThank you for your interest in the {{programme}} – {{batch}}. We regret that we are unable to offer you a place in this batch. We encourage you to apply again in the future.\n\nRegards,' },
+    interview: { name: 'Interview schedule', subject: 'DCIP {{batch}} – Interview schedule',
+      body: 'Dear Candidate,\n\nCongratulations! You have been shortlisted for the DCIP {{batch}} interview scheduled on {{dateLong}}.\n\nReporting Time: (edit: e.g. 1:00 PM)\nSession: {{slot}}\nMode: {{mode}}\nVenue: {{venue}}\n\nLocation / meeting link: {{link}}\n\nPlease bring your qualifying degree certificates (originals preferred, along with attested copies) and a valid photo identity proof (Aadhaar / Voter ID / Passport).\n\nPlease follow our official website www.dcip.co.in and social media handles of @collectorkkd and DCIP for any updates.\n\nFor queries, contact:\n📞 {{phone}}\n📧 {{contactEmail}}\n\nWe look forward to meeting you and wish you all the best!' + SIGN },
+    docs: { name: 'Document verification', subject: 'DCIP {{batch}} – Document verification',
+      body: 'Dear Candidate,\n\nYou have been selected for the {{programme}} – {{batch}} subject to verification of your documents.\n\nPlease report with the originals of your educational certificates and a valid photo ID on {{dateLong}} ({{slot}}) at {{venue}}.' + SIGN },
+    selected: { name: 'Selected', subject: 'DCIP {{batch}} – Selection',
+      body: 'Dear Candidate,\n\nCongratulations.\n\nWe are pleased to inform you that you have been selected for the {{batch}} of the District Collector’s Internship Programme (DCIP).\n\nYour interaction during the selection process reflected clarity of thought, social awareness, and readiness to engage meaningfully with public systems. Among a competitive pool of applicants, you stood out for your perspective and potential to contribute constructively.\n\nThe {{batch}} will commence on (edit: date).\n\n📍 Reporting Time: (edit: e.g. Sharp at 9:30 AM)\n📍 Venue: Mission Room, Collectorate\n\nKindly ensure punctual reporting.\n\n✅ Please confirm your participation by replying to this email at the earliest.\n\nWe look forward to welcoming you.' + SIGN },
+    waitlist: { name: 'Waitlisted', subject: 'DCIP {{batch}} – Waiting list',
+      body: 'Dear Candidate,\n\nThank you for attending the interview for the {{programme}} – {{batch}}. You are on the waiting list. We will contact you on this e-mail address if a place becomes available.' + SIGN },
+    notselected: { name: 'Not selected', subject: 'DCIP {{batch}} – Application outcome',
+      body: 'Dear Candidate,\n\nThank you for your interest in the {{programme}} – {{batch}}. We regret that we are unable to offer you a place in this batch. We encourage you to apply again in the future.' + SIGN },
     custom: { name: 'Write my own', subject: '', body: '' }
   };
   A.compose = function (ids, tplKey) {
@@ -205,7 +217,7 @@
       '<p class="muted" style="margin:0 0 10px">' + esc(good.slice(0, 3).map(function (a) { return a.fullName; }).join(', ')) + (good.length > 3 ? ' and ' + (good.length - 3) + ' more' : '') + (q != null ? ' · daily e-mail quota left: <b>' + q + '</b>' : '') + '</p>' +
       '<div class="field"><label class="f">Template</label><select id="mTpl">' + Object.keys(A.TEMPLATES).map(function (k) { return '<option value="' + k + '"' + (k === (tplKey || 'custom') ? ' selected' : '') + '>' + esc(A.TEMPLATES[k].name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label class="f">Subject</label><input type="text" id="mSub"></div>' +
-      '<div class="field"><label class="f">Message</label><textarea id="mBody" rows="10"></textarea><div class="hint">Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} – filled in separately for every applicant. Review the wording before sending.</div></div>' +
+      '<div class="field"><label class="f">Message</label><textarea id="mBody" rows="10"></textarea><div class="hint">Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} {{dateLong}} {{mode}} {{link}} {{phone}} {{contactEmail}} – filled in separately for every applicant. Review the wording before sending.</div></div>' +
       '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's') + '</button></div>');
     function fillTpl() { var t = A.TEMPLATES[$('#mTpl', m).value]; $('#mSub', m).value = t.subject; $('#mBody', m).value = t.body; }
     $('#mTpl', m).onchange = fillTpl; fillTpl();

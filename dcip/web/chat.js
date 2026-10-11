@@ -83,11 +83,11 @@
     root.innerHTML =
       '<button id="chatFab" class="chat-fab" type="button" aria-haspopup="dialog" aria-expanded="false"><span class="chat-fab-ic" aria-hidden="true">💬</span><span class="chat-fab-tx">Have a question?</span></button>' +
       '<section id="chatPanel" class="chat-panel" role="dialog" aria-label="DCIP helper" hidden>' +
-        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div><b>DCIP Helper</b><small>Ask about the internship</small></div>' +
+        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div><b>DCIP Helper</b><small>Ask me anything about DCIP</small></div>' +
         '<button type="button" class="chat-x" id="chatClose" aria-label="Close chat">✕</button></header>' +
         '<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>' +
         '<div class="chat-chips" id="chatChips"></div>' +
-        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
+        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question in your own words…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
         '<div class="chat-note">Chats are saved to improve our answers. Please don\'t share personal details.</div>' +
       '</section>';
     document.body.appendChild(root);
@@ -124,16 +124,16 @@
     return topics.map(function (t) { return { label: t, run: function () { showTopic(t); } }; });
   }
   function menu(text) {
-    say('bot', esc(text || 'What would you like to know?'));
+    say('bot', esc(text || 'Sure! What would you like to know? Pick a topic, or type your question.'));
     chips(topicChips());
   }
   function greet() {
-    say('bot', 'Hi! 👋 I\'m the DCIP helper. Tap a topic below, or type your question.');
+    say('bot', 'Hi there! 👋 I\'m the DCIP helper, happy to help you with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>"I am in my final year, can I apply?"</i> or <i>"is there a stipend?"</i>');
     chips(topicChips());
   }
   function showTopic(t) {
     var qs = faq.filter(function (f) { return f.topic === t; });
-    say('bot', 'Popular questions about <b>' + esc(t) + '</b>:');
+    say('bot', 'Here is what people usually ask about <b>' + esc(t) + '</b>. Tap one, or type your own question:');
     chips(qs.map(function (f) { return { label: f.question, run: function () { showAnswer(f); } }; }).concat([{ label: '← All topics', kind: 'ghost', run: function () { menu(); } }]));
   }
   function related(item) {
@@ -145,7 +145,8 @@
     var wantsApply = /\[\[apply\]\]/.test(text); text = text.replace(/\s*\[\[apply\]\]\s*/g, '');
     say('bot', fmt(text)); history.push({ r: 'b', t: text.slice(0, 400) });
     var list = (extra || []).slice();
-    if (wantsApply && applyOpen) list.unshift({ label: 'Start application →', kind: 'go', say: false, run: function () { toggle(); var a = document.getElementById('apply'); if (a) a.scrollIntoView({ behavior: 'smooth' }); var f = document.getElementById('fullName'); if (f) setTimeout(function () { f.focus({ preventScroll: true }); }, 500); } });
+    if (wantsApply && applyOpen) list.unshift({ label: 'Go to the application form →', kind: 'go', say: false, run: function () { toggle(); var a = document.getElementById('apply'); if (a) a.scrollIntoView({ behavior: 'smooth' }); var f = document.getElementById('fullName'); if (f) setTimeout(function () { f.focus({ preventScroll: true }); }, 500); } });
+    if (!list.some(function (c) { return c.kind !== 'ghost' && c.kind !== 'go'; })) say('bot', 'Anything else I can help with? Type it in your own words or pick a topic.');
     list.push({ label: '☰ Other topics', kind: 'ghost', run: function () { menu(); } });
     chips(list);
   }
@@ -158,8 +159,8 @@
     say('user', esc(q)); history.push({ r: 'u', t: q.slice(0, 300) });
     var greeting = GREET.test(q) && q.split(/\s+/).length <= 4;
     if (!greeting && !THANKS.test(q)) logMsg('u', q, 'typed');
-    if (GREET.test(q) && q.split(/\s+/).length <= 4) { menu('Hello! What would you like to know?'); return; }
-    if (THANKS.test(q)) { say('bot', 'You\'re welcome! 😊 Good luck with your application.'); chips([{ label: '☰ Other topics', kind: 'ghost', run: function () { menu(); } }]); return; }
+    if (GREET.test(q) && q.split(/\s+/).length <= 4) { menu('Hello! 😊 Tell me what you would like to know, or pick a topic.'); return; }
+    if (THANKS.test(q)) { say('bot', 'You\'re most welcome! 😊 If anything else comes to mind, just ask. All the best with your application!'); chips([{ label: '☰ Other topics', kind: 'ghost', run: function () { menu(); } }]); return; }
     var hits = match(faq, q);
     if (hits.length && hits[0].score >= THRESHOLD) {
       var best = hits[0].item, more = hits.slice(1, 3).filter(function (h) { return h.score >= 2; }).map(function (h) { return h.item; });
@@ -178,7 +179,7 @@
     }, function () {
       typing.remove(); busy = false; logMsg('b', 'Error: could not reach the helper', 'none');
       var contact = faq.filter(function (f) { return /contact/i.test(f.topic); })[0];
-      say('bot', 'Sorry, I couldn\'t find that. Try one of the topics below' + (contact ? ' or contact the team.' : '.'));
+      say('bot', 'Sorry, I could not get an answer just now. Please try one of the topics below' + (contact ? ' or reach out to the team directly; they will be glad to help.' : '.'));
       chips((contact ? [{ label: contact.question, run: function () { showAnswer(contact); } }] : []).concat(topicChips()));
     });
   }

@@ -10,6 +10,7 @@
     var s = sess(sid);
     return [[extra || 'Interviewer', s ? s.interviewer : '', ['Session', s ? D.fmtDate(s.date) + ', ' + s.slot : sessionTitle(sid)]]].concat(s && s.venue ? [['Venue', s.venue]] : []);
   }
+  function callerName(u) { var c = (A.S.callers || []).filter(function (x) { return x.username === u; })[0]; return c ? c.name : u || ''; }
   function loc(a) { return a.location || [a.district, a.localBody].filter(Boolean).join(', '); }
   function phones(a) { return [a.mobile, a.altMobile].filter(Boolean).join('\n'); }
   function sl(rows) { return rows.map(function (r, i) { return [i + 1].concat(r); }); }
@@ -32,7 +33,7 @@
     var list = A.S.apps.filter(function (a) { return a.screening === 'Review' || a.screening === 'Suggest Disqualify' || a.flagged === 'Yes'; });
     list.sort(function (a, b) { return (a.screening === 'Suggest Disqualify' ? 0 : 1) - (b.screening === 'Suggest Disqualify' ? 0 : 1) || String(a.id).localeCompare(b.id); });
     return { filename: 'DCIP_Screening_Report', orientation: 'landscape', sheets: [{ name: 'Screening', title: 'Application screening – flags and suggested disqualifications', rowHeight: 34, fontSize: 8,
-      note: 'Rules: age up to ' + A.S.settings.MAX_AGE + ' on ' + D.fmtDate(A.S.config.ageAsOn) + '; UG course completed on or before ' + D.fmtDate(A.S.settings.INTAKE_END) + '.',
+      note: 'Rules: age up to ' + A.S.settings.MAX_AGE + ' on ' + D.fmtDate(A.S.config.ageAsOn) + '; UG course completed on or before ' + D.fmtDate(A.S.config.ugBy) + '.',
       columns: [SL, { h: 'App ID', w: 11 }, { h: 'Name', w: 20 }, { h: 'Age', w: 5, align: 'center' }, { h: 'UG completion', w: 11 }, { h: 'Screening', w: 14 }, { h: 'Reasons', w: 50 }, { h: 'Flag note', w: 20 }, { h: 'Status', w: 11 }],
       rows: sl(list.map(function (a) { return [a.id, a.fullName, a.age, a.completion, a.screening, (a.screeningNotes || '').replace(/ \| /g, '\n'), a.flagged === 'Yes' ? (a.flagNote || 'Flagged') : '', a.status]; })) }] };
   };
@@ -66,14 +67,14 @@
   };
 
   R.scoreSheet = function (sid) {
-    var list = A.sessionApps(sid);
+    var list = A.docApps(sid);
     return { filename: 'DCIP_Score_Sheet_' + sessionTitle(sid), orientation: 'landscape', sheets: [{ name: 'Score sheet', title: 'Score sheet', meta: sessionMeta(sid), rowHeight: 34, noBands: true,
       columns: [SL, { h: 'Full Name', w: 22 }, { h: 'Age', w: 5, align: 'center' }, { h: 'District, local body', w: 24 }, { h: 'Highest Edu. Qual.', w: 20 }, { h: 'UG', w: 34 }, { h: 'Score', w: 10 }, { h: 'Remarks', w: 30 }],
       rows: sl(list.map(function (a) { return [a.fullName, a.age, loc(a), a.qual, A.ugText(a), A.num(a.interviewScore), a.remarks]; })) }] };
   };
 
   R.attendance = function (sid) {
-    var list = A.sessionApps(sid);
+    var list = A.docApps(sid);
     return { filename: 'DCIP_Attendance_' + sessionTitle(sid), orientation: 'portrait', sheets: [{ name: 'Attendance', title: 'Attendance', meta: sessionMeta(sid, 'Attendance record'), rowHeight: 40, noBands: true,
       columns: [SL, { h: 'Name', w: 24 }, { h: 'Contact Number', w: 15 }, { h: 'Location', w: 24 }, { h: 'Reporting Time', w: 13 }, { h: 'Signature', w: 20 }],
       rows: sl(list.map(function (a) { return [a.fullName, phones(a), loc(a), a.reportingTime || '', '']; })) }] };
@@ -82,12 +83,12 @@
   R.callChart = function (sid) {
     var list = A.sessionApps(sid);
     return { filename: 'DCIP_Call_Chart_' + sessionTitle(sid), orientation: 'landscape', sheets: [{ name: 'Call chart', title: 'Call chart', meta: sessionMeta(sid, 'Called by'), rowHeight: 36, noBands: true,
-      columns: [SL, { h: 'Name', w: 22 }, { h: 'Contact Number', w: 14 }, { h: 'Location', w: 24 }, { h: 'Session', w: 18 }, { h: 'Call status', w: 13 }, { h: 'Called by', w: 12 }, { h: 'Time', w: 9 }, { h: 'Response', w: 16 }, { h: 'Remarks', w: 28 }],
-      rows: sl(list.map(function (a) { return [a.fullName, phones(a), loc(a), a.session, a.callStatus, '', '', '', a.callNote]; })) }] };
+      columns: [SL, { h: 'Name', w: 22 }, { h: 'Contact Number', w: 14 }, { h: 'Location', w: 24 }, { h: 'Session', w: 18 }, { h: 'Mode', w: 9 }, { h: 'Caller', w: 14 }, { h: 'Call status', w: 14 }, { h: 'Remarks', w: 30 }],
+      rows: sl(list.map(function (a) { return [a.fullName, phones(a), loc(a), a.session, a.interviewMode || (sess(a.session) || {}).mode || 'In person', callerName(a.caller), a.callStatus, a.callNote]; })) }] };
   };
 
   R.docVerification = function (sid) {
-    var list = A.sessionApps(sid);
+    var list = A.docApps(sid);
     return { filename: 'DCIP_Doc_Verification_' + sessionTitle(sid), orientation: 'landscape', sheets: [{ name: 'Doc verification', title: 'Doc. verification', meta: sessionMeta(sid, 'Verified by'), rowHeight: 38, noBands: true,
       columns: [SL, { h: 'Name', w: 22 }, { h: 'Contact Number', w: 14 }, { h: 'Location', w: 22 }, { h: 'UG', w: 34 }, { h: 'UG Certificate', w: 13 }, { h: 'Other Documents Presented', w: 26 }, { h: 'Remarks', w: 26 }],
       rows: sl(list.map(function (a) { return [a.fullName, phones(a), loc(a), A.ugText(a), a.docCert, a.docOther, a.docRemarks]; })) }] };
