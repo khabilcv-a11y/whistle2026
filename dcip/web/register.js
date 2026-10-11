@@ -71,9 +71,13 @@
     cur = Math.max(1, Math.min(4, n));
     [].forEach.call(document.querySelectorAll('.step'), function (s) { s.hidden = +s.dataset.step !== cur; });
     $('#progress').innerHTML = LABELS.map(function (l, i) {
-      return '<li class="' + (i + 1 < cur ? 'done' : i + 1 === cur ? 'now' : '') + '"><button type="button" data-go="' + (i + 1) + '"' + (i + 1 >= cur ? ' disabled' : '') + ' aria-label="' + (i + 1 < cur ? 'Go back to ' : '') + 'Step ' + (i + 1) + ': ' + l + '"><div class="bar"></div><div class="lbl">' + (i + 1 < cur ? '✓ ' : '') + l + '</div></button></li>';
+      var go = i + 1 < cur;
+      return '<li class="' + (go ? 'done' : i + 1 === cur ? 'now' : '') + '"' + (go ? ' data-go="' + (i + 1) + '" role="button" tabindex="0" aria-label="Go back to step ' + (i + 1) + ': ' + l + '"' : '') + '><div class="bar"></div><div class="lbl">' + l + '</div></li>';
     }).join('');
-    [].forEach.call(document.querySelectorAll('[data-go]'), function (b) { b.onclick = function () { showStep(+b.dataset.go); }; });
+    [].forEach.call(document.querySelectorAll('[data-go]'), function (b) {
+      b.onclick = function () { showStep(+b.dataset.go); };
+      b.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStep(+b.dataset.go); } };
+    });
     $('#back').style.visibility = cur === 1 ? 'hidden' : 'visible';
     $('#next').classList.toggle('hidden', cur === 4); $('#submit').classList.toggle('hidden', cur !== 4);
     $('#formAlert').innerHTML = '';
@@ -256,7 +260,7 @@
 
   function done(r) {
     try { localStorage.removeItem(draftKey); } catch (e) {}
-    $('#main').innerHTML = '<div class="done"><div class="tick">✓</div><h2>You\'re in! Application received</h2>' +
+    $('#main').innerHTML = '<div class="success"><div class="tick">✓</div><h2>You\'re in! Application received</h2>' +
       '<p>Thank you for applying to DCIP. Please note your reference number:</p><div class="ref">' + esc(r.id) + '</div>' +
       (r.mailed ? '<p>A confirmation with the details you submitted is on its way to <b>' + esc(r.email) + '</b>. Check your spam folder if you don\'t see it.</p>'
                 : '<p>We could not send the confirmation e-mail right now, but your application is recorded. Keep your reference number safe.</p>') +

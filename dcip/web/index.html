@@ -54,8 +54,7 @@
   .progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; list-style: none; margin: 0 0 6px; padding: 0; }
   .progress { align-items: start; }
   .progress li { text-align: left; min-width: 0; }
-  .progress button { all: unset; display: block; width: 100%; cursor: pointer; }
-  .progress button[disabled] { cursor: default; }
+  .progress li[data-go] { cursor: pointer; }
   .progress .bar { height: 7px; border-radius: 99px; background: var(--line); overflow: hidden; }
   .progress .bar::after { content: ''; display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width .35s ease; }
   .progress li.done .bar::after, .progress li.now .bar::after { width: 100%; }
@@ -64,6 +63,7 @@
   @media (max-width: 480px) { .progress .lbl { font-size: 11px; } }
   .progress li.now .lbl { color: var(--ink); }
   .progress li.done .lbl { color: #1aa366; }
+  .progress li.done .lbl::before { content: '✓ '; }
   .stephead { margin: 18px 0 18px; }
   .stephead small { color: var(--red); font-weight: 800; letter-spacing: .6px; text-transform: uppercase; font-size: 12px; }
   .stephead h2 { font-size: clamp(22px, 4.6vw, 28px); letter-spacing: -.01em; margin: 4px 0 2px; }
@@ -104,10 +104,10 @@
   .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
 
   /* ---------- done ---------- */
-  .done { text-align: center; padding: 20px 6px 10px; }
-  .done .tick { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, #1aa366, #4ade80); color: #fff; display: grid; place-items: center; font-size: 42px; margin: 0 auto 14px; animation: pop .5s cubic-bezier(.2,1.6,.4,1); box-shadow: 0 12px 30px rgba(26,163,102,.35); }
+  .success { text-align: center; padding: 20px 6px 10px; }
+  .success .tick { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, #1aa366, #4ade80); color: #fff; display: grid; place-items: center; font-size: 42px; margin: 0 auto 14px; animation: pop .5s cubic-bezier(.2,1.6,.4,1); box-shadow: 0 12px 30px rgba(26,163,102,.35); }
   @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-  .done h2 { font-size: 28px; margin: 0 0 6px; }
+  .success h2 { font-size: 28px; margin: 0 0 6px; }
   .ref { display: inline-block; font-size: 26px; font-weight: 800; letter-spacing: 1.5px; background: var(--gold-soft); border: 2px dashed var(--gold); border-radius: 14px; padding: 8px 20px; margin: 10px 0; }
   .next { text-align: left; background: var(--bg); border-radius: 16px; padding: 16px 18px; margin-top: 16px; }
   .next b { display: block; margin-bottom: 6px; }
