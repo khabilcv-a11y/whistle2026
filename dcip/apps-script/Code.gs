@@ -514,7 +514,7 @@ function cleanApplication_(p, s) {
   if (clean_(p.altMobile) && !d.altMobile) throw new Error('The alternate mobile number is not valid.');
   d.district = pick_(p.district, DISTRICTS, 'district');
   d.localBody = clean_(p.localBody);
-  if (!d.localBody) throw new Error('Please enter your local body (panchayat / municipality / corporation).');
+  if (!d.localBody && d.district === 'Kozhikode') throw new Error('Please enter your local body (panchayat / municipality / corporation).');
   d.qual = pick_(p.qual, QUALS, 'qualification');
   d.stream = clean_(p.stream);
   d.specialisation = clean_(p.specialisation);

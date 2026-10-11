@@ -47,6 +47,13 @@ test('valid application is stored, CV saved to Drive, confirmation e-mail sent',
   assert.equal(a.location, 'Kozhikode, Kozhikode Corporation'); assert.ok(a.cv.includes('drive.google.com')); assert.equal(a.cvFileId, undefined);
 });
 
+test('local body is required only for Kozhikode residents', () => {
+  fails('submitApplication', /local body/, base({ email: 'lb1@example.com', mobile: '9000000071', fullName: 'Koz No Body', localBody: '' }));
+  verifiedSubmit({ email: 'lb2@example.com', mobile: '9000000072', fullName: 'Malappuram Person', district: 'Malappuram', localBody: '' });
+  const a = call('getAdminState', call('adminLogin', 'T', pin).token).applications.find(x => x.email === 'lb2@example.com');
+  assert.equal(a.location, 'Malappuram'); assert.equal(a.localBody, '');
+});
+
 test('duplicate e-mail refused', () => fails('submitApplication', /already been received/, base()));
 
 test('age limit: 30 on 1 Nov 2026 is OK, 31 is refused', () => {

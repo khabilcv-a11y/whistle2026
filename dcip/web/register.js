@@ -3,8 +3,6 @@
   'use strict';
   var D = window.DCIP, esc = D.esc, $ = function (s, r) { return (r || document).querySelector(s); };
   var C = null, draftKey = 'dcip34_draft_v1';
-  var LB_TYPES = ['Grama Panchayat', 'Municipality', 'Corporation'];
-  var KOZ_MUNICIPALITIES = ['Koyilandy', 'Vadakara', 'Payyoli', 'Ramanattukara', 'Koduvally', 'Mukkam', 'Feroke'];
   var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
 
   D.getConfig().then(function (c) { C = c; render(); }, function (e) {
@@ -37,14 +35,13 @@
         f('altMobile', 'Alternate mobile number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
       section(2, 'Where do you live?',
         f('district', 'District of residence', select('district', C.districts, 'Select')) +
-        f('lbType', 'Local body type', select('lbType', LB_TYPES.concat(['Other / outside Kerala']), 'Select')) +
-        f('lbName', 'Local body name', '<input type="text" id="lbName" list="lbList" maxlength="80" placeholder="e.g. Atholi, Vadakara, Kozhikode"><datalist id="lbList"></datalist>', 'full',
-          'Your Grama Panchayat, Municipality or Corporation. For outside Kerala, enter your town / place and state.')) +
+        f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full',
+          'Type a few letters and pick your local body from the list that appears.')) +
       section(3, 'Education',
         f('qual', 'Highest educational qualification', select('qual', C.quals, 'Select'), 'full') +
         f('stream', 'UG / bachelor\'s degree stream', select('stream', STREAMS, 'Select')) +
         f('specialisation', 'UG specialisation / subject', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics, Computer Science">') +
-        f('institution', 'Name of UG institution', '<input type="text" id="institution" maxlength="150" placeholder="College, University">', 'full') +
+        f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', 'full', 'Pick from the list if you see your college; otherwise type its full name.') +
         f('completion', 'UG degree completion date', '<input type="date" id="completion" min="1980-01-01" max="2040-12-31">', 'full',
           '<span id="compNote">Actual date if completed; <b>expected date</b> if your final-year results are pending.</span>')) +
       section(4, 'About you',
@@ -57,6 +54,8 @@
       '<div class="submit"><button type="submit" class="btn primary" id="submit">Submit application</button><span class="muted" id="submitNote"></span></div>' +
       '</form>';
     bind(); restoreDraft(); updateLocalBody(); liveChecks();
+    typeahead($('#lbName'), (window.DCIP_LISTS || {}).kozhikodeLocalBodies || []);
+    typeahead($('#institution'), (window.DCIP_LISTS || {}).colleges || []);
   }
 
   function section(n, title, body) { return '<div class="card"><h2><span class="n">' + n + '</span>' + title + '</h2><div class="grid">' + body + '</div></div>'; }
@@ -66,13 +65,13 @@
   }
   function select(id, list, ph) { return '<select id="' + id + '"><option value="">' + ph + '</option>' + list.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select>'; }
 
-  var FIELDS = ['fullName', 'dob', 'gender', 'mobile', 'altMobile', 'email', 'district', 'lbType', 'lbName', 'qual', 'stream', 'specialisation', 'institution', 'completion', 'motivation'];
+  var FIELDS = ['fullName', 'dob', 'gender', 'mobile', 'altMobile', 'email', 'district', 'lbName', 'qual', 'stream', 'specialisation', 'institution', 'completion', 'motivation'];
   function val(id) { var e = $('#' + id); return e ? String(e.value).replace(/\s+/g, ' ').trim() : ''; }
 
   function bind() {
     FIELDS.forEach(function (id) {
       var e = $('#' + id); if (!e) return;
-      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'district' || id === 'lbType') updateLocalBody(); liveChecks(); }); });
+      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'district') updateLocalBody(); liveChecks(); }); });
     });
     $('#motivation').addEventListener('input', function () { $('#mcount').textContent = this.value.length; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
@@ -84,19 +83,51 @@
     try { var o = JSON.parse(localStorage.getItem(draftKey) || 'null'); if (o) FIELDS.forEach(function (id) { if (o[id] != null) $('#' + id).value = o[id]; }); $('#mcount').textContent = $('#motivation').value.length; } catch (e) {}
   }
 
-  /* ---------- local body ---------- */
+  /* ---------- local body (asked only from Kozhikode residents) ---------- */
   function updateLocalBody() {
-    var d = val('district'), t = $('#lbType');
-    if (d === 'Outside Kerala') { if (t.value !== 'Other / outside Kerala') t.value = 'Other / outside Kerala'; }
-    var dl = $('#lbList'); dl.innerHTML = '';
-    if (d === 'Kozhikode' && val('lbType') === 'Municipality') dl.innerHTML = KOZ_MUNICIPALITIES.map(function (m) { return '<option value="' + m + '">'; }).join('');
-    if (d === 'Kozhikode' && val('lbType') === 'Corporation' && !val('lbName')) $('#lbName').value = 'Kozhikode';
+    var koz = val('district') === 'Kozhikode', fld = $('#fld-lbName');
+    fld.classList.toggle('hidden', !koz);
+    if (!koz) { $('#lbName').value = ''; clearErr('lbName'); }
   }
-  function localBody() {
-    var t = val('lbType'), n = val('lbName');
-    if (!n) return '';
-    if (t === 'Other / outside Kerala' || !t) return n;
-    return new RegExp(t.split(' ').pop() + '|panchayat|panchayath', 'i').test(n) ? n : n + ' ' + t;
+  function localBody() { return val('district') === 'Kozhikode' ? val('lbName') : ''; }
+
+  /* ---------- type-ahead: a list that appears only while the typed text matches ---------- */
+  function typeahead(input, entries) {
+    var box = document.createElement('ul'), idx = -1, shown = [];
+    var parsed = entries.map(function (e) { var p = e.split('|'); return { label: p[0], keys: p.map(norm) }; });
+    box.className = 'ac'; box.setAttribute('role', 'listbox'); box.hidden = true; box.id = input.id + '-list';
+    input.parentNode.appendChild(box);
+    input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list'); input.setAttribute('aria-controls', box.id); input.setAttribute('aria-expanded', 'false');
+    function norm(s) { return String(s).toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+    function close() { box.hidden = true; idx = -1; input.setAttribute('aria-expanded', 'false'); }
+    function choose(i) { input.value = shown[i].label; close(); input.dispatchEvent(new Event('input', { bubbles: true })); }
+    function paint() { [].forEach.call(box.children, function (li, i) { li.setAttribute('aria-selected', i === idx); if (i === idx) li.scrollIntoView({ block: 'nearest' }); }); }
+    function search() {
+      var q = norm(input.value);
+      if (!q) { close(); return; }
+      var words = q.split(' '), hits = [];
+      parsed.forEach(function (e) {
+        for (var k = 0; k < e.keys.length; k++) {
+          var key = e.keys[k];
+          if (words.every(function (w) { return key.indexOf(w) >= 0; })) { hits.push({ label: e.label, rank: key.indexOf(q) === 0 ? 0 : key.indexOf(' ' + q) >= 0 ? 1 : 2 }); return; }
+        }
+      });
+      hits.sort(function (a, b) { return a.rank - b.rank || a.label.length - b.label.length; });
+      shown = hits.slice(0, 8);
+      if (!shown.length || (shown.length === 1 && norm(shown[0].label) === q)) { close(); return; }
+      box.innerHTML = shown.map(function (h, i) { return '<li role="option" data-i="' + i + '">' + esc(h.label) + '</li>'; }).join('');
+      box.hidden = false; idx = -1; input.setAttribute('aria-expanded', 'true');
+    }
+    input.addEventListener('input', search);
+    input.addEventListener('blur', function () { setTimeout(close, 150); });
+    input.addEventListener('keydown', function (e) {
+      if (box.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); idx = (idx + 1) % shown.length; paint(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); idx = (idx - 1 + shown.length) % shown.length; paint(); }
+      else if (e.key === 'Enter' && idx >= 0) { e.preventDefault(); choose(idx); }
+      else if (e.key === 'Escape') close();
+    });
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); var li = e.target.closest('li'); if (li) choose(+li.dataset.i); });
   }
 
   /* ---------- live eligibility feedback (the server re-checks everything) ---------- */
@@ -142,8 +173,7 @@
     if (val('altMobile')) { var a = val('altMobile').replace(/\D/g, ''); if (a.length === 12 && a.indexOf('91') === 0) a = a.slice(2); if (!/^[6-9]\d{9}$/.test(a)) errs.altMobile = 'Enter a valid 10-digit mobile number or leave it blank.'; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email'))) errs.email = 'Please enter a valid e-mail address.';
     ['district', 'qual', 'stream'].forEach(function (k) { if (!val(k)) errs[k] = 'Please select.'; });
-    if (!val('lbType')) errs.lbType = 'Please select.';
-    if (!val('lbName')) errs.lbName = 'Please enter your local body.';
+    if (val('district') === 'Kozhikode' && !val('lbName')) errs.lbName = 'Please enter your local body.';
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
     if (!D.isIso(val('completion'))) errs.completion = 'Please enter the completion date.'; else if (r.compBlock) errs.completion = r.compBlock;
     if (val('motivation').length < 30) errs.motivation = 'Please write at least 30 characters.';
