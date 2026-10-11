@@ -51,7 +51,7 @@
   /* ---------- form ---------- */
   main { max-width: 760px; margin: 0 auto; padding: 26px 16px 70px; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 10px 40px rgba(11,33,64,.08); padding: 26px; }
-  .progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; list-style: none; margin: 0 0 6px; padding: 0; }
+  .progress { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; list-style: none; margin: 0 0 6px; padding: 0; }
   .progress { align-items: start; }
   .progress li { text-align: left; min-width: 0; }
   .progress li[data-go] { cursor: pointer; }
@@ -101,6 +101,14 @@
   .ac { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--line-2); border-radius: 14px; box-shadow: 0 14px 34px rgba(11,33,64,.2); max-height: 280px; overflow-y: auto; }
   .ac li { padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 15px; }
   .ac li:hover, .ac li[aria-selected=true] { background: var(--info-bg); }
+  .drop { display: grid; place-items: center; gap: 4px; text-align: center; cursor: pointer; padding: 28px 16px; border: 2px dashed var(--line-2); border-radius: 18px; background: #fbfcfe; transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.over { border-color: var(--focus); background: var(--info-bg); } .drop.has { border-style: solid; border-color: #1aa366; background: #f1fbf6; }
+  .drop-ic { font-size: 38px; } .drop b { font-size: 17px; overflow-wrap: anywhere; } .drop:focus-within { box-shadow: 0 0 0 4px rgba(42,120,214,.2); }
+  .cvmsg { margin-top: 12px; border-radius: 14px; padding: 12px 14px; font-size: 14.5px; background: var(--info-bg); color: var(--info); }
+  .cvmsg.ok { background: #e6f7ee; color: #14633a; } .cvmsg.busy { background: var(--gold-soft); color: #7a4b00; }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: rot .7s linear infinite; } @keyframes rot { to { transform: rotate(360deg); } }
+  .field.autofilled label.f::after { content: '✨ from your CV'; margin-left: 8px; font-size: 11.5px; font-weight: 700; color: #1d6fb8; background: var(--info-bg); border-radius: 999px; padding: 2px 8px; }
+  .field.autofilled input, .field.autofilled select { background: #f3f8ff; border-color: #9cc0ee; }
   .hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
 
   /* ---------- done ---------- */
@@ -158,7 +166,7 @@
 </div></header>
 
 <section class="how" aria-label="How it works"><ol>
-  <li><b>1</b><strong>Apply online</strong><span>About 5 minutes. Keep your CV ready.</span></li>
+  <li><b>1</b><strong>Apply online</strong><span>About 5 minutes. Upload your CV and we pre-fill the form.</span></li>
   <li><b>2</b><strong>Screening</strong><span>We check eligibility and shortlist.</span></li>
   <li><b>3</b><strong>Interview</strong><span>Shortlisted applicants are called by e-mail and phone.</span></li>
   <li><b>4</b><strong>Join the batch</strong><span>Selected interns confirm after document verification.</span></li>
@@ -167,9 +175,13 @@
 <main id="apply"><div class="card" id="main" style="color:var(--muted)">Loading…</div></main>
 <footer>Having trouble? <span id="contact">Reply to the e-mail you receive from us.</span></footer>
 
+<script type="text/plain" id="lib-pdfjs" data-src="vendor/pdf.min.js"></script>
+<script type="text/plain" id="lib-pdfworker" data-src="vendor/pdf.worker.min.js"></script>
+<script type="text/plain" id="lib-jszip" data-src="vendor/jszip.min.js"></script>
 <script src="config.js"></script>
 <script src="common.js"></script>
 <script src="lists.js"></script>
+<script src="cv.js"></script>
 <script src="register.js"></script>
 <script src="chat.js"></script>
 </body>

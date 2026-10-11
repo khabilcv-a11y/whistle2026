@@ -12,8 +12,13 @@ logo = 'data:image/png;base64,' + base64.b64encode(read('logo.png', 'rb')).decod
 CONFIG = ("<script>\n// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL BETWEEN THE QUOTES (it ends in /exec) ======\n"
           "window.DCIP_CONFIG = { apiUrl: '__API_URL__' };\n// ================================================================================\n</script>")
 
+LAZY = {'lib-pdfjs': 'vendor/pdf.min.js', 'lib-pdfworker': 'vendor/pdf.worker.min.js', 'lib-jszip': 'vendor/jszip.min.js'}
+
 def build(page, scripts, css_files):
     html = read(page)
+    for lid, path in LAZY.items():   # inert text/plain blocks: only started when a CV is chosen
+        tag = '<script type="text/plain" id="%s" data-src="%s"></script>' % (lid, path)
+        if tag in html: html = html.replace(tag, '<script type="text/plain" id="%s">%s</script>' % (lid, read(path).replace('</script', '<\\/script')))
     css = '\n'.join(read(c) for c in css_files)
     # the inlined CSS goes where the first <link rel=stylesheet> was, so the page's own <style> still comes after it
     html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', lambda m, _c=[0]: (_c.__setitem__(0, _c[0] + 1) or ('<style>\n%s\n</style>\n' % css if _c[0] == 1 else '')), html)
@@ -27,7 +32,7 @@ def build(page, scripts, css_files):
 API_URL = (sys.argv[1] if len(sys.argv) > 1 else '')
 os.makedirs(OUT, exist_ok=True)
 pages = {
-  'index.html': build('index.html', ['common.js', 'lists.js', 'register.js', 'chat.js'], ['styles.css']),
+  'index.html': build('index.html', ['common.js', 'lists.js', 'cv.js', 'register.js', 'chat.js'], ['styles.css']),
   'admin.html': build('admin.html', ['vendor/exceljs.min.js', 'vendor/jspdf.umd.min.js', 'vendor/jspdf.plugin.autotable.min.js',
                                       'common.js', 'insights.js', 'reports.js', 'admin-core.js', 'admin-reports.js', 'admin-views.js', 'admin-boot.js'],
                       ['styles.css', 'admin.css']),

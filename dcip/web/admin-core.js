@@ -222,6 +222,20 @@
     };
   };
 
+  A.changePasswordDialog = function () {
+    var m = A.modal('<h3>Change your password</h3>' +
+      '<div class="field"><label class="f">Current password</label><input type="password" id="pwOld" autocomplete="current-password"></div>' +
+      '<div class="field"><label class="f">New password</label><input type="password" id="pwNew" autocomplete="new-password"><div class="hint">At least 8 characters.</div></div>' +
+      '<div class="field"><label class="f">Repeat new password</label><input type="password" id="pwNew2" autocomplete="new-password"></div>' +
+      '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Change password</button></div>');
+    $('#cNo', m).onclick = A.closeModal;
+    $('#cYes', m).onclick = function () {
+      var o = $('#pwOld', m).value, n = $('#pwNew', m).value;
+      if (n !== $('#pwNew2', m).value) { D.toast('The new passwords do not match.', 'err'); return; }
+      A.api('changeMyPassword', o, n).then(function () { A.closeModal(); D.toast('Password changed', 'ok'); }, function (e) { D.toast(e.message, 'err'); });
+    };
+  };
+
   /* ---------- session / rendering plumbing (implemented in admin-boot.js) ---------- */
   A.refresh = function () { return A.loadState(); };
 })(window);

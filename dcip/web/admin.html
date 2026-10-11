@@ -15,8 +15,8 @@
     <img class="logo-lg" src="logo.png" alt="DCIP Kozhikode">
     <h1>DCIP Admin</h1>
     <p class="muted">Selection management portal</p>
-    <div class="field"><label class="f" for="lname">Your name</label><input type="text" id="lname" autocomplete="name" required><div class="hint">Recorded in the audit trail with every change.</div></div>
-    <div class="field" style="margin-top:12px"><label class="f" for="lpin">PIN</label><input type="password" id="lpin" inputmode="numeric" autocomplete="current-password" required></div>
+    <div class="field"><label class="f" for="luser">Username</label><input type="text" id="luser" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+    <div class="field" style="margin-top:12px"><label class="f" for="lpass">Password</label><input type="password" id="lpass" autocomplete="current-password" required></div>
     <div id="lerr" class="err-box"></div>
     <button class="btn primary" style="width:100%;margin-top:14px" id="lbtn">Sign in</button>
   </form>
@@ -29,7 +29,7 @@
     <span class="live" id="live" title="Data refreshes automatically"><i></i><span id="liveText">Live</span></span>
     <button class="btn small" id="btnRefresh">Refresh</button>
     <a class="btn small" id="btnForm" href="index.html" target="_blank" rel="noopener">Open form ↗</a>
-    <span class="who" id="who"></span>
+    <span class="who" id="who"></span><button class="btn small" id="btnAccount" title="Change your password">My account</button>
     <button class="btn small" id="btnLogout">Sign out</button>
   </header>
   <nav class="tabs" id="tabs" role="tablist"></nav>

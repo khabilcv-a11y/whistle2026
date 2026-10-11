@@ -19,11 +19,21 @@ Public registration form + admin portal. **Google Sheets** is the database, **Ap
 - **Admin**: live insights (all applications / shortlisted / selected-confirmed: district, gender, education, age, college, stream, subject, LSGD within Kozhikode, funnel, per-day trend); applications table with search, filters, bulk actions, flag, status; screening queue; screen scores → **shortlist top 30** (tie warning); sessions + auto-assign; **score sheet, attendance, call chart, document verification** per session; selection by interview rank; bulk e-mail with templates; settings; audit trail. Everything downloads as **Excel or PDF**.
 - Status flow: Received → Shortlisted → Selected → Confirmed (also Waitlisted, Not Selected, Disqualified, Withdrawn). The portal polls every 6 s and updates when anything changes.
 
+## Sign-in, roles and logs
+- Everyone signs in to `admin.html` with their **own username and password** (no shared PIN). Roles: **Admin** (applications, screening, shortlist, interviews, selection, reports, settings) and **Super admin** (all of that, plus **Users**, **Logs**, and **Chats**).
+- Run `setup` once: the log prints the **super admin** login (`superadmin` + a random password). Change it under *My account*. Forgot it? Run `resetSuperAdminPassword` in the Apps Script editor.
+- Super admins create, disable, delete and reset passwords for users (Users tab). Passwords are stored hashed (never in clear). 5 wrong passwords lock an account for 10 minutes. Disabling a user signs them out at once.
+- **Logs** tab: activity (audit trail) and sign-in history, searchable, with Excel/PDF export. The same records live in the `Audit` and `Login_Log` sheet tabs.
+- **Chats** tab: every chat helper conversation, the questions it could not answer, and transcripts. Super admins always see it; normal admins only if a super admin sets `ADMIN_CAN_VIEW_CHATS = TRUE` in Settings.
+
+## CV auto-fill
+Step 1 of the form asks for the CV. PDF and DOCX files are read **in the applicant's browser**; recognised details (name, e-mail, phone, date of birth, district, degree, subject, college…) are filled into the later steps, marked "✨ from your CV", and never overwrite what the applicant typed. If `GROQ_API_KEY` is set and `CV_AUTOFILL_AI = TRUE`, the CV *text* is also sent (through the script, never from the page) to Groq for a more accurate reading; it is not stored. Turn the AI part off in Settings. Scanned/image PDFs and old `.doc` files are attached but not read.
+
 ## Chat helper (FAQ bot)
 A floating **"Have a question?"** button on the applicant page opens a chat with topic buttons → question buttons → answer → related questions. Typed questions are matched by keywords against the **FAQ** sheet tab (built from the DCIP FAQ document). Only when nothing matches does the server ask **Groq** (AI), which is told to answer from the FAQ only.
 - **Edit the answers** any time in the `FAQ` tab (Topic, Question, Answer, Keywords, Related IDs). Changes show within ~5 minutes. Answers can use `{{BATCH}} {{INTAKE_START}} {{INTAKE_END}} {{MIN_AGE}} {{MAX_AGE}} {{AGE_AS_ON}} {{DEADLINE}} {{CONTACT}}` and `[[apply]]` (a "Start application" button).
 - **Groq key**: Apps Script → Project Settings → Script Properties → add `GROQ_API_KEY`. *Never* put the key in a web page, `Code.gs` or GitHub. Optional `GROQ_MODEL` (default `llama-3.3-70b-versatile`). Without a key the bot still works from the FAQ and shows the contact details for anything else.
-- The `Chat_Log` tab lists questions the FAQ could not answer. Read it to improve the FAQ.
+- Conversations are saved in the `Chat_Log` tab and shown in the admin **Chats** tab; use the unanswered questions to improve the FAQ.
 - Limits: 20 AI answers/minute and 600/day across all visitors, to protect the key.
 
 ## Deploy

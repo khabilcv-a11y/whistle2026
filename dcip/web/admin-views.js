@@ -8,7 +8,8 @@
 
   A.TABS = [
     ['overview', 'Overview'], ['applications', 'Applications'], ['screening', 'Screening'], ['shortlist', 'Shortlist'],
-    ['interviews', 'Interviews'], ['selection', 'Selection'], ['reports', 'Reports'], ['settings', 'Settings & audit']
+    ['interviews', 'Interviews'], ['selection', 'Selection'], ['reports', 'Reports'], ['settings', 'Settings'],
+    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs']
   ];
   function dl(rep, label) { return '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>'; }
   function bindDl(root, makeRep) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(makeRep(), b.dataset.dl); }; }); }
@@ -313,9 +314,9 @@
     $$('[data-r]', el).forEach(function (b) { b.onclick = function () { A.download(cat[b.dataset.r].make(), b.dataset.t); }; });
   };
 
-  /* ============================ Settings & audit ============================ */
+  /* ================================ Settings ================================ */
   V.settings = function (el) {
-    var s = S.settings, sel = { REG_OPEN: ['TRUE', 'FALSE'], CV_REQUIRED: ['TRUE', 'FALSE'], ENFORCE_AGE: ['BLOCK', 'FLAG'], ENFORCE_COMPLETION: ['BLOCK', 'FLAG'] };
+    var s = S.settings, sel = { REG_OPEN: ['TRUE', 'FALSE'], CV_REQUIRED: ['TRUE', 'FALSE'], CV_AUTOFILL_AI: ['TRUE', 'FALSE'], ADMIN_CAN_VIEW_CHATS: ['TRUE', 'FALSE'], ENFORCE_AGE: ['BLOCK', 'FLAG'], ENFORCE_COMPLETION: ['BLOCK', 'FLAG'] };
     function ctl(k) {
       var v = s[k] == null ? '' : s[k];
       if (sel[k]) return '<select data-s="' + k + '">' + A.opts(sel[k], String(v).toUpperCase()) + '</select>';
@@ -325,22 +326,133 @@
       return '<input type="text" data-s="' + k + '" value="' + esc(v) + '">';
     }
     var base = (location.origin + location.pathname.replace(/admin(\.html)?$/, '')).replace(/\/$/, '/');
-    el.innerHTML = head('Settings & audit', 'Registration rules and event details. Changes apply immediately to the public form.', '<button class="btn primary" id="btnSaveS">Save settings</button>') +
+    el.innerHTML = head('Settings', 'Registration rules and event details. Changes apply immediately to the public form.', '<button class="btn primary" id="btnSaveS">Save settings</button>') +
       '<div class="kv"><div><b>' + (S.mailQuota == null ? '—' : S.mailQuota) + '</b>e-mails left today</div><div><b>' + S.apps.length + '</b>applications</div>' +
       '<div>Public form<b style="font-size:14px"><a href="' + esc(base) + '" target="_blank" rel="noopener">' + esc(base) + '</a></b></div>' +
       (S.cvFolder ? '<div>CV folder<b style="font-size:14px"><a href="' + esc(S.cvFolder) + '" target="_blank" rel="noopener">Open in Google Drive ↗</a></b></div>' : '') + '</div>' +
-      '<div class="setgrid">' + S.meta.map(function (m) { return '<label for="s_' + m.key + '">' + esc(m.key) + '</label><div>' + ctl(m.key).replace('data-s=', 'id="s_' + m.key + '" data-s=') + '<div class="d">' + esc(m.desc) + '</div></div>'; }).join('') + '</div>' +
-      '<div class="toolbar" style="margin-top:18px"><button class="btn" id="btnRescreen2">Re-screen all applications</button><span class="muted">After changing the age limit or intake dates, re-screen so existing applications are re-checked.</span></div>' +
-      '<h3 style="margin:22px 0 8px">Audit trail</h3><div class="tw"><table class="t"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>App</th><th>Details</th></tr></thead><tbody id="auditBody"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>';
+      '<div class="setgrid">' + S.meta.filter(function (m) { return m.key !== 'ADMIN_CAN_VIEW_CHATS' || (S.me && S.me.role === 'super'); }).map(function (m) { return '<label for="s_' + m.key + '">' + esc(m.key) + '</label><div>' + ctl(m.key).replace('data-s=', 'id="s_' + m.key + '" data-s=') + '<div class="d">' + esc(m.desc) + '</div></div>'; }).join('') + '</div>' +
+      '<div class="toolbar" style="margin-top:18px"><button class="btn" id="btnRescreen2">Re-screen all applications</button><span class="muted">After changing the age limit or intake dates, re-screen so existing applications are re-checked.</span></div>';
     $('#btnSaveS', el).onclick = function () {
       var vals = {}; $$('[data-s]', el).forEach(function (i) { var v = i.value; if (String(v) !== String(s[i.dataset.s] == null ? '' : s[i.dataset.s])) vals[i.dataset.s] = v; });
       if (!Object.keys(vals).length) { D.toast('No changes.'); return; }
       A.api('saveSettings', vals).then(function () { D.toast('Settings saved', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); });
     };
     $('#btnRescreen2', el).onclick = function () { A.api('rescreenAll').then(function (r) { D.toast(r.checked + ' checked, ' + r.changed + ' updated', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); }); };
-    A.api('getAudit', 300).then(function (rows) {
-      var b = $('#auditBody'); if (!b) return;
-      b.innerHTML = rows.map(function (r) { return '<tr><td class="nowrap">' + esc(D.fmtDateTime(r.time)) + '</td><td>' + esc(r.user) + '</td><td><span class="chip">' + esc(r.action) + '</span></td><td class="nowrap">' + esc(r.id) + '</td><td style="max-width:560px;overflow-wrap:anywhere">' + esc(r.details) + '</td></tr>'; }).join('') || '<tr><td colspan="5" class="muted">No entries yet.</td></tr>';
-    }, function () {});
+  };
+  /* ================================== Users ================================== */
+  function genPassword() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', out = '', buf = new Uint32Array(12);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    for (var i = 0; i < 12; i++) out += chars.charAt(buf[i] % chars.length);
+    return out;
+  }
+  function copy(text) { try { navigator.clipboard.writeText(text).then(function () { D.toast('Copied', 'ok'); }); } catch (e) { D.toast('Press Ctrl+C to copy', ''); } }
+  function credentialsDialog(title, username, password) {
+    var m = A.modal('<h3>' + esc(title) + '</h3><p>Share these details with the person. They can change the password under <b>My account</b>.</p>' +
+      '<div class="note-box" style="font-family:ui-monospace,Menlo,monospace">Username: ' + esc(username) + '\nPassword: ' + esc(password) + '</div>' +
+      '<p class="hint">The password cannot be shown again after you close this window.</p>' +
+      '<div class="acts"><button class="btn" id="cCopy">Copy details</button><button class="btn primary" id="cYes">Done</button></div>');
+    $('#cCopy', m).onclick = function () { copy('Username: ' + username + '\nPassword: ' + password); };
+    $('#cYes', m).onclick = A.closeModal;
+  }
+  function userDialog() {
+    var m = A.modal('<h3>Add a user</h3><div class="fgrid">' +
+      '<div><label class="f">Username</label><input type="text" id="nuUser" autocapitalize="none" spellcheck="false" placeholder="e.g. meera.k"><div class="hint">Letters, numbers, dot, dash, underscore</div></div>' +
+      '<div><label class="f">Full name</label><input type="text" id="nuName"></div>' +
+      '<div><label class="f">Role</label><select id="nuRole"><option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option></select></div>' +
+      '<div><label class="f">Password</label><div style="display:flex;gap:6px"><input type="text" id="nuPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="nuGen">Generate</button></div><div class="hint">At least 8 characters</div></div></div>' +
+      '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Create user</button></div>');
+    $('#nuPass', m).value = genPassword();
+    $('#nuGen', m).onclick = function () { $('#nuPass', m).value = genPassword(); };
+    $('#cNo', m).onclick = A.closeModal;
+    $('#cYes', m).onclick = function () {
+      var u = $('#nuUser', m).value, pw = $('#nuPass', m).value;
+      A.api('createUser', u, $('#nuName', m).value, pw, $('#nuRole', m).value).then(function () { A.closeModal(); credentialsDialog('User created', u.trim().toLowerCase(), pw); V.users($('#view')); }, function (e) { D.toast(e.message, 'err'); });
+    };
+  }
+  V.users = function (el) {
+    el.innerHTML = head('Users', 'Create admin accounts. People sign in with their own username and password.', '<button class="btn primary" id="uAdd">+ Add user</button>') +
+      '<div class="tw"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Created</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>' +
+      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs.</p>';
+    $('#uAdd', el).onclick = userDialog;
+    A.api('listUsers').then(function (rows) {
+      var b = $('#uBody', el); if (!b) return;
+      b.innerHTML = rows.map(function (u) {
+        var me = S.me && S.me.user === u.username;
+        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : 'Admin') + '</span></td>' +
+          '<td>' + (u.active === 'Yes' ? '<span class="chip ok">Active</span>' : '<span class="chip bad">Disabled</span>') + '</td><td class="nowrap">' + esc(u.lastLogin ? D.fmtDateTime(u.lastLogin) : '—') + '</td><td class="nowrap"><small style="display:inline">' + esc(D.fmtDate(String(u.created).slice(0, 10))) + ' · ' + esc(u.createdBy) + '</small></td>' +
+          '<td class="nowrap"><button class="btn small" data-reset="' + esc(u.username) + '">Reset password</button> ' + (me ? '' : '<button class="btn small" data-tog="' + esc(u.username) + '" data-on="' + (u.active === 'Yes' ? '0' : '1') + '">' + (u.active === 'Yes' ? 'Disable' : 'Enable') + '</button> <button class="btn small danger" data-del="' + esc(u.username) + '">Delete</button>') + '</td></tr>';
+      }).join('');
+      $$('[data-reset]', b).forEach(function (x) { x.onclick = function () {
+        var u = x.dataset.reset, pw = genPassword();
+        var m = A.modal('<h3>Reset password for ' + esc(u) + '</h3><div class="field"><label class="f">New password</label><div style="display:flex;gap:6px"><input type="text" id="rpPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="rpGen">Generate</button></div><div class="hint">At least 8 characters</div></div><div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Reset</button></div>');
+        $('#rpPass', m).value = pw; $('#rpGen', m).onclick = function () { $('#rpPass', m).value = genPassword(); }; $('#cNo', m).onclick = A.closeModal;
+        $('#cYes', m).onclick = function () { var np = $('#rpPass', m).value; A.api('setUserPassword', u, np).then(function () { A.closeModal(); credentialsDialog('Password reset', u, np); }, function (e) { D.toast(e.message, 'err'); }); };
+      }; });
+      $$('[data-tog]', b).forEach(function (x) { x.onclick = function () { A.api('setUserActive', x.dataset.tog, x.dataset.on === '1').then(function () { D.toast('Updated', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }; });
+      $$('[data-del]', b).forEach(function (x) { x.onclick = function () { A.confirm('Delete ' + x.dataset.del + '?', 'The account is removed for good. (Consider <b>Disable</b> instead, which keeps it on record.) Their past actions stay in the logs.', 'Delete', true).then(function (ok) { if (ok) A.api('deleteUser', x.dataset.del).then(function () { D.toast('Deleted', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }); }; });
+    }, function (e) { D.toast(e.message, 'err'); });
+  };
+
+  /* ================================== Logs =================================== */
+  S.logTab = 'audit'; S.logQ = '';
+  V.logs = function (el) {
+    var tab = S.logTab;
+    el.innerHTML = head('Logs', 'Everything that happens in the portal, kept in the Google Sheet as well.', '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
+      '<div class="toolbar"><div class="seg" role="group">' + [['audit', 'Activity (audit trail)'], ['logins', 'Sign-ins']].map(function (t) { return '<button aria-pressed="' + (tab === t[0]) + '" data-lt="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<input type="search" id="logQ" placeholder="Search…" value="' + esc(S.logQ) + '" style="max-width:260px"></div><div class="tw"><table class="t" id="logTable"><tbody><tr><td class="muted">Loading…</td></tr></tbody></table></div>';
+    $$('[data-lt]', el).forEach(function (b) { b.onclick = function () { S.logTab = b.dataset.lt; S.logQ = ''; V.logs(el); }; });
+    var rows = [], cols;
+    function paint() {
+      var q = S.logQ.toLowerCase(), list = rows.filter(function (r) { return !q || JSON.stringify(r).toLowerCase().indexOf(q) >= 0; });
+      cols = tab === 'audit' ? [['Time', 'time'], ['User', 'user'], ['Action', 'action'], ['App', 'id'], ['Details', 'details']] : [['Time', 'time'], ['Username', 'user'], ['Result', 'result'], ['Role', 'role'], ['Note', 'note']];
+      $('#logTable', el).innerHTML = '<thead><tr>' + cols.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '</tr></thead><tbody>' + list.map(function (r) {
+        return '<tr>' + cols.map(function (c) {
+          var x = r[c[1]];
+          if (c[1] === 'time') return '<td class="nowrap">' + esc(D.fmtDateTime(x)) + '</td>';
+          if (c[1] === 'action' || c[1] === 'result') return '<td><span class="chip ' + (/FAIL|LOCK|DELETE|DISABLE/.test(x) ? 'bad' : x === 'OK' ? 'ok' : '') + '">' + esc(x) + '</span></td>';
+          return '<td' + (c[1] === 'details' ? ' style="max-width:560px;overflow-wrap:anywhere"' : '') + '>' + esc(x) + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + (list.length ? '' : '<tr><td colspan="5" class="muted">Nothing found.</td></tr>') + '</tbody>';
+      bindDl(el, function () { return { filename: 'DCIP_Log_' + tab, orientation: 'landscape', sheets: [{ name: 'Log', title: tab === 'audit' ? 'Activity log' : 'Sign-in log', rowHeight: 20, fontSize: 8, noBands: false,
+        columns: cols.map(function (c, i) { return { h: c[0], w: c[1] === 'details' ? 60 : c[1] === 'time' ? 18 : 16 }; }),
+        rows: list.map(function (r) { return cols.map(function (c) { return String(r[c[1]] == null ? '' : r[c[1]]).replace('T', ' '); }); }) }] }; });
+    }
+    $('#logQ', el).oninput = debounce(function () { S.logQ = this.value; paint(); }, 200);
+    A.api(tab === 'audit' ? 'getAudit' : 'getLoginLog', 1000).then(function (r) { rows = r; paint(); }, function (e) { D.toast(e.message, 'err'); });
+  };
+
+  /* ================================== Chats ================================== */
+  V.chats = function (el) {
+    el.innerHTML = head('Chats', 'What applicants ask the chat helper. Use the unanswered questions to improve the FAQ sheet.', '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
+      '<div id="chatBody"><div class="muted">Loading…</div></div>';
+    A.api('chatSessions').then(function (d) {
+      var st = d.stats, body = $('#chatBody', el); if (!body) return;
+      var q = S.chatQ || '';
+      body.innerHTML = '<div class="tiles">' + [['Conversations', d.total], ['Questions asked', st.messages], ['Answered from FAQ', st.faq], ['Answered by AI', st.ai], ['Not answered', st.unanswered, st.unanswered ? 'warn' : '']].map(function (t) { return '<div class="tile ' + (t[2] || '') + '"><div class="tv">' + t[1] + '</div><div class="tl">' + t[0] + '</div></div>'; }).join('') + '</div>' +
+        (d.unanswered.length ? '<section class="ins" style="margin-bottom:14px"><h3>Questions the helper could not answer <span class="tot">' + d.unanswered.length + '</span></h3><table class="bars"><tbody>' + d.unanswered.map(function (u) { return '<tr><th scope="row" style="width:80%">' + esc(u.q) + '</th><td class="n">' + u.n + '×</td></tr>'; }).join('') + '</tbody></table><p class="hint">Add answers for these to the <b>FAQ</b> tab of the Google Sheet.</p></section>' : '') +
+        '<div class="toolbar"><h3 style="font-size:16px">Conversations</h3><span class="grow"></span><input type="search" id="chatQ" placeholder="Search first question…" value="' + esc(q) + '" style="max-width:260px"></div><div class="tw"><table class="t"><thead><tr><th>When</th><th>First question</th><th class="num">Messages</th><th>Outcome</th></tr></thead><tbody id="chatRows"></tbody></table></div>';
+      function paint() {
+        var list = d.sessions.filter(function (s) { return !S.chatQ || s.first.toLowerCase().indexOf(S.chatQ.toLowerCase()) >= 0; });
+        $('#chatRows', body).innerHTML = list.map(function (s) {
+          return '<tr class="click sessrow" data-s="' + esc(s.id) + '"><td class="nowrap">' + esc(D.fmtDateTime(s.start)) + '</td><td>' + esc(s.first || '—') + '</td><td class="num">' + s.count + '</td><td>' +
+            (s.outcomes.faq ? '<span class="chip ok">FAQ ' + s.outcomes.faq + '</span> ' : '') + (s.outcomes.ai ? '<span class="chip info">AI ' + s.outcomes.ai + '</span> ' : '') + (s.outcomes.none ? '<span class="chip warn">No answer ' + s.outcomes.none + '</span>' : '') + '</td></tr>';
+        }).join('') || '<tr><td colspan="4" class="muted">No conversations yet.</td></tr>';
+        $$('[data-s]', body).forEach(function (tr) { tr.onclick = function () {
+          A.api('chatTranscript', tr.dataset.s).then(function (rows) {
+            var m = A.modal('<h3>Conversation · ' + esc(D.fmtDateTime(rows[0] ? rows[0].time : '')) + '</h3><div>' + rows.map(function (r) { return '<div class="bubble ' + (r.role === 'User' ? 'u' : 'b') + '">' + esc(r.text) + '<small>' + (r.role === 'User' ? 'Applicant' : 'Helper · ' + esc(r.source)) + '</small></div>'; }).join('') + '</div><div class="acts"><button class="btn primary" id="cYes">Close</button></div>');
+            $('#cYes', m).onclick = A.closeModal;
+          }, function (e) { D.toast(e.message, 'err'); });
+        }; });
+      }
+      paint();
+      $('#chatQ', body).oninput = debounce(function () { S.chatQ = this.value; paint(); }, 200);
+      bindDl(el, function () {
+        return { filename: 'DCIP_Chat_Conversations', orientation: 'landscape', sheets: [{ name: 'Conversations', title: 'Chat helper conversations', rowHeight: 22, fontSize: 8,
+          columns: [{ h: 'When', w: 18 }, { h: 'First question', w: 60 }, { h: 'Messages', w: 10, align: 'center' }, { h: 'FAQ', w: 8, align: 'center' }, { h: 'AI', w: 8, align: 'center' }, { h: 'No answer', w: 10, align: 'center' }],
+          rows: d.sessions.map(function (s) { return [s.start.replace('T', ' '), s.first, s.count, s.outcomes.faq, s.outcomes.ai, s.outcomes.none]; }) },
+          { name: 'Unanswered', title: 'Questions with no answer', rowHeight: 20, columns: [{ h: 'Question', w: 70 }, { h: 'Times asked', w: 12, align: 'center' }], rows: d.unanswered.map(function (u) { return [u.q, u.n]; }) }] };
+      });
+    }, function (e) { var b = $('#chatBody', el); if (b) b.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
   };
 })(window);

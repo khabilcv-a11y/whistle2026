@@ -4,12 +4,14 @@ const { createGasEnv } = require('./mock-gas.js');
 
 let clock = Date.parse('2026-10-05T12:00:00+05:30');
 let fetchImpl = null;
-const env = createGasEnv({ now: () => clock, fetch: (u, o) => fetchImpl ? fetchImpl(u, o) : { code: 200, body: { choices: [{ message: { content: 'Demo AI answer.' } }] } } });
+const logs = [];
+const env = createGasEnv({ now: () => clock, log: m => logs.push(m), fetch: (u, o) => fetchImpl ? fetchImpl(u, o) : { code: 200, body: { choices: [{ message: { content: 'Demo AI answer.' } }] } } });
 class D extends Date { constructor(...a) { a.length ? super(...a) : super(clock); } static now() { return clock; } }
 const ctx = vm.createContext(Object.assign({ Date: D, console }, env.globals));
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../apps-script/Code.gs'), 'utf8'), ctx);
 vm.runInContext('setup()', ctx);
-const pin = env.store.props.ADMIN_PIN;
+const superPw = /password: (\S+)/.exec(logs.join('\n'))[1];
+const login = (u = 'superadmin', pw = superPw) => call('adminLogin', u, pw).token;
 
 const call = (fn, ...args) => {
   const out = JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify({ fn, args }) } }).getContent());
@@ -41,7 +43,7 @@ test('valid application is stored, CV saved to Drive, confirmation e-mail sent',
   assert.equal(mail.to, 'asha@example.com'); assert.match(mail.subject, /Application received – DCIP34-0001/);
   assert.match(mail.html, /9847012345/); assert.match(mail.html, /All further communication/);
   assert.equal(Object.keys(env.store.files).length, 1);
-  const st = call('adminLogin', 'Tester', pin);
+  const st = call('adminLogin', 'superadmin', superPw);
   const s = call('getAdminState', st.token);
   const a = s.applications[0];
   assert.equal(a.age, 24); assert.equal(a.screening, 'Eligible'); assert.equal(a.status, 'Received'); assert.equal(a.mobile, '9847012345');
@@ -51,7 +53,7 @@ test('valid application is stored, CV saved to Drive, confirmation e-mail sent',
 test('local body is required only for Kozhikode residents', () => {
   fails('submitApplication', /local body/, base({ email: 'lb1@example.com', mobile: '9000000071', fullName: 'Koz No Body', localBody: '' }));
   verifiedSubmit({ email: 'lb2@example.com', mobile: '9000000072', fullName: 'Malappuram Person', district: 'Malappuram', localBody: '' });
-  const a = call('getAdminState', call('adminLogin', 'T', pin).token).applications.find(x => x.email === 'lb2@example.com');
+  const a = call('getAdminState', call('adminLogin', 'superadmin', superPw).token).applications.find(x => x.email === 'lb2@example.com');
   assert.equal(a.location, 'Malappuram'); assert.equal(a.localBody, '');
 });
 
@@ -67,12 +69,12 @@ test('UG completion after the internship period is refused; inside the period is
   const late = base({ email: 'late@example.com', mobile: '9000000041', fullName: 'Late Finisher', qual: "Bachelor's Degree (final year – results pending)", completion: '2027-03-31' });
   fails('submitApplication', /after the internship period/, late);
   verifiedSubmit({ email: 'ok@example.com', mobile: '9000000042', fullName: 'Final Year', qual: "Bachelor's Degree (final year – results pending)", completion: '2026-12-15' });
-  const a = call('getAdminState', call('adminLogin', 'T', pin).token).applications.find(x => x.email === 'ok@example.com');
+  const a = call('getAdminState', call('adminLogin', 'superadmin', superPw).token).applications.find(x => x.email === 'ok@example.com');
   assert.equal(a.screening, 'Eligible'); assert.match(a.screeningNotes, /during the internship period/);
 });
 
 test('FLAG mode accepts but marks Suggest Disqualify; rescreen applies new rules to old rows', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   call('saveSettings', tok, { ENFORCE_AGE: 'FLAG' });
   verifiedSubmit({ email: 'old@example.com', mobile: '9000000051', fullName: 'Older Person', dob: '1990-01-01' });
   let s = call('getAdminState', tok);
@@ -87,7 +89,7 @@ test('FLAG mode accepts but marks Suggest Disqualify; rescreen applies new rules
 
 test('duplicate mobile is flagged for review', () => {
   verifiedSubmit({ email: 'dup@example.com', mobile: '9847012345', fullName: 'Another Person' });
-  const a = call('getAdminState', call('adminLogin', 'T', pin).token).applications.find(x => x.email === 'dup@example.com');
+  const a = call('getAdminState', call('adminLogin', 'superadmin', superPw).token).applications.find(x => x.email === 'dup@example.com');
   assert.equal(a.screening, 'Review'); assert.match(a.screeningNotes, /also used by DCIP34-0001/);
 });
 
@@ -99,16 +101,16 @@ test('CV rules: required, type and size', () => {
 });
 
 test('admin: login, bad PIN, expired/forged token', () => {
-  fails('adminLogin', /Incorrect PIN/, 'x', '000');
+  fails('adminLogin', /Incorrect username or password/, 'superadmin', 'wrongpass');
   fails('getAdminState', /SESSION_EXPIRED/, 'forged.token');
-  const tok = call('adminLogin', 'Tester', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   clock += 13 * 3600 * 1000;
   fails('getAdminState', /SESSION_EXPIRED/, tok);
   clock -= 13 * 3600 * 1000;
 });
 
 test('admin: score, shortlist top N, status, flag, audit', () => {
-  const tok = call('adminLogin', 'Meera', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   const apps = call('getAdminState', tok).applications;
   apps.forEach((a, i) => call('updateApplications', tok, [a.id], { screenScore: String(90 - i * 5) }));
   const r = call('shortlistTop', tok, 3);
@@ -119,15 +121,15 @@ test('admin: score, shortlist top N, status, flag, audit', () => {
   call('updateApplications', tok, [apps[0].id], { flagged: true, flagNote: 'Check CV' });
   call('updateApplications', tok, [apps[0].id], { status: 'Selected' });
   const a0 = call('getAdminState', tok).applications.find(a => a.id === apps[0].id);
-  assert.equal(a0.flagged, 'Yes'); assert.equal(a0.status, 'Selected'); assert.equal(a0.shortlisted, 'Yes'); assert.equal(a0.updatedBy, 'Meera');
+  assert.equal(a0.flagged, 'Yes'); assert.equal(a0.status, 'Selected'); assert.equal(a0.shortlisted, 'Yes'); assert.equal(a0.updatedBy, 'superadmin');
   fails('updateApplications', /not editable/, tok, [apps[0].id], { id: 'X' });
   fails('updateApplications', /Unknown status/, tok, [apps[0].id], { status: 'Winner' });
   const audit = call('getAudit', tok);
-  assert.ok(audit.some(x => x.action === 'UPDATE' && /Selection status: Shortlisted → Selected/.test(x.details) && x.user === 'Meera'));
+  assert.ok(audit.some(x => x.action === 'UPDATE' && /Selection status: Shortlisted → Selected/.test(x.details) && x.user === 'superadmin'));
 });
 
 test('admin: sessions, assignment, rename keeps attendees, delete guarded', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   call('saveSession', tok, { date: '2026-11-20', slot: 'Forenoon', venue: 'Collectorate', interviewer: 'Panel A', capacity: 25 });
   const ids = call('getAdminState', tok).applications.slice(0, 2).map(a => a.id);
   call('assignSessions', tok, { [ids[0]]: '2026-11-20 Forenoon', [ids[1]]: '2026-11-20 Forenoon' });
@@ -141,7 +143,7 @@ test('admin: sessions, assignment, rename keeps attendees, delete guarded', () =
 });
 
 test('admin: bulk e-mail with placeholders and quota', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   call('saveSession', tok, { date: '2026-11-22', slot: 'Forenoon', venue: 'Hall 2' });
   const a = call('getAdminState', tok).applications[0];
   call('assignSessions', tok, { [a.id]: '2026-11-22 Forenoon' });
@@ -152,7 +154,7 @@ test('admin: bulk e-mail with placeholders and quota', () => {
 });
 
 test('settings: validation and registration close/deadline', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   fails('saveSettings', /number/, tok, { MAX_AGE: 'abc' });
   fails('saveSettings', /BLOCK or FLAG/, tok, { ENFORCE_AGE: 'MAYBE' });
   call('saveSettings', tok, { REG_DEADLINE: '2026-10-05T11:00' });
@@ -163,7 +165,7 @@ test('settings: validation and registration close/deadline', () => {
 });
 
 test('admin can clear a screening flag; rescreen respects it', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   const a = call('getAdminState', tok).applications.find(x => x.screening === 'Review');
   call('updateApplications', tok, [a.id], { screening: 'Cleared' });
   call('rescreenAll', tok);
@@ -172,7 +174,7 @@ test('admin can clear a screening flag; rescreen respects it', () => {
 });
 
 test('ping stamp changes on write', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   const a = call('ping', tok).stamp; clock += 5; 
   call('updateApplications', tok, [call('getAdminState', tok).applications[1].id], { remarks: 'x' + clock });
   assert.notEqual(call('ping', tok).stamp, a);
@@ -207,13 +209,12 @@ test('chat: keyword matcher answers real applicant questions from the FAQ', () =
   assert.ok(M.GREET.test('hello there') && M.THANKS.test('thanks!') && !M.GREET.test('what is dcip'));
 });
 
-test('chat: no key -> polite fallback with contact, nothing sent out, question logged', () => {
-  const tok = call('adminLogin', 'T', pin).token;
+test('chat: no key -> polite fallback with contact, nothing sent out', () => {
+  const tok = call('adminLogin', 'superadmin', superPw).token;
   call('saveSettings', tok, { CONTACT_EMAIL: 'dcip@example.com', CONTACT_PHONE: '0495 0000000' });
   const before = (env.store.fetches || []).length;
   const a = call('chatAsk', 'What is the stipend?', []);
   assert.equal(a.source, 'none'); assert.match(a.answer, /dcip@example.com/); assert.equal((env.store.fetches || []).length, before);
-  assert.ok(env.store.sheets.Chat_Log.some(r => r[1] === 'What is the stipend?' && r[2] === 'no-ai'));
 });
 
 test('chat: with a key it calls Groq server-side only, with the FAQ as context and a safe prompt', () => {
@@ -232,7 +233,7 @@ test('chat: with a key it calls Groq server-side only, with the FAQ as context a
 test('chat: Groq errors and rate limits degrade to the fallback, long questions are cut', () => {
   fetchImpl = () => ({ code: 429, body: { error: { message: 'rate limit' } } });
   const a = call('chatAsk', 'anything else?', []); assert.equal(a.source, 'none'); assert.match(a.answer, /do not have that information/);
-  assert.ok(env.store.sheets.Chat_Log.some(r => /ai-error: Groq 429/.test(r[2])));
+  assert.ok(env.store.sheets.Audit.some(r => r[2] === 'CHAT_AI_ERROR' && /Groq 429/.test(r[4])));
   fetchImpl = (u, o) => ({ code: 200, body: { choices: [{ message: { content: 'ok' } }] } });
   call('chatAsk', 'x'.repeat(2000), []); const body = JSON.parse(env.store.fetches[env.store.fetches.length - 1].o.payload);
   assert.equal(body.messages[body.messages.length - 1].content.length, 300);
@@ -246,6 +247,118 @@ test('chat: Groq errors and rate limits degrade to the fallback, long questions 
 test('chat: editing the FAQ sheet changes the answers (after the 5 minute cache)', () => {
   const rows = env.store.sheets.FAQ; const i = rows.findIndex(r => r[0] === 'F11'); rows[i][3] = 'PDF only, up to 2 MB.';
   clock += 301000; assert.equal(call('chatInit').faq.find(f => f.id === 'F11').answer, 'PDF only, up to 2 MB.');
+});
+
+test('accounts: super admin created by setup(); wrong password / unknown user give the same message; lockout after 5 fails', () => {
+  assert.match(logs.join('\n'), /SUPER ADMIN LOGIN → username: superadmin/);
+  const s = call('adminLogin', 'superadmin', superPw); assert.equal(s.role, 'super');
+  fails('adminLogin', /Incorrect username or password/, 'nobody', 'whatever12');
+  for (let i = 0; i < 5; i++) fails('adminLogin', /Incorrect username or password/, 'superadmin', 'bad-password-' + i);
+  fails('adminLogin', /Too many failed attempts/, 'superadmin', superPw);
+  clock += 601000; assert.equal(call('adminLogin', 'superadmin', superPw).role, 'super');
+  const log = call('getLoginLog', login()); assert.ok(log.some(r => r.result === 'FAILED') && log.some(r => r.result === 'LOCKED') && log.some(r => r.result === 'OK'));
+  assert.ok(!JSON.stringify(env.store.sheets.Users).includes(superPw), 'password must not be stored in clear');
+});
+
+test('accounts: super creates admins; admins sign in, cannot reach super functions; disabled users lose access at once', () => {
+  const sup = login();
+  fails('createUser', /3–30 letters/, sup, 'a b', 'Name', 'Password@1', 'admin');
+  fails('createUser', /at least 8/, sup, 'meera', 'Meera', 'short', 'admin');
+  call('createUser', sup, 'Meera', 'Meera K', 'Meera@12345', 'admin');
+  fails('createUser', /already exists/, sup, 'meera', 'x', 'Password@1', 'admin');
+  const adm = login('meera', 'Meera@12345');
+  const st = call('getAdminState', adm); assert.equal(st.me.role, 'admin'); assert.equal(st.me.user, 'meera'); assert.equal(st.canChats, false);
+  ['listUsers', 'getAudit', 'getLoginLog'].forEach(fn => fails(fn, /Only a super admin/, adm));
+  fails('createUser', /Only a super admin/, adm, 'x1x1', 'X', 'Password@1', 'admin');
+  const id = call('getAdminState', adm).applications[0].id;
+  call('updateApplications', adm, [id], { remarks: 'checked by meera' });
+  assert.equal(call('getAdminState', adm).applications.find(a => a.id === id).updatedBy, 'meera');
+  call('setUserActive', sup, 'meera', false);
+  fails('getAdminState', /SESSION_EXPIRED/, adm); fails('adminLogin', /Incorrect username or password/, 'meera', 'Meera@12345');
+  call('setUserActive', sup, 'meera', true); assert.ok(login('meera', 'Meera@12345'));
+  assert.ok(call('listUsers', sup).every(u => !('hash' in u) && !('salt' in u)));
+});
+
+test('accounts: guards (own account), password reset and change, delete', () => {
+  const sup = login();
+  fails('setUserActive', /own account/, sup, 'superadmin', false); fails('deleteUser', /own account/, sup, 'superadmin');
+  call('createUser', sup, 'second', 'Second Super', 'Second@1234', 'super');
+  const s2 = login('second', 'Second@1234'); assert.equal(call('getAdminState', s2).me.role, 'super');
+  fails('setUserActive', /own account/, s2, 'second', false); fails('deleteUser', /own account/, s2, 'second');
+  call('setUserPassword', sup, 'second', 'NewPass@5678'); fails('adminLogin', /Incorrect/, 'second', 'Second@1234'); assert.ok(login('second', 'NewPass@5678'));
+  fails('setUserPassword', /at least 8/, sup, 'second', 'short');
+  fails('changeMyPassword', /current password is not correct/, login('second', 'NewPass@5678'), 'wrong', 'Another@123');
+  call('changeMyPassword', login('second', 'NewPass@5678'), 'NewPass@5678', 'Another@123'); assert.ok(login('second', 'Another@123'));
+  call('deleteUser', sup, 'second'); fails('adminLogin', /Incorrect/, 'second', 'Another@123');
+  assert.ok(env.store.sheets.Audit.some(r => r[2] === 'PASSWORD_RESET' && r[4] === 'second'));
+});
+
+test('chat logs: widget reports messages, super admin reads them, admins only when allowed', () => {
+  const entries = [{ r: 'u', t: 'is there a stipend?', s: 'typed' }, { r: 'b', t: 'FAQ: Will I get a stipend?', s: 'faq:F31' }, { r: 'u', t: 'what is the weather', s: 'typed' }, { r: 'b', t: 'I do not have that information yet.', s: 'none' }];
+  assert.equal(call('chatLog', 'sess123abc', entries).logged, 4); call('chatLog', 'sess456def', [{ r: 'u', t: 'hello', s: 'typed' }]);
+  assert.equal(call('chatLog', '', entries).logged, 0); assert.equal(call('chatLog', 'x1', 'nope').logged, 0);
+  const sup = login(), adm = (call('createUser', sup, 'viewer1', 'Viewer', 'Viewer@1234', 'admin'), login('viewer1', 'Viewer@1234'));
+  const cs = call('chatSessions', sup); assert.equal(cs.total, 2); assert.equal(cs.stats.faq, 1); assert.equal(cs.stats.unanswered, 1); assert.equal(cs.unanswered[0].q, 'what is the weather');
+  assert.equal(call('chatTranscript', sup, 'sess123abc').length, 4);
+  fails('chatSessions', /super admins only/, adm); fails('chatTranscript', /super admins only/, adm, 'sess123abc');
+  call('saveSettings', sup, { ADMIN_CAN_VIEW_CHATS: 'TRUE' }); assert.equal(call('chatSessions', adm).total, 2); assert.equal(call('getAdminState', adm).canChats, true);
+  call('saveSettings', sup, { ADMIN_CAN_VIEW_CHATS: 'FALSE' }); fails('chatSessions', /super admins only/, adm);
+  fails('saveSettings', /Only a super admin/, adm, { ADMIN_CAN_VIEW_CHATS: 'TRUE' });
+  call('deleteUser', sup, 'viewer1');
+});
+
+test('CV autofill: AI result is validated; no key / disabled / junk -> empty; the CV text is not stored', () => {
+  assert.deepEqual(call('parseCv', 'x'.repeat(100)), { ai: false, fields: {} });
+  env.store.props.GROQ_API_KEY = 'gsk_TESTKEY';
+  fetchImpl = (u, o) => ({ code: 200, body: { choices: [{ message: { content: JSON.stringify({ fullName: 'Anagha Saji A', dob: '2002-03-14', gender: 'female', email: 'Anagha@Example.com', mobile: '+91 70344 87655', altMobile: '123',
+    district: 'kozhikode', localBody: 'Vadakara Municipality', qual: "Bachelor's Degree (completed)", stream: 'B.A', specialisation: 'English Language and Literature', institution: "St. Joseph's College (Autonomous), Devagiri",
+    completion: '2024-13-45', completionYear: '2024', ignored: 'x' }) } }] } });
+  const cvText = 'Anagha Saji A\nB.A English Language and Literature, St. Joseph\'s College Devagiri 2021-2024\nanagha@example.com +91 70344 87655 '.repeat(2);
+  const r = call('parseCv', cvText);
+  assert.equal(r.ai, true); const f = r.fields;
+  assert.equal(f.fullName, 'Anagha Saji A'); assert.equal(f.dob, '2002-03-14'); assert.equal(f.gender, 'Female'); assert.equal(f.email, 'anagha@example.com'); assert.equal(f.mobile, '7034487655');
+  assert.equal(f.altMobile, undefined); assert.equal(f.district, 'Kozhikode'); assert.equal(f.localBody, 'Vadakara Municipality'); assert.equal(f.qual, "Bachelor's Degree (completed)"); assert.equal(f.stream, 'B.A');
+  assert.equal(f.completion, undefined, 'impossible date dropped'); assert.equal(f.completionYear, '2024'); assert.equal(f.ignored, undefined);
+  const body = JSON.parse(env.store.fetches[env.store.fetches.length - 1].o.payload); assert.equal(body.response_format.type, 'json_object'); assert.match(body.messages[1].content, /Anagha Saji A/);
+  assert.ok(!JSON.stringify(env.store).includes('Anagha Saji A\\nB.A'), 'CV text must not be stored');
+  fetchImpl = () => ({ code: 200, body: { choices: [{ message: { content: 'not json' } }] } }); assert.deepEqual(call('parseCv', cvText), { ai: false, fields: {} });
+  fetchImpl = () => ({ code: 500, body: {} }); assert.equal(call('parseCv', cvText).ai, false);
+  const sup = login(); call('saveSettings', sup, { CV_AUTOFILL_AI: 'FALSE' }); assert.equal(call('parseCv', cvText).ai, false); assert.equal(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.cvAi, false);
+  call('saveSettings', sup, { CV_AUTOFILL_AI: 'TRUE' }); assert.equal(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.cvAi, true);
+  delete env.store.props.GROQ_API_KEY; fetchImpl = null;
+});
+
+test('CV autofill: details are recognised from typical CV text (no AI needed)', () => {
+  const CV = require('../web/cv.js'), L = require('../web/lists.js'), opts = { colleges: L.colleges, today: '2026-10-12' };
+  let f = CV.extractLocal(`ANAGHA SAJI A
+Kozhikode, Kerala
+Email: anagha.saji@gmail.com | Mobile: +91 70344 87655
+Date of Birth: 14 March 2002
+Gender: Female
+Permanent Address: Puthiyara House, Vadakara, Kozhikode, Kerala 673101
+
+EDUCATION
+B.A English Language and Literature, St. Joseph's College (Autonomous), Devagiri, Kozhikode   2021 - 2024
+Higher Secondary, GHSS Vadakara 2019-2021`, opts);
+  assert.deepEqual(f, { email: 'anagha.saji@gmail.com', mobile: '7034487655', dob: '2002-03-14', gender: 'Female', fullName: 'Anagha Saji A', district: 'Kozhikode', stream: 'B.A',
+    specialisation: 'English Language and Literature', institution: "St. Joseph's College, Devagiri, Kozhikode", completionYear: '2024', qual: "Bachelor's Degree (completed)" });
+  f = CV.extractLocal(`Rahul Menon
+rahul.menon@example.com
+9847012345 / 8891234567
+DOB: 05/11/2003
+Address: Thrissur
+Academic Qualifications
+Bachelor of Science in Physics – Farook College, Kozhikode (2023 – Present)`, opts);
+  assert.equal(f.fullName, 'Rahul Menon'); assert.equal(f.mobile, '9847012345'); assert.equal(f.altMobile, '8891234567'); assert.equal(f.dob, '2003-11-05'); assert.equal(f.district, 'Thrissur');
+  assert.equal(f.stream, 'B.Sc'); assert.equal(f.specialisation, 'Physics'); assert.equal(f.institution, 'Farook College, Kozhikode'); assert.equal(f.qual, "Bachelor's Degree (final year – results pending)"); assert.equal(f.completionYear, undefined);
+  f = CV.extractLocal(`Meera Krishnan
+Education
+M.A Political Science, University of Delhi 2024 - 2026
+B.A History, Hindu College, University of Delhi 2021 - 2024`, opts);
+  assert.equal(f.qual, "Master's Degree"); assert.equal(f.stream, 'B.A'); assert.equal(f.specialisation, 'History'); assert.equal(f.institution, 'Hindu College, University of Delhi'); assert.equal(f.completionYear, '2024');
+  assert.deepEqual(CV.extractLocal('Lorem ipsum dolor sit amet, nothing to see here at all.', opts), {});
+  assert.deepEqual(CV.extractLocal('', opts), {});
+  assert.equal(CV.parseDate('31/02/2002', '2026-10-12'), ''); assert.equal(CV.parseDate('12-03-2015', '2026-10-12'), '', 'too young'); assert.equal(CV.parseDate('March 5, 2001', '2026-10-12'), '2001-03-05');
 });
 
 console.log(`\n${n} tests passed`);

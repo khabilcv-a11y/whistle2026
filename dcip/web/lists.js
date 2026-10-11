@@ -55,4 +55,5 @@
     kozhikodeLocalBodies: KOZ_CORPORATION.concat(add(KOZ_MUNICIPALITIES, ' Municipality'), add(KOZ_PANCHAYATS, ' Grama Panchayat')),
     colleges: COLLEGES
   };
-})(window);
+  if (typeof module !== 'undefined' && module.exports) module.exports = w.DCIP_LISTS;
+})(typeof window !== 'undefined' ? window : {});

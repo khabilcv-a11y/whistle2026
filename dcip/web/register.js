@@ -25,28 +25,32 @@
     $('#main').innerHTML =
       '<form id="form" novalidate autocomplete="on">' +
       '<ol class="progress" id="progress"></ol>' +
-      step(1, 'About you', 'Let\'s start with you', 'Use your name as it is on your certificates.',
+      step(1, 'Your CV', 'Start with your CV', C.cvRequired ? 'Upload your CV and we\'ll fill in what we can. You only check it and complete the rest.' : 'Upload your CV and we\'ll fill in what we can (optional).',
+        '<div class="full"><div class="field" id="fld-cv"><label class="drop" for="cv" id="drop"><span class="drop-ic" aria-hidden="true">📄</span><b id="dropTitle">Choose your CV</b><span class="muted" id="dropSub">or drop it here · PDF, DOC or DOCX · up to ' + (C.cvMaxBytes / 1048576) + ' MB</span>' +
+        '<input type="file" id="cv" class="sr" accept=".pdf,.doc,.docx,application/pdf"></label><div class="err"></div>' +
+        '<div id="cvStatus" role="status" aria-live="polite"></div>' +
+        '<p class="hint">' + (C.cvAi ? 'To pre-fill the form, the text of your CV is read automatically and processed by an AI service. It is not stored, and your CV file goes only to the DCIP team.' : 'Your CV is read in your browser to pre-fill the form. It goes only to the DCIP team.') +
+        '</p>' + (C.cvRequired ? '' : '<p><button type="button" class="btn ghost" id="skipCv">I\'ll fill in the form myself →</button></p>') + '</div></div>') +
+      step(2, 'About you', 'Let\'s start with you', 'Use your name as it is on your certificates.',
         f('fullName', 'Full name', '<input type="text" id="fullName" autocomplete="name" maxlength="100">', 'full') +
         f('dob', 'Date of birth', '<input type="date" id="dob" min="1950-01-01" max="' + D.addDays(C.today, -365 * 15) + '" autocomplete="bday">', '', '<span id="ageNote"></span>') +
         f('gender', 'Gender', select('gender', C.genders, 'Select')) +
         f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.') +
         f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">') +
         f('altMobile', 'Alternate mobile <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
-      step(2, 'Home', 'Where are you from?', 'This helps us understand the reach of the programme.',
+      step(3, 'Home', 'Where are you from?', 'This helps us understand the reach of the programme.',
         f('district', 'District of residence', select('district', C.districts, 'Select')) +
         f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full',
           'Type a few letters and pick your local body from the list that appears.')) +
-      step(3, 'Education', 'Tell us about your studies', 'A bachelor\'s degree is needed, completed by ' + D.fmtDate(C.intakeEnd) + '.',
+      step(4, 'Education', 'Tell us about your studies', 'A bachelor\'s degree is needed, completed by ' + D.fmtDate(C.intakeEnd) + '.',
         f('qual', 'Highest educational qualification', select('qual', C.quals, 'Select'), 'full') +
-        f('stream', 'UG / bachelor\'s degree stream', select('stream', STREAMS, 'Select')) +
+        f('stream', 'UG / bachelor\'s degree stream', select('stream', C.streams || STREAMS, 'Select')) +
         f('specialisation', 'UG subject / specialisation', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics">') +
         f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', 'full', 'Pick from the list if you see your college; otherwise type its full name.') +
         f('completion', 'UG degree completion date', '<input type="date" id="completion" min="1980-01-01" max="2040-12-31">', 'full',
           '<span id="compNote">The actual date if completed; the <b>expected date</b> if your final-year results are pending.</span>')) +
-      step(4, 'Your story', 'Almost there – tell us why', 'A few honest lines are enough.',
+      step(5, 'Your story', 'Almost there – tell us why', 'A few honest lines are enough.',
         f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" maxlength="1500" rows="5"></textarea><div class="hint"><span id="mcount">0</span>/1500 characters (minimum 30)</div>', 'full') +
-        f('cv', 'Upload your CV', '<input type="file" id="cv" accept=".pdf,.doc,.docx,application/pdf">', 'full',
-          'PDF, DOC or DOCX, up to ' + (C.cvMaxBytes / 1048576) + ' MB.' + (C.cvRequired ? '' : ' (optional)')) +
         '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>') +
       '<div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>' +
       '<div id="formAlert" role="alert"></div>' +
@@ -58,17 +62,76 @@
     typeahead($('#lbName'), (window.DCIP_LISTS || {}).kozhikodeLocalBodies || []);
     typeahead($('#institution'), (window.DCIP_LISTS || {}).colleges || []);
     $('#back').onclick = function () { showStep(cur - 1); };
+    bindCv();
     $('#next').onclick = next;
     showStep(1, true);
   }
 
-  var cur = 1, LABELS = ['About you', 'Home', 'Education', 'Your story'];
-  var STEP_FIELDS = { 1: ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile'], 2: ['district', 'lbName'], 3: ['qual', 'stream', 'specialisation', 'institution', 'completion'], 4: ['motivation', 'cv', 'declare'] };
+  var applying = false, cvBusy = false, autoIds = {};
+  var MAP = { fullName: 'fullName', dob: 'dob', gender: 'gender', email: 'email', mobile: 'mobile', altMobile: 'altMobile', district: 'district', localBody: 'lbName', qual: 'qual', stream: 'stream', specialisation: 'specialisation', institution: 'institution', completion: 'completion' };
+  var NICE = { fullName: 'name', dob: 'date of birth', gender: 'gender', email: 'e-mail', mobile: 'mobile number', altMobile: 'second mobile', district: 'district', localBody: 'local body', qual: 'qualification', stream: 'degree stream', specialisation: 'subject', institution: 'college', completion: 'completion date' };
+  function mark(id) { var f = $('#fld-' + id); if (f) f.classList.add('autofilled'); }
+  function unmark(id) { delete autoIds[id]; var f = $('#fld-' + id); if (f) f.classList.remove('autofilled'); }
+
+  /** Puts CV details into the empty fields (never over something the applicant typed) and marks them so they get checked. */
+  function applyFields(f) {
+    var filled = []; applying = true;
+    Object.keys(MAP).forEach(function (k) {
+      var id = MAP[k], v = f[k], el = $('#' + id); if (!v || !el) return;
+      if (id === 'lbName' && (val('district') !== 'Kozhikode')) return;
+      var cur = String(el.value || '').trim(); if (cur && !autoIds[id]) return;
+      if (el.tagName === 'SELECT' && ![].some.call(el.options, function (o) { return o.value === v; })) return;
+      el.value = v; autoIds[id] = true; mark(id); filled.push(k);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    applying = false;
+    if (f.completionYear && !f.completion && !val('completion') && $('#compNote')) $('#compNote').innerHTML = 'Your CV mentions <b>' + esc(f.completionYear) + '</b>. Please enter the exact completion date (the expected date if your results are pending).';
+    return filled;
+  }
+
+  function cvStatus(html, cls) { var s = $('#cvStatus'); if (s) s.innerHTML = html ? '<div class="cvmsg ' + (cls || '') + '">' + html + '</div>' : ''; }
+  function checkFile(file) {
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (C.cvExt.indexOf(ext) < 0) return 'The CV must be a PDF, DOC or DOCX file.';
+    if (file.size > C.cvMaxBytes) return 'The file is larger than ' + (C.cvMaxBytes / 1048576) + ' MB.';
+    return '';
+  }
+  function bindCv() {
+    var inp = $('#cv'), drop = $('#drop'); if (!inp) return;
+    function chosen() {
+      var file = inp.files[0]; clearErr('cv'); cvStatus('');
+      if (!file) { $('#dropTitle').textContent = 'Choose your CV'; drop.classList.remove('has'); return; }
+      var bad = checkFile(file); if (bad) { setErr('cv', bad); return; }
+      $('#dropTitle').textContent = file.name; drop.classList.add('has'); $('#dropSub').textContent = Math.max(1, Math.round(file.size / 1024)) + ' KB · tap to change';
+      var ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'doc') { cvStatus('✓ CV attached. We can only read <b>PDF</b> and <b>DOCX</b> files for auto-fill, so please fill in the next steps yourself.', 'info'); return; }
+      cvBusy = true; cvStatus('<span class="spin"></span> Reading your CV…', 'busy');
+      w_read(file).then(function (res) {
+        cvBusy = false;
+        var filled = applyFields(res.fields || {});
+        if (filled.length) {
+          cvStatus('✨ We found <b>' + filled.length + ' detail' + (filled.length > 1 ? 's' : '') + '</b> in your CV: ' + filled.map(function (k) { return esc(NICE[k]); }).join(', ') + '. They are filled in on the next steps – <b>please check each one</b> and complete the rest.', 'ok');
+        } else cvStatus('✓ CV attached. We could not read details from it (that happens with scanned or image-only files) – no problem, please fill in the next steps yourself.', 'info');
+      }, function () { cvBusy = false; cvStatus('✓ CV attached. Please fill in the next steps yourself.', 'info'); });
+    }
+    inp.addEventListener('change', chosen);
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files.length) { try { inp.files = e.dataTransfer.files; } catch (x) { return; } chosen(); } });
+    var skip = $('#skipCv'); if (skip) skip.onclick = function () { showStep(2); };
+  }
+  function w_read(file) {
+    return window.DCIPCv.read(file, { colleges: (window.DCIP_LISTS || {}).colleges, districts: C.districts, today: C.today, ai: !!C.cvAi,
+      askServer: function (text) { return D.call('parseCv', text); } });
+  }
+
+  var cur = 1, LABELS = ['Your CV', 'About you', 'Home', 'Education', 'Your story'];
+  var STEP_FIELDS = { 1: ['cv'], 2: ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile'], 3: ['district', 'lbName'], 4: ['qual', 'stream', 'specialisation', 'institution', 'completion'], 5: ['motivation', 'declare'] };
   function step(n, label, title, sub, body) {
-    return '<div class="step" data-step="' + n + '"' + (n > 1 ? ' hidden' : '') + '><div class="stephead"><small>Step ' + n + ' of 4 · ' + label + '</small><h2>' + title + '</h2><p>' + sub + '</p></div><div class="grid">' + body + '</div></div>';
+    return '<div class="step" data-step="' + n + '"' + (n > 1 ? ' hidden' : '') + '><div class="stephead"><small>Step ' + n + ' of 5 · ' + label + '</small><h2>' + title + '</h2><p>' + sub + '</p></div><div class="grid">' + body + '</div></div>';
   }
   function showStep(n, quiet) {
-    cur = Math.max(1, Math.min(4, n));
+    cur = Math.max(1, Math.min(5, n));
     [].forEach.call(document.querySelectorAll('.step'), function (s) { s.hidden = +s.dataset.step !== cur; });
     $('#progress').innerHTML = LABELS.map(function (l, i) {
       var go = i + 1 < cur;
@@ -79,11 +142,12 @@
       b.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStep(+b.dataset.go); } };
     });
     $('#back').style.visibility = cur === 1 ? 'hidden' : 'visible';
-    $('#next').classList.toggle('hidden', cur === 4); $('#submit').classList.toggle('hidden', cur !== 4);
+    $('#next').classList.toggle('hidden', cur === 5); $('#submit').classList.toggle('hidden', cur !== 5);
     $('#formAlert').innerHTML = '';
     if (!quiet) { $('#apply').scrollIntoView({ behavior: 'smooth', block: 'start' }); var first = $('.step:not([hidden]) input, .step:not([hidden]) select'); if (first && window.matchMedia('(min-width: 700px)').matches) first.focus({ preventScroll: true }); }
   }
   function next() {
+    if (cur === 1 && cvBusy) { $('#formAlert').innerHTML = '<div class="alert warn">One moment – we are still reading your CV…</div>'; return; }
     var errs = validate(), keys = Object.keys(errs).filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; });
     $('#formAlert').innerHTML = '';
     if (keys.length) {
@@ -105,10 +169,10 @@
   function bind() {
     FIELDS.forEach(function (id) {
       var e = $('#' + id); if (!e) return;
-      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'district') updateLocalBody(); liveChecks(); }); });
+      ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { if (!applying) unmark(id); clearErr(id); saveDraft(); if (id === 'district') updateLocalBody(); liveChecks(); }); });
     });
     $('#motivation').addEventListener('input', function () { $('#mcount').textContent = this.value.length; });
-    $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); if (cur < 4) next(); else submit(); });
+    $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); if (cur < 5) next(); else submit(); });
   }
 
   /* ---------- draft (kept in this browser only; never the CV or the verification) ---------- */
@@ -236,10 +300,10 @@
     $('#formAlert').innerHTML = '';
     var errs = validate(), keys = Object.keys(errs);
     if (keys.length) {
-      for (var s = 1; s <= 4; s++) if (keys.some(function (k) { return STEP_FIELDS[s].indexOf(k) >= 0; })) { if (s !== cur) showStep(s, true); break; }
+      for (var s = 1; s <= 5; s++) if (keys.some(function (k) { return STEP_FIELDS[s].indexOf(k) >= 0; })) { if (s !== cur) showStep(s, true); break; }
       keys.forEach(function (k) { setErr(k, errs[k]); });
       var first = $('#fld-' + keys.filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; })[0]); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + (cur < 4 ? ' on this step' : '') + '.</div>';
+      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + (cur < 5 ? ' on this step' : '') + '.</div>';
       return;
     }
     var btn = $('#submit'); btn.disabled = true; btn.textContent = 'Submitting…';

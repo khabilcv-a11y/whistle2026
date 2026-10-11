@@ -10,23 +10,30 @@
     S.token = ''; try { sessionStorage.removeItem(KEY); } catch (e) {}
     clearInterval(pollTimer); A.closeDrawer(); A.closeModal();
     $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
-    $('#lerr').textContent = msg || ''; $('#lpin').value = '';
+    $('#lerr').textContent = msg || ''; $('#lpass').value = '';
   };
   $('#loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var btn = $('#lbtn'); btn.disabled = true; btn.textContent = 'Signing in…'; $('#lerr').textContent = '';
-    D.call('adminLogin', $('#lname').value, $('#lpin').value).then(function (r) { S.token = r.token; S.user = r.name; saveSession(); start(); },
+    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; saveSession(); start(); },
       function (err) { $('#lerr').textContent = err.message; }).then(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
   });
   $('#btnLogout').onclick = function () { A.logout(); };
   $('#btnRefresh').onclick = function () { A.loadState(true); };
+  $('#btnAccount').onclick = function () { A.changePasswordDialog(); };
+  A.tabAllowed = function (id) {
+    var role = (S.me || {}).role;
+    if (id === 'users' || id === 'logs') return role === 'super';
+    if (id === 'chats') return role === 'super' || !!S.canChats;
+    return true;
+  };
 
   /* ---------- state ---------- */
   A.loadState = function (manual) {
     return A.api('getAdminState').then(function (st) {
       var firstLoad = lastCount === null;
       S.apps = st.applications; S.sessions = st.sessions; S.settings = st.settings; S.meta = st.settingsMeta; S.config = st.config; S.statuses = st.statuses;
-      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder;
+      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats;
       if (!firstLoad && st.applications.length > lastCount) D.toast((st.applications.length - lastCount) + ' new application' + (st.applications.length - lastCount > 1 ? 's' : '') + ' received', 'ok');
       lastCount = st.applications.length; failures = 0; live(true);
       $('#hTitle').textContent = 'DCIP ' + (S.settings.BATCH_LABEL || ''); document.title = 'DCIP ' + (S.settings.BATCH_LABEL || '') + ' · Admin';
@@ -46,8 +53,11 @@
   }
   A.render = function () {
     A.pendingRender = false;
-    $('#who').textContent = S.user;
-    $('#tabs').innerHTML = A.TABS.map(function (t) { return '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" data-tab="' + t[0] + '">' + esc(t[1]) + badge(t[0]) + '</button>'; }).join('');
+    var me = S.me || { user: S.user, name: S.user, role: 'admin' };
+    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : 'Admin') + '</span>';
+    var tabs = A.TABS.filter(function (t) { return A.tabAllowed(t[0]); });
+    if (!tabs.some(function (t) { return t[0] === S.tab; })) S.tab = 'overview';
+    $('#tabs').innerHTML = tabs.map(function (t) { return '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" data-tab="' + t[0] + '">' + esc(t[1]) + badge(t[0]) + '</button>'; }).join('');
     A.$$('#tabs button').forEach(function (b) { b.onclick = function () { S.tab = b.dataset.tab; saveSession(); window.scrollTo(0, 0); A.render(); }; });
     var v = $('#view'), top = window.scrollY;
     A.views[S.tab](v);

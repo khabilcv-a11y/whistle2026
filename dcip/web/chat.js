@@ -59,6 +59,15 @@
   /* ------------------------------------------ widget ------------------------------------------ */
   var D = w.DCIP, esc = D.esc, $ = function (s, r) { return (r || document).querySelector(s); };
   var faq = [], byId = {}, topics = [], history = [], opened = false, busy = false, applyOpen = true;
+  var session = Math.random().toString(36).slice(2, 10) + Date.now().toString(36), queue = [], flushTimer = null;
+  /** Conversations are reported to the server so officials can see what applicants ask (shown to the applicant in the footer note). */
+  function logMsg(r, t, s) { queue.push({ r: r, t: String(t || '').slice(0, 400), s: s }); clearTimeout(flushTimer); flushTimer = setTimeout(flush, 1500); }
+  function flush() {
+    clearTimeout(flushTimer); if (!queue.length) return;
+    var batch = queue.splice(0, 12); D.call('chatLog', session, batch).catch(function () {});
+    if (queue.length) flushTimer = setTimeout(flush, 500);
+  }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
 
   function fmt(text) {
     var h = esc(text).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
@@ -79,7 +88,7 @@
         '<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>' +
         '<div class="chat-chips" id="chatChips"></div>' +
         '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
-        '<div class="chat-note">Please don\'t share personal details here.</div>' +
+        '<div class="chat-note">Chats are saved to improve our answers. Please don\'t share personal details.</div>' +
       '</section>';
     document.body.appendChild(root);
     $('#chatFab').onclick = toggle; $('#chatClose').onclick = toggle;
@@ -95,7 +104,7 @@
     if (opened) {
       if (!$('#chatLog').children.length) greet();
       if (w.matchMedia('(min-width: 700px)').matches) $('#chatIn').focus();
-    } else $('#chatFab').focus();
+    } else { flush(); $('#chatFab').focus(); }
   }
 
   function scroll() { var l = $('#chatLog'); l.scrollTop = l.scrollHeight; }
@@ -141,12 +150,14 @@
     chips(list);
   }
   function showAnswer(item) {
-    history.push({ r: 'u', t: item.question });
+    history.push({ r: 'u', t: item.question }); logMsg('u', item.question, 'button'); logMsg('b', 'FAQ: ' + item.question, 'faq:' + item.id);
     answer(item.answer, related(item).map(function (f) { return { label: f.question, run: function () { showAnswer(f); } }; }));
   }
 
   function ask(q) {
     say('user', esc(q)); history.push({ r: 'u', t: q.slice(0, 300) });
+    var greeting = GREET.test(q) && q.split(/\s+/).length <= 4;
+    if (!greeting && !THANKS.test(q)) logMsg('u', q, 'typed');
     if (GREET.test(q) && q.split(/\s+/).length <= 4) { menu('Hello! What would you like to know?'); return; }
     if (THANKS.test(q)) { say('bot', 'You\'re welcome! 😊 Good luck with your application.'); chips([{ label: '☰ Other topics', kind: 'ghost', run: function () { menu(); } }]); return; }
     var hits = match(faq, q);
@@ -154,7 +165,7 @@
       var best = hits[0].item, more = hits.slice(1, 3).filter(function (h) { return h.score >= 2; }).map(function (h) { return h.item; });
       var rel = related(best), extra = [];
       more.concat(rel).forEach(function (f) { if (f.id !== best.id && !extra.some(function (e) { return e.label === f.question; }) && extra.length < 3) extra.push({ label: f.question, run: function () { showAnswer(f); } }); });
-      answer(best.answer, extra); return;
+      logMsg('b', 'FAQ: ' + best.question, 'faq:' + best.id); answer(best.answer, extra); return;
     }
     // no confident keyword match: ask the server (AI)
     busy = true; $('#chatChips').innerHTML = '';
@@ -162,9 +173,10 @@
     D.call('chatAsk', q, history.slice(-6, -1)).then(function (r) {
       typing.remove(); busy = false;
       var contact = faq.filter(function (f) { return /contact/i.test(f.topic); })[0];
+      logMsg('b', r.answer, r.source === 'ai' ? 'ai' : 'none');
       answer(r.answer, (r.source === 'none' && contact ? [{ label: contact.question, run: function () { showAnswer(contact); } }] : []));
     }, function () {
-      typing.remove(); busy = false;
+      typing.remove(); busy = false; logMsg('b', 'Error: could not reach the helper', 'none');
       var contact = faq.filter(function (f) { return /contact/i.test(f.topic); })[0];
       say('bot', 'Sorry, I couldn\'t find that. Try one of the topics below' + (contact ? ' or contact the team.' : '.'));
       chips((contact ? [{ label: contact.question, run: function () { showAnswer(contact); } }] : []).concat(topicChips()));
