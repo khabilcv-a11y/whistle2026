@@ -10,7 +10,7 @@ def js(code): return code.replace('</script', '<\\/script')
 logo = 'data:image/png;base64,' + base64.b64encode(read('logo.png', 'rb')).decode()
 
 CONFIG = ("<script>\n// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL BETWEEN THE QUOTES (it ends in /exec) ======\n"
-          "window.DCIP_CONFIG = { apiUrl: '' };\n// ================================================================================\n</script>")
+          "window.DCIP_CONFIG = { apiUrl: '__API_URL__' };\n// ================================================================================\n</script>")
 
 def build(page, scripts, css_files):
     html = read(page)
@@ -24,6 +24,7 @@ def build(page, scripts, css_files):
     html = html.replace('</body>', body + '\n</body>')
     return html
 
+API_URL = (sys.argv[1] if len(sys.argv) > 1 else '')
 os.makedirs(OUT, exist_ok=True)
 pages = {
   'index.html': build('index.html', ['common.js', 'register.js'], ['styles.css']),
@@ -32,6 +33,7 @@ pages = {
                       ['styles.css', 'admin.css']),
 }
 for name, html in pages.items():
+    html = html.replace('__API_URL__', API_URL)
     assert 'src="logo.png"' not in html and 'href="styles.css"' not in html
     with open(os.path.join(OUT, name), 'w', encoding='utf-8') as f: f.write(html)
     print(name, round(len(html) / 1024), 'KB')
