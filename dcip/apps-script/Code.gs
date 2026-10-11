@@ -40,12 +40,12 @@ var DEFAULT_SETTINGS = [
   ['PROGRAMME', "District Collector's Internship Programme", 'Programme name.'],
   ['REG_OPEN', 'TRUE', 'TRUE / FALSE – master switch for accepting applications.'],
   ['REG_DEADLINE', '', 'Optional. yyyy-mm-ddThh:mm (IST). Registration closes automatically after this time.'],
-  ['INTAKE_START', '2026-11-01', 'First day of the internship period (yyyy-mm-dd).'],
+  ['INTAKE_START', '2026-10-01', 'First day of the internship period (yyyy-mm-dd).'],
   ['INTAKE_END', '2027-02-28', 'Last day of the internship period.'],
   ['UG_COMPLETE_BY', '2026-11-01', 'The UG course must be completed on or before this date (yyyy-mm-dd).'],
   ['MAX_AGE', '30', 'Maximum age (completed years) on AGE_AS_ON.'],
   ['MIN_AGE', '20', 'Minimum age (the DCIP FAQ says 20 to 30 years). 0 = no minimum.'],
-  ['AGE_AS_ON', '', 'Date on which age is calculated (yyyy-mm-dd). Blank = INTAKE_START.'],
+  ['AGE_AS_ON', '', 'Date on which age is calculated (yyyy-mm-dd). Blank = UG_COMPLETE_BY.'],
   ['ENFORCE_AGE', 'BLOCK', 'BLOCK = the form refuses over-age applicants.  FLAG = accept, mark "Suggest Disqualify".'],
   ['ENFORCE_COMPLETION', 'BLOCK', 'BLOCK = the form refuses a UG completion date after UG_COMPLETE_BY.  FLAG = accept, mark "Suggest Disqualify".'],
   ['SHORTLIST_SIZE', '30', 'Number of top-scoring applicants shortlisted for interview.'],
@@ -1285,11 +1285,13 @@ function settingsSheet_() {
     sh.getRange(start, 2, missing.length, 1).setNumberFormat('@');
     sh.getRange(start, 1, missing.length, 3).setValues(missing);
   }
-  if (sh.getLastRow() > 1) {   // the intake rules were revised: replace our own earlier defaults, never a value someone chose
+  var props = PropertiesService.getScriptProperties();
+  if (sh.getLastRow() > 1 && props.getProperty('RULES_V3') !== '1') {   // the intake rules were revised once more: replace our own earlier defaults (one time only, so later choices stay)
     sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(function (r, i) {
-      var old = { INTAKE_END: '2027-01-31', MIN_AGE: '18' }[r[0]], now = { INTAKE_END: '2027-02-28', MIN_AGE: '20' }[r[0]];
-      if (old && String(r[1]).trim() === old) { sh.getRange(i + 2, 2).setValue(now); _settingsCache = null; }
+      var olds = { INTAKE_START: ['2026-11-01', '2026-12-01', '2027-01-01'], INTAKE_END: ['2027-01-31'], MIN_AGE: ['18', '0', ''] }[r[0]], now = { INTAKE_START: '2026-10-01', INTAKE_END: '2027-02-28', MIN_AGE: '20' }[r[0]];
+      if (olds && olds.indexOf(String(r[1]).trim()) >= 0) { sh.getRange(i + 2, 2).setValue(now); _settingsCache = null; }
     });
+    props.setProperty('RULES_V3', '1');
   }
   return sh;
 }
@@ -1401,7 +1403,7 @@ function nowS_() { return Math.floor(Date.now() / 1000); }
 function nowIso_() { return Utilities.formatDate(new Date(), APP.TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss"); }
 function today_() { return Utilities.formatDate(new Date(), APP.TIMEZONE, 'yyyy-MM-dd'); }
 function iso_(d, withTime) { return Utilities.formatDate(d, APP.TIMEZONE, withTime ? "yyyy-MM-dd'T'HH:mm:ss" : 'yyyy-MM-dd'); }
-function ageAsOn_(s) { return isIso_(s.AGE_AS_ON) ? s.AGE_AS_ON : s.INTAKE_START; }
+function ageAsOn_(s) { return isIso_(s.AGE_AS_ON) ? s.AGE_AS_ON : ugBy_(s); }
 function regOpen_(s) {
   if (!truthy_(s.REG_OPEN)) return false;
   if (s.REG_DEADLINE) return Utilities.formatDate(new Date(), APP.TIMEZONE, "yyyy-MM-dd'T'HH:mm") <= s.REG_DEADLINE;

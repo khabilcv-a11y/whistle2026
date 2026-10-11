@@ -35,7 +35,7 @@ const test = (name, fn) => { fn(); n++; console.log('  ✓ ' + name); };
 
 test('public config exposes the rules', () => {
   const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
-  assert.equal(c.open, true); assert.equal(c.maxAge, 30); assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.ugBy, '2026-11-01'); assert.equal(c.period, 'Nov 2026 – Feb 2027'); assert.equal(c.minAge, 20); assert.ok(c.contactEmail && c.contactPhone); assert.equal(c.ageAsOn, '2026-11-01');
+  assert.equal(c.open, true); assert.equal(c.maxAge, 30); assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.ugBy, '2026-11-01'); assert.equal(c.period, 'Oct 2026 – Feb 2027'); assert.equal(c.minAge, 20); assert.ok(c.contactEmail && c.contactPhone); assert.equal(c.ageAsOn, '2026-11-01');
 });
 
 test('valid application is stored, CV saved to Drive, confirmation e-mail sent', () => {
@@ -392,7 +392,7 @@ test('form fields: WhatsApp, how they heard, master\'s college, legacy master\'s
 
 test('settings: our older defaults are upgraded, UG_COMPLETE_BY is its own rule', () => {
   const rows = env.store.sheets.Settings; const set = (k, v) => { rows.find(r => r[0] === k)[1] = v; };
-  set('INTAKE_END', '2027-01-31'); set('MIN_AGE', '18'); _reset();
+  set('INTAKE_END', '2027-01-31'); set('MIN_AGE', '18'); delete env.store.props.RULES_V3; _reset();
   const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result; assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.minAge, 20);
   set('MIN_AGE', '19'); _reset(); assert.equal(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.minAge, 19, 'a value someone chose is never overwritten'); set('MIN_AGE', '20'); _reset();
   const tok = login(); call('saveSettings', tok, { UG_COMPLETE_BY: '2026-12-31' });
@@ -406,7 +406,7 @@ test('faq: untouched starter rows are corrected for the new dates, edited ones a
   r8[3] = 'Yes, if your degree will be completed on or before {{INTAKE_END}}.'; r5[3] = 'My own edited answer about {{INTAKE_END}}'; r5[2] = 'Who can apply (edited)?'; env.store.props.FAQ_MIG = '1'; _reset(); CacheServiceClear();
   const f = call('chatInit').faq;
   assert.match(f.find(x => x.id === 'F08').answer, /1 Nov 2026/); assert.equal(f.find(x => x.id === 'F05').answer, 'My own edited answer about 28 Feb 2027');
-  assert.match(f.find(x => x.id === 'F28').answer, /Nov 2026 – Feb 2027/); assert.match(f.find(x => x.id === 'F29').answer, /four months/);
+  assert.match(f.find(x => x.id === 'F28').answer, /Oct 2026 – Feb 2027/); assert.match(f.find(x => x.id === 'F29').answer, /four months/);
 });
 
 test('sessions: mode and meeting link; interview mode per candidate', () => {
