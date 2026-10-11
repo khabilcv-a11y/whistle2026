@@ -361,4 +361,14 @@ B.A History, Hindu College, University of Delhi 2021 - 2024`, opts);
   assert.equal(CV.parseDate('31/02/2002', '2026-10-12'), ''); assert.equal(CV.parseDate('12-03-2015', '2026-10-12'), '', 'too young'); assert.equal(CV.parseDate('March 5, 2001', '2026-10-12'), '2001-03-05');
 });
 
+test('setup: an older Chat_Log layout is moved aside (rows kept) instead of failing', () => {
+  env.store.sheets.Chat_Log_backup = env.store.sheets.Chat_Log; const keep = env.store.sheets.Chat_Log;
+  env.store.sheets.Chat_Log = [['Time', 'Question', 'Outcome'], ['2026-10-05T10:00:00', 'old question', 'no-ai']];
+  vm.runInContext('setup()', ctx);
+  assert.deepEqual(env.store.sheets.Chat_Log[0], ['Time', 'Session', 'Role', 'Text', 'Source']);
+  const old = Object.keys(env.store.sheets).find(k => /^Chat_Log_old_/.test(k)); assert.ok(old); assert.equal(env.store.sheets[old][1][1], 'old question');
+  assert.ok(logs.join('\n').includes('✓ Chat log tab') && !logs.join('\n').includes('✗'));
+  env.store.sheets.Chat_Log = keep; delete env.store.sheets.Chat_Log_backup; delete env.store.sheets[old];
+});
+
 console.log(`\n${n} tests passed`);

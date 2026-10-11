@@ -1100,6 +1100,10 @@ function ss_() {
 function sheet_(name, fields) {
   var ss = ss_(), sh = ss.getSheetByName(name);
   var headers = fields.map(function (f) { return f.h || f; });
+  if (sh && name === APP.SHEETS.CHATLOG && sh.getLastColumn() && sh.getRange(1, 1, 1, Math.min(headers.length, sh.getLastColumn())).getValues()[0].join() !== headers.slice(0, Math.min(headers.length, sh.getLastColumn())).join()) {
+    sh.setName(name + '_old_' + Utilities.formatDate(new Date(), APP.TIMEZONE, 'yyyyMMdd_HHmm'));   // older layout: keep its rows, start a fresh tab
+    sh = null;
+  }
   if (!sh) {
     sh = ss.insertSheet(name);
     sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground('#14213d').setFontColor('#ffffff');

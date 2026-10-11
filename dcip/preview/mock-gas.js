@@ -130,6 +130,7 @@
     Sheet.prototype.getLastColumn = function () { var m = 0; store.sheets[this.name].forEach(function (r) { m = Math.max(m, r.length); }); return m; };
     Sheet.prototype.getRange = function (r, c, nr, nc) { return new Range(this, r, c, nr, nc); };
     Sheet.prototype.setFrozenRows = function () {};
+    Sheet.prototype.setName = function (n) { store.sheets[n] = store.sheets[this.name]; delete store.sheets[this.name]; this.name = n; save(); return this; };
     Sheet.prototype.deleteRow = function (r) { store.sheets[this.name].splice(r - 1, 1); save(); };
 
     var spreadsheet = {
