@@ -205,23 +205,36 @@ function msg_(err) { return String(err && err.message || err); }
  * ========================================================================= */
 
 function setup() {
-  var ss = ss_();
-  sheet_(APP.SHEETS.APPS, FIELDS);
-  sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS);
-  sheet_(APP.SHEETS.AUDIT, AUDIT_HEADERS);
-  settingsSheet_();
-  faqSheet_();
-  var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty('TOKEN_SECRET')) props.setProperty('TOKEN_SECRET', Utilities.getUuid() + Utilities.getUuid());
-  sheet_(APP.SHEETS.USERS, USER_FIELDS); sheet_(APP.SHEETS.LOGINS, LOGIN_HEADERS); sheet_(APP.SHEETS.CHATLOG, CHATLOG_HEADERS);
-  cvFolder_();
-  Logger.log('Setup complete for spreadsheet: ' + ss.getUrl());
-  if (!users_().length) {
+  var failed = 0, ss = null;
+  function step(name, fn) {   // every step reports on its own, so a failure says exactly where it happened
+    try { var r = fn(); Logger.log('✓ ' + name + (r ? ' – ' + r : '')); return true; }
+    catch (e) { failed++; Logger.log('✗ ' + name + ' FAILED: ' + msg_(e)); return false; }
+  }
+  Logger.log('DCIP setup started…');
+  step('Open the spreadsheet', function () { ss = ss_(); return ss.getUrl(); });
+  if (!ss) { Logger.log('Stopped. Set the Script Property SPREADSHEET_ID (Project Settings → Script properties) to the ID of your Google Sheet and run setup again.'); return; }
+  step('Security key', function () {
+    var props = PropertiesService.getScriptProperties();
+    if (!props.getProperty('TOKEN_SECRET')) { props.setProperty('TOKEN_SECRET', Utilities.getUuid() + Utilities.getUuid()); return 'created'; }
+    return 'already there';
+  });
+  step('Applications tab', function () { sheet_(APP.SHEETS.APPS, FIELDS); });
+  step('Sessions tab', function () { sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS); });
+  step('Settings tab', function () { settingsSheet_(); });
+  step('Audit tab', function () { sheet_(APP.SHEETS.AUDIT, AUDIT_HEADERS); });
+  step('Users tab', function () { sheet_(APP.SHEETS.USERS, USER_FIELDS); });
+  step('Sign-in log tab', function () { sheet_(APP.SHEETS.LOGINS, LOGIN_HEADERS); });
+  step('Chat log tab', function () { sheet_(APP.SHEETS.CHATLOG, CHATLOG_HEADERS); });
+  step('FAQ tab', function () { faqSheet_(); });
+  step('CV folder in Google Drive', function () { return cvFolder_().getUrl(); });
+  step('Super admin account', function () {
+    if (users_().length) return 'accounts already exist – login unchanged (to reset the super admin password run resetSuperAdminPassword)';
     var pw = randomPassword_();
     insertUser_('superadmin', 'Super Admin', 'super', pw, 'setup');
     Logger.log('SUPER ADMIN LOGIN → username: superadmin   password: ' + pw + '   (change it after signing in: "My account" → Change password)');
-  } else Logger.log('Users already exist – super admin login unchanged. To reset the super admin password run resetSuperAdminPassword().');
-  Logger.log('CV folder: ' + cvFolder_().getUrl());
+    return 'created';
+  });
+  Logger.log(failed ? 'Setup finished with ' + failed + ' problem(s). Please send the ✗ lines above.' : 'Setup complete. You can now deploy the web app.');
 }
 
 function resetSuperAdminPassword() {
