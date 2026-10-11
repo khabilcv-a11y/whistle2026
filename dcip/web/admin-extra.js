@@ -48,7 +48,7 @@
   V.banners = function (el) {
     el.innerHTML = head('Landing-page banners', 'Images shown one after another at the top of the application page. Paste a direct image link for each.',
       '<button class="btn" id="bAdd">+ Add image</button><button class="btn primary" id="bSave">Save banners</button>') +
-      '<div class="note-box" style="margin-bottom:14px"><b>Best image size:</b> 1600 × 600 px (8:3 landscape), JPG or WebP, under 300 KB each. Keep the important part (text, faces) inside the central 1000 × 600 px, because phones crop the sides. Up to 20 images.<br>' +
+      '<div class="note-box" style="margin-bottom:14px"><b>Best image size:</b> 1600 × 600 px (8:3 landscape), JPG, WebP, PNG or <b>animated GIF</b>, ideally under 300 KB each (GIFs under 1 MB). Only <b>links</b> are accepted. Nothing is uploaded to this portal, which keeps it light. Keep the important part (text, faces) inside the central 1000 × 600 px, because phones crop the sides. Up to 20 images.<br>' +
       '<b>Where to host:</b> upload the image to the same GitHub repository (e.g. a <code>banners</code> folder) and use its raw link, or use any public image link. A Google Drive file must be shared as <i>Anyone with the link</i>; paste the normal Drive link and it is converted automatically.</div>' +
       '<div id="bList"><div class="muted">Loading…</div></div>';
     function paint() {
