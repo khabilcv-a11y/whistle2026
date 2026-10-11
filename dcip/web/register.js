@@ -5,7 +5,7 @@
   var C = null, draftKey = 'dcip34_draft_v1';
   var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
 
-  D.getConfig().then(function (c) { C = c; render(); }, function (e) {
+  D.getConfig().then(function (c) { C = c; render(); if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(c); }, function (e) {
     $('#main').innerHTML = '<div class="card"><div class="alert bad">' + esc(e.message) + '</div></div>';
   });
 
@@ -13,7 +13,7 @@
     $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
     if (C.contactEmail || C.contactPhone) $('#contact').textContent = 'Contact: ' + [C.contactEmail, C.contactPhone].filter(Boolean).join(' · ');
-    var facts = [['Internship', D.fmtDate(C.intakeStart) + ' – ' + D.fmtDate(C.intakeEnd)], ['Age', C.maxAge + ' years or below'], ['Degree', 'UG completed by ' + D.fmtDate(C.intakeEnd)]];
+    var facts = [['Internship', D.fmtDate(C.intakeStart) + ' – ' + D.fmtDate(C.intakeEnd)], ['Age', (C.minAge ? C.minAge + ' to ' + C.maxAge : C.maxAge + ' or below') + ' years'], ['Degree', 'UG completed by ' + D.fmtDate(C.intakeEnd)]];
     if (C.deadline) facts.push(['Last date', D.fmtDateTime(C.deadline.replace(' ', 'T'))]);
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
     if (!C.open) {

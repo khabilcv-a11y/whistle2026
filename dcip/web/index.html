@@ -112,6 +112,36 @@
   .next { text-align: left; background: var(--bg); border-radius: 16px; padding: 16px 18px; margin-top: 16px; }
   .next b { display: block; margin-bottom: 6px; }
   .next li { margin: 4px 0; }
+
+  /* ---------- chat helper ---------- */
+  .chat-fab { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; border-radius: 999px; padding: 13px 20px 13px 16px; font: 800 15px/1 inherit; font-family: inherit; color: #fff;
+    background: linear-gradient(135deg, var(--red), #e8453f); box-shadow: 0 10px 28px rgba(211,32,47,.4); transition: transform .15s; }
+  .chat-fab:hover { transform: translateY(-2px); } .chat-fab-ic { font-size: 20px; }
+  .chat-fab.nudge { animation: nudge 1.4s ease-in-out 3; } @keyframes nudge { 0%,100% { transform: none; } 30% { transform: translateY(-8px) scale(1.04); } 60% { transform: translateY(0); } }
+  .chat-panel { position: fixed; right: 16px; bottom: 16px; z-index: 70; width: min(380px, calc(100vw - 24px)); height: min(600px, calc(100vh - 32px)); display: flex; flex-direction: column; background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 24px 70px rgba(11,33,64,.4); border: 1px solid var(--line); }
+  .chat-panel[hidden] { display: none; }
+  .chat-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #fff; background: linear-gradient(135deg, var(--navy-900), var(--navy-500)); }
+  .chat-head b { display: block; font-size: 16px; } .chat-head small { opacity: .8; font-size: 12px; } .chat-logo { height: 40px; width: auto; }
+  .chat-x { margin-left: auto; border: 0; background: rgba(255,255,255,.15); color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 15px; }
+  .chat-log { flex: 1; overflow-y: auto; padding: 14px; background: #f5f8fd; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 88%; padding: 10px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; animation: slide .25s ease; overflow-wrap: anywhere; }
+  .msg.bot { background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px; align-self: flex-start; }
+  .msg.user { background: var(--navy-700); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .msg a { color: var(--focus); } .msg.user a { color: #fff; }
+  .msg.typing { display: flex; gap: 4px; padding: 14px 16px; } .msg.typing span { width: 7px; height: 7px; border-radius: 50%; background: #9aa8c0; animation: bounce 1s infinite; } .msg.typing span:nth-child(2) { animation-delay: .15s; } .msg.typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 50% { transform: translateY(-5px); opacity: .5; } }
+  .chat-chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 12px; max-height: 34%; overflow-y: auto; border-top: 1px solid var(--line); background: #fff; }
+  .chat-chips:empty { display: none; }
+  .cchip { border: 1.5px solid var(--navy-500); background: #fff; color: var(--navy-700); border-radius: 999px; padding: 8px 13px; font: 700 13.5px/1.2 inherit; font-family: inherit; cursor: pointer; text-align: left; transition: background .12s, color .12s; }
+  .cchip:hover { background: var(--navy-700); color: #fff; }
+  .cchip.go { background: var(--gold); border-color: var(--gold); color: #261800; } .cchip.go:hover { background: #e59a0e; color: #261800; }
+  .cchip.ghost { border-color: var(--line-2); color: var(--ink-2); }
+  .chat-form { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: #fff; }
+  .chat-form input { flex: 1; min-height: 44px; border-radius: 999px; padding: 8px 16px; }
+  .chat-send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--navy-700); color: #fff; font-size: 18px; cursor: pointer; }
+  .chat-note { text-align: center; font-size: 11px; color: var(--muted); padding: 0 12px 8px; background: #fff; }
+  @media (max-width: 560px) { .chat-panel { right: 0; bottom: 0; width: 100vw; height: 82vh; border-radius: 22px 22px 0 0; } .chat-fab-tx { display: none; } .chat-fab { padding: 14px; } body.chat-open { overflow: hidden; } }
+  @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
   footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 36px; }
 </style>
 </head>
@@ -141,5 +171,6 @@
 <script src="common.js"></script>
 <script src="lists.js"></script>
 <script src="register.js"></script>
+<script src="chat.js"></script>
 </body>
 </html>

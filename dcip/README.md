@@ -19,6 +19,13 @@ Public registration form + admin portal. **Google Sheets** is the database, **Ap
 - **Admin**: live insights (all applications / shortlisted / selected-confirmed: district, gender, education, age, college, stream, subject, LSGD within Kozhikode, funnel, per-day trend); applications table with search, filters, bulk actions, flag, status; screening queue; screen scores → **shortlist top 30** (tie warning); sessions + auto-assign; **score sheet, attendance, call chart, document verification** per session; selection by interview rank; bulk e-mail with templates; settings; audit trail. Everything downloads as **Excel or PDF**.
 - Status flow: Received → Shortlisted → Selected → Confirmed (also Waitlisted, Not Selected, Disqualified, Withdrawn). The portal polls every 6 s and updates when anything changes.
 
+## Chat helper (FAQ bot)
+A floating **"Have a question?"** button on the applicant page opens a chat with topic buttons → question buttons → answer → related questions. Typed questions are matched by keywords against the **FAQ** sheet tab (built from the DCIP FAQ document). Only when nothing matches does the server ask **Groq** (AI), which is told to answer from the FAQ only.
+- **Edit the answers** any time in the `FAQ` tab (Topic, Question, Answer, Keywords, Related IDs). Changes show within ~5 minutes. Answers can use `{{BATCH}} {{INTAKE_START}} {{INTAKE_END}} {{MIN_AGE}} {{MAX_AGE}} {{AGE_AS_ON}} {{DEADLINE}} {{CONTACT}}` and `[[apply]]` (a "Start application" button).
+- **Groq key**: Apps Script → Project Settings → Script Properties → add `GROQ_API_KEY`. *Never* put the key in a web page, `Code.gs` or GitHub. Optional `GROQ_MODEL` (default `llama-3.3-70b-versatile`). Without a key the bot still works from the FAQ and shows the contact details for anything else.
+- The `Chat_Log` tab lists questions the FAQ could not answer. Read it to improve the FAQ.
+- Limits: 20 AI answers/minute and 600/day across all visitors, to protect the key.
+
 ## Deploy
 1. **Sheet**: create an empty Google Sheet; copy its ID (between `/d/` and `/edit`).
 2. **Apps Script**: script.google.com → New project. Paste `apps-script/Code.gs`; enable the manifest and paste `apps-script/appsscript.json`. Project Settings → Script Properties → `SPREADSHEET_ID`.

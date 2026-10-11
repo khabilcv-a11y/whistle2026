@@ -204,12 +204,19 @@
       MimeType: { JSON: 'JSON' },
       createTextOutput: function (s) { return { setMimeType: function () { return this; }, getContent: function () { return s; } }; }
     };
+    var UrlFetchApp = {
+      fetch: function (url, o) {
+        store.fetches = store.fetches || []; store.fetches.push({ url: url, o: o });
+        var r = (opts.fetch ? opts.fetch(url, o) : { code: 200, body: { choices: [{ message: { content: 'Demo AI answer.' } }] } });
+        return { getResponseCode: function () { return r.code; }, getContentText: function () { return JSON.stringify(r.body); } };
+      }
+    };
     var Logger = { log: function (s) { if (opts.log) opts.log(s); } };
 
     return {
       store: store,
       globals: { SpreadsheetApp: SpreadsheetApp, Utilities: Utilities, CacheService: CacheService, PropertiesService: PropertiesService,
-        LockService: LockService, MailApp: MailApp, DriveApp: DriveApp, ContentService: ContentService, Logger: Logger }
+        LockService: LockService, MailApp: MailApp, UrlFetchApp: UrlFetchApp, DriveApp: DriveApp, ContentService: ContentService, Logger: Logger }
     };
   }
 
