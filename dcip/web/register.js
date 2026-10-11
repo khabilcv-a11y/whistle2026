@@ -10,55 +10,85 @@
   });
 
   function render() {
-    $('#title').textContent = C.batch + ' · Registration';
+    $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
     if (C.contactEmail || C.contactPhone) $('#contact').textContent = 'Contact: ' + [C.contactEmail, C.contactPhone].filter(Boolean).join(' · ');
+    var facts = [['Internship', D.fmtDate(C.intakeStart) + ' – ' + D.fmtDate(C.intakeEnd)], ['Age', C.maxAge + ' years or below'], ['Degree', 'UG completed by ' + D.fmtDate(C.intakeEnd)]];
+    if (C.deadline) facts.push(['Last date', D.fmtDateTime(C.deadline.replace(' ', 'T'))]);
+    $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
     if (!C.open) {
-      $('#main').innerHTML = '<div class="card"><h2>Registration is closed</h2><p>The registration for the DCIP ' + esc(C.batch) + ' is not open at the moment. Thank you for your interest.</p></div>';
+      $('#badge').classList.add('closed'); $('#badgeText').textContent = 'Applications closed'; $('#cta').classList.add('hidden');
+      $('#main').innerHTML = '<h2>Registration is closed</h2><p>The registration for the DCIP ' + esc(C.batch) + ' is not open at the moment. Thank you for your interest.</p>';
       return;
     }
+    $('#main').removeAttribute('style');
     $('#main').innerHTML =
-      '<div class="card"><h2>Before you apply</h2><ul class="rules">' +
-      '<li><b class="ic">1</b><span>Internship period: <b>' + D.fmtDate(C.intakeStart) + ' to ' + D.fmtDate(C.intakeEnd) + '</b>.</span></li>' +
-      '<li><b class="ic">2</b><span>Age limit: <b>' + C.maxAge + ' years or below</b> on ' + D.fmtDate(C.ageAsOn) + '.</span></li>' +
-      '<li><b class="ic">3</b><span>You must have a bachelor\'s degree, and the <b>UG course must be completed on or before ' + D.fmtDate(C.intakeEnd) + '</b> (the end of the internship period).</span></li>' +
-      '<li><b class="ic">4</b><span>Enter your e-mail address <b>carefully</b>. <b>All further communication will be sent to this e-mail</b> and your mobile numbers, so use ones you check regularly.</span></li>' +
-      (C.deadline ? '<li><b class="ic">5</b><span>Last date to apply: <b>' + D.fmtDateTime(C.deadline.replace(' ', 'T')) + '</b>.</span></li>' : '') +
-      '</ul></div>' +
       '<form id="form" novalidate autocomplete="on">' +
-      section(1, 'Personal details',
-        f('fullName', 'Full name', '<input type="text" id="fullName" autocomplete="name" maxlength="100">', 'full', 'As in your certificates.') +
+      '<ol class="progress" id="progress"></ol>' +
+      step(1, 'About you', 'Let\'s start with you', 'Use your name as it is on your certificates.',
+        f('fullName', 'Full name', '<input type="text" id="fullName" autocomplete="name" maxlength="100">', 'full') +
         f('dob', 'Date of birth', '<input type="date" id="dob" min="1950-01-01" max="' + D.addDays(C.today, -365 * 15) + '" autocomplete="bday">', '', '<span id="ageNote"></span>') +
         f('gender', 'Gender', select('gender', C.genders, 'Select')) +
-        f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'Your confirmation will be sent here. Please double-check the spelling.') +
-        f('mobile', 'Primary mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">') +
-        f('altMobile', 'Alternate mobile number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
-      section(2, 'Where do you live?',
+        f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.') +
+        f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">') +
+        f('altMobile', 'Alternate mobile <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true)) +
+      step(2, 'Home', 'Where are you from?', 'This helps us understand the reach of the programme.',
         f('district', 'District of residence', select('district', C.districts, 'Select')) +
         f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full',
           'Type a few letters and pick your local body from the list that appears.')) +
-      section(3, 'Education',
+      step(3, 'Education', 'Tell us about your studies', 'A bachelor\'s degree is needed, completed by ' + D.fmtDate(C.intakeEnd) + '.',
         f('qual', 'Highest educational qualification', select('qual', C.quals, 'Select'), 'full') +
         f('stream', 'UG / bachelor\'s degree stream', select('stream', STREAMS, 'Select')) +
-        f('specialisation', 'UG specialisation / subject', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics, Computer Science">') +
+        f('specialisation', 'UG subject / specialisation', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics">') +
         f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', 'full', 'Pick from the list if you see your college; otherwise type its full name.') +
         f('completion', 'UG degree completion date', '<input type="date" id="completion" min="1980-01-01" max="2040-12-31">', 'full',
-          '<span id="compNote">Actual date if completed; <b>expected date</b> if your final-year results are pending.</span>')) +
-      section(4, 'About you',
+          '<span id="compNote">The actual date if completed; the <b>expected date</b> if your final-year results are pending.</span>')) +
+      step(4, 'Your story', 'Almost there – tell us why', 'A few honest lines are enough.',
         f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" maxlength="1500" rows="5"></textarea><div class="hint"><span id="mcount">0</span>/1500 characters (minimum 30)</div>', 'full') +
         f('cv', 'Upload your CV', '<input type="file" id="cv" accept=".pdf,.doc,.docx,application/pdf">', 'full',
-          'PDF, DOC or DOCX, up to ' + (C.cvMaxBytes / 1048576) + ' MB.' + (C.cvRequired ? '' : ' (optional)'))) +
+          'PDF, DOC or DOCX, up to ' + (C.cvMaxBytes / 1048576) + ' MB.' + (C.cvRequired ? '' : ' (optional)')) +
+        '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>') +
       '<div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>' +
-      '<div class="card"><label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="declare" style="margin-top:4px;width:18px;height:18px"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
-      '<div id="formAlert"></div>' +
-      '<div class="submit"><button type="submit" class="btn primary" id="submit">Submit application</button><span class="muted" id="submitNote"></span></div>' +
+      '<div id="formAlert" role="alert"></div>' +
+      '<div class="nav"><button type="button" class="btn ghost" id="back">← Back</button><span class="grow"></span>' +
+      '<button type="button" class="btn primary" id="next">Next →</button><button type="submit" class="btn submit" id="submit">Submit application</button></div>' +
+      '<div class="muted" id="submitNote" style="margin-top:10px;font-size:13px"></div>' +
       '</form>';
     bind(); restoreDraft(); updateLocalBody(); liveChecks();
     typeahead($('#lbName'), (window.DCIP_LISTS || {}).kozhikodeLocalBodies || []);
     typeahead($('#institution'), (window.DCIP_LISTS || {}).colleges || []);
+    $('#back').onclick = function () { showStep(cur - 1); };
+    $('#next').onclick = next;
+    showStep(1, true);
   }
 
-  function section(n, title, body) { return '<div class="card"><h2><span class="n">' + n + '</span>' + title + '</h2><div class="grid">' + body + '</div></div>'; }
+  var cur = 1, LABELS = ['About you', 'Home', 'Education', 'Your story'];
+  var STEP_FIELDS = { 1: ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile'], 2: ['district', 'lbName'], 3: ['qual', 'stream', 'specialisation', 'institution', 'completion'], 4: ['motivation', 'cv', 'declare'] };
+  function step(n, label, title, sub, body) {
+    return '<div class="step" data-step="' + n + '"' + (n > 1 ? ' hidden' : '') + '><div class="stephead"><small>Step ' + n + ' of 4 · ' + label + '</small><h2>' + title + '</h2><p>' + sub + '</p></div><div class="grid">' + body + '</div></div>';
+  }
+  function showStep(n, quiet) {
+    cur = Math.max(1, Math.min(4, n));
+    [].forEach.call(document.querySelectorAll('.step'), function (s) { s.hidden = +s.dataset.step !== cur; });
+    $('#progress').innerHTML = LABELS.map(function (l, i) {
+      return '<li class="' + (i + 1 < cur ? 'done' : i + 1 === cur ? 'now' : '') + '"><button type="button" data-go="' + (i + 1) + '"' + (i + 1 >= cur ? ' disabled' : '') + ' aria-label="' + (i + 1 < cur ? 'Go back to ' : '') + 'Step ' + (i + 1) + ': ' + l + '"><div class="bar"></div><div class="lbl">' + (i + 1 < cur ? '✓ ' : '') + l + '</div></button></li>';
+    }).join('');
+    [].forEach.call(document.querySelectorAll('[data-go]'), function (b) { b.onclick = function () { showStep(+b.dataset.go); }; });
+    $('#back').style.visibility = cur === 1 ? 'hidden' : 'visible';
+    $('#next').classList.toggle('hidden', cur === 4); $('#submit').classList.toggle('hidden', cur !== 4);
+    $('#formAlert').innerHTML = '';
+    if (!quiet) { $('#apply').scrollIntoView({ behavior: 'smooth', block: 'start' }); var first = $('.step:not([hidden]) input, .step:not([hidden]) select'); if (first && window.matchMedia('(min-width: 700px)').matches) first.focus({ preventScroll: true }); }
+  }
+  function next() {
+    var errs = validate(), keys = Object.keys(errs).filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; });
+    $('#formAlert').innerHTML = '';
+    if (keys.length) {
+      keys.forEach(function (k) { setErr(k, errs[k]); });
+      var el = $('#fld-' + keys[0]); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    showStep(cur + 1);
+  }
   function f(id, label, control, cls, hint, optional) {
     return '<div class="field ' + (cls || '') + '" id="fld-' + id + '"><label class="f" for="' + id + '">' + label + (optional ? '' : ' <span class="req">*</span>') + '</label>' + control +
       '<div class="err"></div>' + (hint ? '<div class="hint">' + hint + '</div>' : '') + '<div id="live-' + id + '"></div></div>';
@@ -74,7 +104,7 @@
       ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () { clearErr(id); saveDraft(); if (id === 'district') updateLocalBody(); liveChecks(); }); });
     });
     $('#motivation').addEventListener('input', function () { $('#mcount').textContent = this.value.length; });
-    $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
+    $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); if (cur < 4) next(); else submit(); });
   }
 
   /* ---------- draft (kept in this browser only; never the CV or the verification) ---------- */
@@ -202,9 +232,10 @@
     $('#formAlert').innerHTML = '';
     var errs = validate(), keys = Object.keys(errs);
     if (keys.length) {
+      for (var s = 1; s <= 4; s++) if (keys.some(function (k) { return STEP_FIELDS[s].indexOf(k) >= 0; })) { if (s !== cur) showStep(s, true); break; }
       keys.forEach(function (k) { setErr(k, errs[k]); });
-      var first = $('#fld-' + keys[0]); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the ' + keys.length + ' highlighted field' + (keys.length > 1 ? 's' : '') + '.</div>';
+      var first = $('#fld-' + keys.filter(function (k) { return STEP_FIELDS[cur].indexOf(k) >= 0; })[0]); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + (cur < 4 ? ' on this step' : '') + '.</div>';
       return;
     }
     var btn = $('#submit'); btn.disabled = true; btn.textContent = 'Submitting…';
@@ -225,11 +256,12 @@
 
   function done(r) {
     try { localStorage.removeItem(draftKey); } catch (e) {}
-    $('#main').innerHTML = '<div class="card done"><div class="tick">✓</div><h2 style="justify-content:center;font-size:22px">Application received</h2>' +
-      '<div class="ref">' + esc(r.id) + '</div><p>Please note your reference number.</p>' +
-      (r.mailed ? '<p>A confirmation with the details you submitted has been sent to <b>' + esc(r.email) + '</b>. Please check it, and look in your spam folder if you do not see it.</p>'
+    $('#main').innerHTML = '<div class="done"><div class="tick">✓</div><h2>You\'re in! Application received</h2>' +
+      '<p>Thank you for applying to DCIP. Please note your reference number:</p><div class="ref">' + esc(r.id) + '</div>' +
+      (r.mailed ? '<p>A confirmation with the details you submitted is on its way to <b>' + esc(r.email) + '</b>. Check your spam folder if you don\'t see it.</p>'
                 : '<p>We could not send the confirmation e-mail right now, but your application is recorded. Keep your reference number safe.</p>') +
-      '<p><b>All further communication will be sent to this e-mail address and your mobile numbers.</b></p></div>';
+      '<div class="next"><b>What happens next</b><ol style="margin:0;padding-left:20px"><li>We screen applications for eligibility.</li><li>Shortlisted applicants are contacted on this e-mail and mobile number.</li><li>Interview, document verification and final selection follow.</li></ol></div></div>';
+    $('#cta').classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 })();

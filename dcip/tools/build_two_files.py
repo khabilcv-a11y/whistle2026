@@ -15,9 +15,9 @@ CONFIG = ("<script>\n// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL BETWEEN
 def build(page, scripts, css_files):
     html = read(page)
     css = '\n'.join(read(c) for c in css_files)
-    html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', '', html)
+    # the inlined CSS goes where the first <link rel=stylesheet> was, so the page's own <style> still comes after it
+    html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', lambda m, _c=[0]: (_c.__setitem__(0, _c[0] + 1) or ('<style>\n%s\n</style>\n' % css if _c[0] == 1 else '')), html)
     html = html.replace('<link rel="icon" href="logo.png">', '<link rel="icon" href="%s">' % logo)
-    html = html.replace('</head>', '<style>\n%s\n</style>\n</head>' % css, 1)
     html = html.replace('src="logo.png"', 'src="%s"' % logo)
     html = re.sub(r'\s*<script src="[^"]+"></script>', '', html)          # drop external script tags
     body = CONFIG + '\n' + '\n'.join('<script>\n%s\n</script>' % js(read(s)) for s in scripts)
