@@ -7,7 +7,8 @@
   var texts = [], htmls = [], attrs = [], ATTR = ['placeholder', 'aria-label', 'title', 'alt'];
   var EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var ML_MON = ['ജനു', 'ഫെബ്രു', 'മാർ', 'ഏപ്രി', 'മേയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗ', 'സെപ്റ്റം', 'ഒക്ടോ', 'നവം', 'ഡിസം'];
-  try { var saved = localStorage.getItem(KEY); if (saved) lang = saved === 'ml' ? 'ml' : 'en'; else if (/^ml/i.test(navigator.language || '')) lang = 'ml'; } catch (e) {}
+  var LIVE = false;   // Malayalam stays hidden until the wording is checked: set to true to switch it on
+  try { if (!LIVE) throw 0; var saved = localStorage.getItem(KEY); if (saved) lang = saved === 'ml' ? 'ml' : 'en'; else if (/^ml/i.test(navigator.language || '')) lang = 'ml'; } catch (e) {}
 
   function norm(s) { return String(s).replace(/\s+/g, ' ').trim(); }
   /* Entries written with {name} stand for any text in that place, e.g. "Hello {name} · applied on {date}". */
@@ -96,7 +97,16 @@
   }
   function init() {
     mo.observe(document.body, { childList: true, subtree: true });
-    var b = document.getElementById('langBtn'); if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
+    var b = document.getElementById('langBtn');
+    if (b && !LIVE) {
+      b.onclick = function () {
+        var old = document.getElementById('langSoon'); if (old) { old.remove(); return; }
+        var n = document.createElement('div'); n.id = 'langSoon'; n.setAttribute('role', 'status'); n.setAttribute('data-noi18n', '');
+        n.innerHTML = '<b lang="ml">മലയാളം ഉടൻ വരുന്നു</b><span>Malayalam is coming soon</span>';
+        b.parentNode.appendChild(n); setTimeout(function () { if (n.parentNode) n.remove(); }, 3500);
+      };
+      document.addEventListener('click', function (e) { var n = document.getElementById('langSoon'); if (n && e.target !== b) n.remove(); });
+    } else if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
     set(lang, 'init');
   }
   w.DCIPLang = { t: t, set: set, get: function () { return lang; }, onChange: function (f) { listeners.push(f); }, run: run,

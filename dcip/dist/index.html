@@ -342,6 +342,9 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   .igin { max-width: 760px; margin: -40px auto 24px; padding: 0 16px; position: relative; z-index: 2; } .igin .igcard { width: 100%; display: grid; grid-template-columns: 112px 1fr; grid-template-areas: 'th hd' 'th go'; gap: 4px 14px; align-items: center; } .igin .igcard .th { grid-area: th; aspect-ratio: 1; } .igin .igcard .hd { grid-area: hd; padding: 0; align-self: end; } .igin .igcard .go { grid-area: go; margin: 0; align-self: start; } .igin .th figcaption, .igin .th em { display: none; }
   @media (min-width: 1280px) { .igfix { display: block; } .igin { display: none !important; } }
   html.a11y-hc .igcard { border: 2px solid #000; }
+  #langSoon { position: absolute; top: calc(100% + 10px); right: 0; z-index: 5; min-width: 210px; background: #0b2140; color: #fff; border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 12px 16px; box-shadow: 0 14px 34px rgba(11,33,64,.35); display: grid; gap: 2px; animation: soonIn .22s ease-out; }
+  #langSoon b { font-size: 15px; color: #ffd27a; } #langSoon span { font-size: 12.5px; color: #c9d8ef; }
+  @keyframes soonIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
@@ -711,7 +714,8 @@ window.DCIP_ML = {
   var texts = [], htmls = [], attrs = [], ATTR = ['placeholder', 'aria-label', 'title', 'alt'];
   var EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var ML_MON = ['ജനു', 'ഫെബ്രു', 'മാർ', 'ഏപ്രി', 'മേയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗ', 'സെപ്റ്റം', 'ഒക്ടോ', 'നവം', 'ഡിസം'];
-  try { var saved = localStorage.getItem(KEY); if (saved) lang = saved === 'ml' ? 'ml' : 'en'; else if (/^ml/i.test(navigator.language || '')) lang = 'ml'; } catch (e) {}
+  var LIVE = false;   // Malayalam stays hidden until the wording is checked: set to true to switch it on
+  try { if (!LIVE) throw 0; var saved = localStorage.getItem(KEY); if (saved) lang = saved === 'ml' ? 'ml' : 'en'; else if (/^ml/i.test(navigator.language || '')) lang = 'ml'; } catch (e) {}
 
   function norm(s) { return String(s).replace(/\s+/g, ' ').trim(); }
   /* Entries written with {name} stand for any text in that place, e.g. "Hello {name} · applied on {date}". */
@@ -800,7 +804,16 @@ window.DCIP_ML = {
   }
   function init() {
     mo.observe(document.body, { childList: true, subtree: true });
-    var b = document.getElementById('langBtn'); if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
+    var b = document.getElementById('langBtn');
+    if (b && !LIVE) {
+      b.onclick = function () {
+        var old = document.getElementById('langSoon'); if (old) { old.remove(); return; }
+        var n = document.createElement('div'); n.id = 'langSoon'; n.setAttribute('role', 'status'); n.setAttribute('data-noi18n', '');
+        n.innerHTML = '<b lang="ml">മലയാളം ഉടൻ വരുന്നു</b><span>Malayalam is coming soon</span>';
+        b.parentNode.appendChild(n); setTimeout(function () { if (n.parentNode) n.remove(); }, 3500);
+      };
+      document.addEventListener('click', function (e) { var n = document.getElementById('langSoon'); if (n && e.target !== b) n.remove(); });
+    } else if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
     set(lang, 'init');
   }
   w.DCIPLang = { t: t, set: set, get: function () { return lang; }, onChange: function (f) { listeners.push(f); }, run: run,
