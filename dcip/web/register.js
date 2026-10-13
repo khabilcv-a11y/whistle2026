@@ -168,8 +168,11 @@
         '<span id="compNote">The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before ' + esc(D.fmtDate(C.ugBy)) + '.</span>') +
       f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="9000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words</span></div>', 'full', null, false,
         '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p><p>What about DCIP\'s way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.</p>') +
-      f('background', 'A) How has your personal background shaped your interest in social or governance issues?<br>B) Who or what has most influenced your sense of public responsibility, and how?', '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> words</span></div>', 'full', null, false,
-        '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point. You can answer A and B together in one response.</p>') +
+      f('background', 'Choose <b>one</b> question and answer it', '<input type="hidden" id="bq"><div class="opts qopts" id="opts-bq" role="radiogroup" aria-labelledby="lbl-background" data-for="bq">' +
+        '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="A"><i class="qdot" aria-hidden="true"></i><span><b>A)</b> How has your personal background shaped your interest in social or governance issues?</span></button>' +
+        '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="B"><i class="qdot" aria-hidden="true"></i><span><b>B)</b> Who or what has most influenced your sense of public responsibility, and how?</span></button></div>' +
+        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> words</span></div>', 'full', null, false,
+        '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.</p>') +
       f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply. It helps us reach more students like you.') +
       '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
       '</div>' +
@@ -287,7 +290,7 @@
   }
 
   /* in the order they appear on the page (the first mistake is scrolled to) */
-  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'mastersInstitution', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'background', 'heardFrom', 'heardOther'];
+  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'mastersInstitution', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'bq', 'background', 'heardFrom', 'heardOther'];
   function val(id) { var e = $('#' + id); return e ? String(e.value).replace(/\s+/g, ' ').trim() : ''; }
   function words(s) { return String(s || '').trim().split(/\s+/).filter(Boolean); }
 
@@ -314,6 +317,7 @@
       ta.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
       ta.addEventListener('dragover', function (e) { e.preventDefault(); });
     }
+    $('#bq').addEventListener('input', function () { $('#background').placeholder = 'Your answer to question ' + this.value + ', in your own words'; });
     wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', 400, 150, 200);
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
     $('#form').addEventListener('input', function () { touched = true; });
@@ -427,7 +431,7 @@
   function live(id, cls, text) { var e = $('#live-' + id); if (e) e.innerHTML = text ? '<div class="' + (cls === 'ok' ? 'okmsg' : cls) + '">' + esc(text) + '</div>' : ''; }
 
   /* ---------- validation + submit ---------- */
-  var ALIAS = { streamOther: 'stream', heardOther: 'heardFrom' };
+  var ALIAS = { streamOther: 'stream', heardOther: 'heardFrom', bq: 'background' };
   function setErr(id, msg) { var fld = $('#fld-' + (ALIAS[id] || id)); if (!fld) return; fld.classList.add('invalid'); var e = $('.err', fld); if (e) e.textContent = msg; }
   function clearErr(id) { var fld = $('#fld-' + (ALIAS[id] || id)); if (fld) fld.classList.remove('invalid'); }
 
@@ -452,6 +456,7 @@
     if (!D.isIso(val('completion'))) errs.completion = 'Please pick the completion month.'; else if (r.compBlock) errs.completion = r.compBlock;
     var wc = words(val('motivation')).length;
     if (val('motivation').length < 30) errs.motivation = 'Please write at least 30 characters.'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
+    if (!val('bq')) errs.bq = 'Please tick the question you are answering: A or B.';
     if (val('background').length < 30) errs.background = 'Please answer this question (a few honest lines are enough, 150 to 200 words is ideal).'; else if (words(val('background')).length > 400) errs.background = 'Please keep your answer within 400 words (150 to 200 is ideal).';
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
@@ -490,7 +495,7 @@
         whatsappSame: val('waSame') === WA_YES, whatsapp: val('whatsapp'), altMobile: val('altMobile'),
         district: val('district'), state: val('district') === 'Outside Kerala' ? stateName() : '', localBody: localBody(), qual: val('qual'), mastersInstitution: val('mastersInstitution'),
         stream: val('stream') === 'Other' ? 'Other: ' + val('streamOther') : val('stream'), specialisation: val('specialisation'),
-        institution: val('institution'), completion: val('completion'), motivation: String($('#motivation').value).trim(), background: String($('#background').value).trim(),
+        institution: val('institution'), completion: val('completion'), motivation: String($('#motivation').value).trim(), backgroundQ: val('bq'), background: String($('#background').value).trim(),
         heardFrom: chosenList('heardFrom').map(function (x) { return x === 'Other' ? 'Other: ' + val('heardOther') : x; }), cv: cv,
         website: val('website')
       });

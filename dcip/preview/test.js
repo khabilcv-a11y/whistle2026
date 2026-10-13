@@ -27,7 +27,7 @@ const base = (o = {}) => Object.assign({
   fullName: 'Asha Menon', dob: '2002-04-10', gender: 'Female', email: 'asha@example.com', mobile: '98470 12345', altMobile: '',
   district: 'Kozhikode', localBody: 'Kozhikode Corporation', qual: "Bachelor's Degree (completed)", stream: 'B.A',
   specialisation: 'Political Science', institution: 'Devagiri College', completion: '2025-05-20',
-  motivation: 'I want to understand how district administration works on the ground.', background: 'My family runs a small shop in a village, where I watched neighbours depend on public offices for everyday needs and wanted to help.', whatsappSame: true, heardFrom: ['Friend / Family'],
+  motivation: 'I want to understand how district administration works on the ground.', backgroundQ: 'A', background: 'My family runs a small shop in a village, where I watched neighbours depend on public offices for everyday needs and wanted to help.', whatsappSame: true, heardFrom: ['Friend / Family'],
   cv: { name: 'cv.pdf', data: Buffer.from('%PDF-1.4 test').toString('base64') }
 }, o);
 function verifiedSubmit(over) { return call('submitApplication', base(over)); }
@@ -494,9 +494,10 @@ test('banners: page links (ImgBB, GitHub, Imgur, Dropbox) become direct image li
 test('background question: required, at least 30 characters, at most 400 words', () => {
   fails('submitApplication', /background and influences/, base({ email: 'bg1@example.com', mobile: '9000012001', fullName: 'No Background', background: '' }));
   fails('submitApplication', /too long/, base({ email: 'bg2@example.com', mobile: '9000012002', fullName: 'Too Long', background: 'word '.repeat(401) }));
+  fails('submitApplication', /A or B/, base({ email: 'bg0@example.com', mobile: '9000012000', fullName: 'No Choice', backgroundQ: '' }));
   const r = call('submitApplication', base({ email: 'bg3@example.com', mobile: '9000012003', fullName: 'Has Background' }));
   const adm = login(); const a = call('getAdminState', adm).applications.filter(x => x.id === r.id)[0];
-  assert.match(a.background, /small shop in a village/);
+  assert.match(a.background, /small shop in a village/); assert.equal(a.backgroundQ, 'A');
 });
 test('instagram: page link is public, post cards need a picture and an instagram.com link, callers cannot edit', () => {
   const adm = login();

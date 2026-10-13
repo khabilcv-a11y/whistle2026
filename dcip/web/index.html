@@ -218,6 +218,11 @@
   .opt .tick { display: none; }
   .other-in { margin-top: 10px; }
   .qlead { font-size: 14.5px; line-height: 1.55; color: var(--ink-2); margin: -1px 0 10px; background: #f6f9fe; border-left: 3px solid var(--gold); border-radius: 0 12px 12px 0; padding: 9px 13px; } .qlead p { margin: 0 0 6px; } .qlead p:last-child { margin: 0; } .qlead b { color: var(--ink); }
+  .qopts { display: grid; gap: 8px; margin-bottom: 10px; } .opt.qopt { display: flex; align-items: flex-start; gap: 12px; border-radius: 14px; padding: 12px 14px; text-align: left; font-weight: 600; font-size: 15px; line-height: 1.45; }
+  .opt.qopt::before { content: none !important; } .opt.qopt b { font-weight: 800; }
+  .qdot { flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; border: 2px solid #8a99b3; background: #fff; box-shadow: inset 0 0 0 4px #fff; transition: background .12s, border-color .12s; }
+  .opt.qopt[aria-checked=true] { background: #eef4fd; color: var(--ink); border-color: var(--navy-700); border-width: 2px; padding: 11px 13px; } .opt.qopt[aria-checked=true] .qdot { background: var(--navy-700); border-color: var(--navy-700); }
+  html.a11y-hc .opt.qopt[aria-checked=true] { background: #fff; } html.a11y-hc .opt.qopt[aria-checked=true] .qdot { background: #000; border-color: #000; }
   .wtarget { display: inline-block; font-weight: 800; font-size: 12.5px; letter-spacing: .3px; color: #7a4b00; background: var(--gold-soft); border: 1px solid #f3d99a; border-radius: 999px; padding: 3px 11px; }
   .wcount b.good { color: #14633a; } .wcount b.amber { color: #a15c00; }
   .wcount { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 6px; } .wcount b.warn { color: var(--red); }

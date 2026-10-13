@@ -120,7 +120,7 @@
       '<dt>UG</dt><dd>' + esc(A.ugText(a)) + '</dd><dt>UG completion</dt><dd>' + esc(D.fmtMonthYear(a.completion)) + '</dd>' +
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
-      (a.background ? '<label class="f" style="margin-top:10px">Background and influences</label><div class="note-box">' + esc(a.background) + '</div>' : '') +
+      (a.background ? '<label class="f" style="margin-top:10px">Background and influences' + (a.backgroundQ ? ' · answered question <b>' + esc(a.backgroundQ) + '</b>' : '') + '</label><div class="note-box">' + esc(a.background) + '</div>' : '') +
       '<h4>Evaluation</h4><div class="fgrid">' +
       '<div><label class="f">Status</label><select data-f="status">' + A.opts(S.statuses, a.status || 'Received') + '</select></div>' +
       '<div><label class="f">Screening result</label><select data-f="screening">' + A.opts(['Eligible', 'Review', 'Suggest Disqualify', 'Cleared'], a.screening) + '</select></div>' +
