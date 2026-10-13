@@ -1132,29 +1132,16 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   var CFGKEY = 'dcip_cfg_v2', booted = false, touched = false, timers = {};
   function istToday() { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); } catch (e) { return new Date().toISOString().slice(0, 10); } }
   function strip(c) { var o = {}; Object.keys(c).forEach(function (k) { if (k !== 'today') o[k] = c[k]; }); return JSON.stringify(o); }
+  function safe(f) { try { f(); } catch (e) { if (window.console) console.error(e); } }   // one failing part must never take the header down with it
   function boot() {
-    render(); renderBanners(C.banners || []); countdown();
+    safe(render); safe(function () { renderBanners(C.banners || []); }); safe(countdown);
     if (!booted) {
-      booted = true; heroFx();
-      if (window.DCIPSkyline) window.DCIPSkyline.mount($('.hero'));
+      booted = true; safe(heroFx);
+      if (window.DCIPSkyline) safe(function () { window.DCIPSkyline.mount($('.hero')); });
       setTimeout(function () { if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(C); }, 2500);
       setTimeout(function () { if (window.DCIPCv && window.DCIPCv.prefetch) window.DCIPCv.prefetch(); }, 4000);
     }
   }
-  var cached = null; try { cached = JSON.parse(localStorage.getItem(CFGKEY) || 'null'); } catch (e) {}
-  if (cached && cached.c && cached.c.batch) { C = cached.c; C.today = istToday(); boot(); }
-  D.getConfig().then(function (fresh) {
-    try { localStorage.setItem(CFGKEY, JSON.stringify({ c: fresh })); } catch (e) {}
-    if (!booted) { C = fresh; boot(); return; }
-    if (strip(fresh) === strip(C)) return;
-    var reopen = fresh.open !== C.open;
-    C = fresh;
-    if (!touched || reopen) boot();                                   // nothing typed yet: simply show the new version
-    else { renderFacts(); renderFooter(); renderInstagram(); renderBanners(C.banners || []); countdown(); }   // keep what was typed
-  }, function (e) {
-    if (!booted) $('#main').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
-  });
-
   function calm() { return document.documentElement.classList.contains('a11y-calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
   function ageText() { return C.minAge ? C.minAge + ' to ' + C.maxAge + ' years' : 'Up to ' + C.maxAge + ' years'; }
   function ageRule() { return C.minAge ? 'between ' + C.minAge + ' and ' + C.maxAge + ' years old' : 'not older than ' + C.maxAge + ' years'; }
@@ -1634,6 +1621,25 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       '<div class="next"><b>What happens next</b><ol style="margin:0;padding-left:20px"><li>Every application is reviewed as a whole: your responses, CV and details together.</li><li>Shortlisted applicants are contacted on this e-mail address and on WhatsApp / mobile.</li><li>Interview, document verification and final selection follow.</li></ol></div></div>';
     $('#apply').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'start' });
   }
+
+  /* ---- start: only now, when everything above has been defined ---- */
+  function startUp() {
+  var cached = null; try { cached = JSON.parse(localStorage.getItem(CFGKEY) || 'null'); } catch (e) {}
+  if (cached && cached.c && cached.c.batch) { C = cached.c; C.today = istToday(); boot(); }
+  D.getConfig().then(function (fresh) {
+    try { localStorage.setItem(CFGKEY, JSON.stringify({ c: fresh })); } catch (e) {}
+    if (!booted) { C = fresh; boot(); return; }
+    if (strip(fresh) === strip(C)) return;
+    var reopen = fresh.open !== C.open;
+    C = fresh;
+    if (!touched || reopen) boot();                                   // nothing typed yet: simply show the new version
+    else { renderFacts(); renderFooter(); renderInstagram(); renderBanners(C.banners || []); countdown(); }   // keep what was typed
+  }, function (e) {
+    if (!booted) $('#main').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
+  });
+
+  }
+  startUp();
 })();
 
 </script>
