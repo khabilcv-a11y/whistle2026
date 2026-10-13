@@ -120,6 +120,7 @@
       '<dt>UG</dt><dd>' + esc(A.ugText(a)) + '</dd><dt>UG completion</dt><dd>' + esc(D.fmtMonthYear(a.completion)) + '</dd>' +
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
+      (a.background ? '<label class="f" style="margin-top:10px">Background and influences</label><div class="note-box">' + esc(a.background) + '</div>' : '') +
       '<h4>Evaluation</h4><div class="fgrid">' +
       '<div><label class="f">Status</label><select data-f="status">' + A.opts(S.statuses, a.status || 'Received') + '</select></div>' +
       '<div><label class="f">Screening result</label><select data-f="screening">' + A.opts(['Eligible', 'Review', 'Suggest Disqualify', 'Cleared'], a.screening) + '</select></div>' +
@@ -140,7 +141,7 @@
       '<div><label class="f">District</label><select data-f="district">' + A.opts(S.config.districts, a.district) + '</select></div>' + inp('localBody', 'Local body') +
       '<div class="full"><label class="f">Qualification</label><select data-f="qual">' + A.opts(S.config.quals, a.qual) + '</select></div>' +
       inp('stream', 'UG stream') + inp('specialisation', 'Subject') + '<div class="full">' + inp('institution', 'Institution') + '</div>' + inp('completion', 'UG completion (use the last day of the month)', 'date') +
-      '<div class="full"><label class="f">Motivation</label><textarea data-f="motivation" rows="4">' + esc(a.motivation) + '</textarea></div></div></details>' +
+      '<div class="full"><label class="f">Motivation</label><textarea data-f="motivation" rows="4">' + esc(a.motivation) + '</textarea></div><div class="full"><label class="f">Background and influences</label><textarea data-f="background" rows="4">' + esc(a.background) + '</textarea></div></div></details>' +
       '</div>' +
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
     d.classList.remove('hidden'); $('#drawerBg').classList.remove('hidden');

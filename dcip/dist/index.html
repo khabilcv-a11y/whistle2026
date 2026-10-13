@@ -275,6 +275,9 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   .opts.wrapgrid { gap: 8px; } .opts.dense .opt { padding: 8px 13px; min-height: 40px; font-size: 14.5px; }
   .opt .tick { display: none; }
   .other-in { margin-top: 10px; }
+  .qlead { font-size: 14.5px; line-height: 1.55; color: var(--ink-2); margin: -1px 0 10px; background: #f6f9fe; border-left: 3px solid var(--gold); border-radius: 0 12px 12px 0; padding: 9px 13px; } .qlead p { margin: 0 0 6px; } .qlead p:last-child { margin: 0; } .qlead b { color: var(--ink); }
+  .wtarget { display: inline-block; font-weight: 800; font-size: 12.5px; letter-spacing: .3px; color: #7a4b00; background: var(--gold-soft); border: 1px solid #f3d99a; border-radius: 999px; padding: 3px 11px; }
+  .wcount b.good { color: #14633a; } .wcount b.amber { color: #a15c00; }
   .wcount { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 6px; } .wcount b.warn { color: var(--red); }
   /* date pickers */
   .dp { position: relative; } .dp-in { padding-right: 52px !important; cursor: pointer; }
@@ -1271,7 +1274,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       f('dob', 'Date of birth', '<input type="hidden" id="dob">', '', '<span id="ageNote"></span>') +
       f('gender', 'Gender', choice('gender', C.genders)) +
       f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.') +
-      f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">', '') +
+      f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">', '', 'The number we will call if you are shortlisted. Please keep it switched on.') +
       f('altMobile', 'Another number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true) +
       '<div class="field full wa hidden" id="fld-waSame"><span class="q" id="lbl-waSame">Is this number on WhatsApp? <span class="req">*</span></span>' + choice('waSame', [WA_YES, WA_NO]) + '<div class="err"></div></div>' +
       f('whatsapp', 'Your WhatsApp number', '<input type="tel" id="whatsapp" inputmode="numeric" maxlength="14" placeholder="10-digit WhatsApp number">', 'full hidden', 'We may send interview updates on WhatsApp.') +
@@ -1279,15 +1282,18 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       f('state', 'Which state?', '<div class="acwrap"><input type="text" id="state" autocomplete="off" maxlength="60" placeholder="Start typing, then pick your state from the list"></div>', 'full hidden') +
       f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full hidden',
         'Type a few letters and pick your local body from the list that appears.') +
-      f('qual', 'Highest educational qualification', choice('qual', C.quals), 'full') +
+      f('qual', 'Highest educational qualification', choice('qual', C.quals), 'full', 'Choose the highest level you have <b>completed</b>. If you are in your final year, pick “final year – results pending”.') +
       f('mastersInstitution', 'Where did you complete your master\'s degree?', '<div class="acwrap"><input type="text" id="mastersInstitution" autocomplete="off" maxlength="150" placeholder="Start typing the college / university"></div>', 'full hidden', 'Tell us the college or university for your master\'s.') +
       f('stream', 'UG / bachelor\'s degree stream', choice('stream', C.streams || STREAMS, false, 'dense') + '<input type="text" id="streamOther" class="other-in hidden" maxlength="80" placeholder="Please tell us your degree, e.g. Bachelor of Fine Arts" aria-label="Your degree">', 'full') +
       f('specialisation', 'UG subject / specialisation', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics">') +
       f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', '', 'Pick from the list if you see your college; otherwise type its full name.') +
       f('completion', 'UG completion month', '<input type="hidden" id="completion">', 'full',
         '<span id="compNote">The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before ' + esc(D.fmtDate(C.ugBy)) + '.</span>') +
-      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="9000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words</span></div>', 'full') +
-      f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply.') +
+      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="9000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words</span></div>', 'full', null, false,
+        '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p><p>What about DCIP\'s way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.</p>') +
+      f('background', 'A) How has your personal background shaped your interest in social or governance issues?<br>B) Who or what has most influenced your sense of public responsibility, and how?', '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> words</span></div>', 'full', null, false,
+        '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point. You can answer A and B together in one response.</p>') +
+      f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply. It helps us reach more students like you.') +
       '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
       '</div>' +
       '<div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>' +
@@ -1398,13 +1404,13 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       askServer: function (text) { return D.call('parseCv', text); } });
   }
 
-  function f(id, label, control, cls, hint, optional) {
-    return '<div class="field ' + (cls || '') + '" id="fld-' + id + '"><label class="f" id="lbl-' + id + '" for="' + id + '">' + label + (optional ? '' : ' <span class="req">*</span>') + '</label>' + control +
+  function f(id, label, control, cls, hint, optional, lead) {
+    return '<div class="field ' + (cls || '') + '" id="fld-' + id + '"><label class="f" id="lbl-' + id + '" for="' + id + '">' + label + (optional ? '' : ' <span class="req">*</span>') + '</label>' + (lead ? '<div class="qlead">' + lead + '</div>' : '') + control +
       '<div class="err"></div>' + (hint ? '<div class="hint">' + hint + '</div>' : '') + '<div id="live-' + id + '"></div></div>';
   }
 
   /* in the order they appear on the page (the first mistake is scrolled to) */
-  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'mastersInstitution', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'heardFrom', 'heardOther'];
+  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'mastersInstitution', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'background', 'heardFrom', 'heardOther'];
   function val(id) { var e = $('#' + id); return e ? String(e.value).replace(/\s+/g, ' ').trim() : ''; }
   function words(s) { return String(s || '').trim().split(/\s+/).filter(Boolean); }
 
@@ -1417,16 +1423,21 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
         liveChecks();
       }); });
     });
-    var mo = $('#motivation'), noted = false;
-    function count() {
-      var w = words(mo.value); if (w.length > MAX_WORDS) { mo.value = mo.value.split(/(\s+)/).slice(0, MAX_WORDS * 2 - 1).join(''); w = words(mo.value); }
-      $('#mcount').textContent = w.length; $('#mcount').className = w.length >= MAX_WORDS ? 'warn' : '';
+    /* long answers: typed by the applicant (no pasting), counted in words, with a gentle target for the second one */
+    function wire(id, countId, noteId, max, lo, hi) {
+      var ta = $('#' + id), noted = false;
+      function count() {
+        var w = words(ta.value); if (w.length > max) { ta.value = ta.value.split(/(\s+)/).slice(0, max * 2 - 1).join(''); w = words(ta.value); }
+        var el = $('#' + countId); el.textContent = w.length;
+        el.className = w.length >= max ? 'warn' : lo && w.length && w.length < lo ? 'amber' : lo && w.length >= lo && w.length <= hi ? 'good' : lo && w.length > hi ? 'amber' : '';
+      }
+      ta.addEventListener('input', count); count();
+      function noPaste(e) { e.preventDefault(); if (!noted) { noted = true; var n = $('#' + noteId); n.style.color = 'var(--red)'; n.style.fontWeight = '700'; } }
+      ['paste', 'drop'].forEach(function (ev) { ta.addEventListener(ev, noPaste); });
+      ta.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
+      ta.addEventListener('dragover', function (e) { e.preventDefault(); });
     }
-    mo.addEventListener('input', count); count();
-    function noPaste(e) { e.preventDefault(); if (!noted) { noted = true; $('#pasteNote').style.color = 'var(--red)'; $('#pasteNote').style.fontWeight = '700'; } }
-    ['paste', 'drop'].forEach(function (ev) { mo.addEventListener(ev, noPaste); });
-    mo.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
-    mo.addEventListener('dragover', function (e) { e.preventDefault(); });
+    wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', 400, 150, 200);
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
     $('#form').addEventListener('input', function () { touched = true; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
@@ -1438,7 +1449,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     try {
       var o = JSON.parse(localStorage.getItem(draftKey) || 'null');
       if (o) FIELDS.forEach(function (id) { if (o[id] != null && $('#' + id)) $('#' + id).value = o[id]; });
-      pickers.dob.show(); pickers.completion.show(); $('#motivation').dispatchEvent(new Event('input'));
+      pickers.dob.show(); pickers.completion.show(); $('#motivation').dispatchEvent(new Event('input')); $('#background').dispatchEvent(new Event('input'));
     } catch (e) {}
   }
 
@@ -1564,6 +1575,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     if (!D.isIso(val('completion'))) errs.completion = 'Please pick the completion month.'; else if (r.compBlock) errs.completion = r.compBlock;
     var wc = words(val('motivation')).length;
     if (val('motivation').length < 30) errs.motivation = 'Please write at least 30 characters.'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
+    if (val('background').length < 30) errs.background = 'Please answer this question (a few honest lines are enough, 150 to 200 words is ideal).'; else if (words(val('background')).length > 400) errs.background = 'Please keep your answer within 400 words (150 to 200 is ideal).';
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
     var file = $('#cv').files[0];
@@ -1601,7 +1613,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
         whatsappSame: val('waSame') === WA_YES, whatsapp: val('whatsapp'), altMobile: val('altMobile'),
         district: val('district'), state: val('district') === 'Outside Kerala' ? stateName() : '', localBody: localBody(), qual: val('qual'), mastersInstitution: val('mastersInstitution'),
         stream: val('stream') === 'Other' ? 'Other: ' + val('streamOther') : val('stream'), specialisation: val('specialisation'),
-        institution: val('institution'), completion: val('completion'), motivation: String($('#motivation').value).trim(),
+        institution: val('institution'), completion: val('completion'), motivation: String($('#motivation').value).trim(), background: String($('#background').value).trim(),
         heardFrom: chosenList('heardFrom').map(function (x) { return x === 'Other' ? 'Other: ' + val('heardOther') : x; }), cv: cv,
         website: val('website')
       });

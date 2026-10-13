@@ -110,7 +110,8 @@ var FIELDS = [
   { k: 'interviewMode', h: 'Interview Mode' },
   { k: 'caller', h: 'Caller' },
   { k: 'confirmMailed', h: 'Confirmation E-mail' },
-  { k: 'state', h: 'State (if outside Kerala)' }
+  { k: 'state', h: 'State (if outside Kerala)' },
+  { k: 'background', h: 'Personal Background, Influences and Public Responsibility' }
 ];
 
 var SESSION_FIELDS = [
@@ -144,7 +145,7 @@ var ADMIN_EDITABLE = ['status', 'screening', 'whatsapp', 'mastersInstitution', '
   'attendance', 'reportingTime', 'callStatus', 'callNote', 'docCert', 'docOther', 'docRemarks',
   // corrections to what the applicant typed (age / location / screening are recalculated)
   'fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'district', 'localBody', 'qual', 'stream',
-  'specialisation', 'institution', 'completion', 'motivation'];
+  'specialisation', 'institution', 'completion', 'motivation', 'background'];
 var RESCREEN_ON = ['dob', 'district', 'localBody', 'qual', 'completion', 'mobile', 'altMobile', 'email', 'fullName'];
 
 
@@ -1183,6 +1184,9 @@ function cleanApplication_(p, s) {
   d.motivation = clean_(p.motivation);
   if (d.motivation.length < 30) throw new Error('Please tell us in a few lines why you want to join DCIP (at least 30 characters).');
   if (d.motivation.split(/\s+/).length > 1000 || d.motivation.length > 9000) throw new Error('Your answer is too long (maximum 1000 words).');
+  d.background = clean_(p.background);
+  if (d.background.length < 30) throw new Error('Please answer the question about your background and influences (at least 30 characters).');
+  if (d.background.split(/\s+/).length > 400 || d.background.length > 4000) throw new Error('Your answer about your background is too long (maximum 400 words; 150 to 200 is ideal).');
   if (d.altMobile && d.altMobile === d.mobile) d.altMobile = '';
   d.cv = ''; d.cvFileId = '';
   recomputeDerived_(d, s);
