@@ -92,7 +92,7 @@
     try { if (quiet !== 'init') localStorage.setItem(KEY, l); } catch (e) {}
     if (w.DCIP && w.DCIP.setMonths) w.DCIP.setMonths(l === 'ml' ? ML_MON : EN_MON);
     if (l === 'ml') { font(); run(document.body); }
-    var b = document.getElementById('langBtn'); if (b) { b.textContent = l === 'ml' ? 'English' : 'മലയാളം'; b.setAttribute('aria-label', l === 'ml' ? 'Switch to English' : 'മലയാളത്തിലേക്ക് മാറ്റുക'); b.lang = l === 'ml' ? 'en' : 'ml'; }
+    var b = document.getElementById('langBtn'); if (b && LIVE) { b.textContent = l === 'ml' ? 'English' : 'മലയാളം'; b.setAttribute('aria-label', l === 'ml' ? 'Switch to English' : 'മലയാളത്തിലേക്ക് മാറ്റുക'); b.lang = l === 'ml' ? 'en' : 'ml'; }
     listeners.forEach(function (f) { try { f(l); } catch (e) {} });
   }
   function init() {
@@ -102,10 +102,10 @@
       b.onclick = function () {
         var old = document.getElementById('langSoon'); if (old) { old.remove(); return; }
         var n = document.createElement('div'); n.id = 'langSoon'; n.setAttribute('role', 'status'); n.setAttribute('data-noi18n', '');
-        n.innerHTML = '<b lang="ml">മലയാളം ഉടൻ വരുന്നു</b><span>Malayalam is coming soon</span>';
+        n.innerHTML = '<b>Updating soon</b><span>The Malayalam version is being updated.</span>';
         b.parentNode.appendChild(n); setTimeout(function () { if (n.parentNode) n.remove(); }, 3500);
       };
-      document.addEventListener('click', function (e) { var n = document.getElementById('langSoon'); if (n && e.target !== b) n.remove(); });
+      document.addEventListener('click', function (e) { var n = document.getElementById('langSoon'); if (n && !b.contains(e.target)) n.remove(); });
     } else if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
     set(lang, 'init');
   }
