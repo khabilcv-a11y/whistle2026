@@ -24,6 +24,7 @@
   }
 
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function setMonths(a) { MON = a; }
   function isIso(s) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return false;
     var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
@@ -53,5 +54,5 @@
     setTimeout(function () { t.remove(); }, kind === 'err' ? 7000 : 3500);
   }
 
-  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtMonthYear: fmtMonthYear, lastDay: lastDay, ageOn: ageOn, addDays: addDays, toast: toast };
+  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtMonthYear: fmtMonthYear, setMonths: setMonths, lastDay: lastDay, ageOn: ageOn, addDays: addDays, toast: toast };
 })(window);

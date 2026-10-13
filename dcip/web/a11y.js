@@ -20,7 +20,7 @@
       '<div class="row"><b>Text size</b><button type="button" class="o" data-a11y="size0">Normal</button><button type="button" class="o" data-a11y="size1">Large</button><button type="button" class="o" data-a11y="size2">Extra large</button></div>' +
       '<div class="row"><b>Display</b><button type="button" class="o" data-a11y="hc">High contrast</button><button type="button" class="o" data-a11y="calm">Calm motion</button></div>' +
       '<div class="row"><button type="button" class="o" id="a11yReset">Reset</button></div></div>';
-    document.body.appendChild(d);
+    var tools = document.getElementById('tools'); while (d.firstChild) (d.firstChild.id === 'a11yFab' && tools ? tools : document.body).appendChild(d.firstChild);
     var fab = document.getElementById('a11yFab'), panel = document.getElementById('a11yPanel');
     fab.onclick = function () { var open = panel.hidden; panel.hidden = !open; fab.setAttribute('aria-expanded', open); if (open) panel.querySelector('button').focus(); };
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { panel.hidden = true; fab.setAttribute('aria-expanded', 'false'); fab.focus(); } });

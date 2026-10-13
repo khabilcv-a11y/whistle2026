@@ -204,11 +204,16 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
 
   /* status button, notices */
-  .statbtn { position: fixed; right: 64px; top: 12px; z-index: 96; height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px 0 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #fff; font: 700 14px inherit; font-family: inherit; letter-spacing: .1px; cursor: pointer; transition: transform .15s, background .2s, border-color .2s, box-shadow .2s; }
+  .tools { position: fixed; right: 12px; top: 12px; z-index: 96; display: flex; align-items: center; gap: 8px; }
+  .statbtn, .langbtn { height: 42px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #fff; font: 700 14px inherit; font-family: inherit; letter-spacing: .1px; cursor: pointer; transition: transform .15s, background .2s, border-color .2s, box-shadow .2s; }
+  .statbtn { padding: 0 16px 0 12px; } .langbtn { padding: 0 15px; font-weight: 800; }
+  .langbtn:hover { transform: translateY(-1px); background: rgba(255,255,255,.24); } .langbtn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px var(--navy-700); }
+  .langbtn.solid { background: var(--navy-700); border-color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.28); } html.a11y-hc .langbtn { background: #000; border-color: #fff; }
+  html[lang=ml] body, html[lang=ml] button, html[lang=ml] input, html[lang=ml] textarea, html[lang=ml] select { font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', system-ui, sans-serif; } html[lang=ml] .decade, html[lang=ml] h1 { font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', system-ui, sans-serif; }
   .statbtn svg { color: var(--gold); flex: none; } .statbtn:hover { transform: translateY(-1px); background: rgba(255,255,255,.24); }
   .statbtn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px var(--navy-700); }
-  .statbtn.solid { background: var(--navy-700); border-color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.28); } .statbtn.solid:hover { background: var(--navy-900); }
-  @media (max-width: 640px) { .statbtn { width: 42px; padding: 0; justify-content: center; } .statbtn span { display: none; } }
+  .statbtn.solid, .langbtn.solid { background: var(--navy-700); border-color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.28); } .statbtn.solid:hover { background: var(--navy-900); }
+  @media (max-width: 640px) { .statbtn { width: 42px; padding: 0; justify-content: center; } .statbtn span { display: none; } .langbtn { padding: 0 12px; } }
   html.a11y-hc .statbtn { background: #000; border-color: #fff; }
   .dlbar { text-align: left; padding: 8px 150px 8px 16px; }
   .dlg-wrap { position: fixed; inset: 0; z-index: 300; background: rgba(8,20,40,.55); display: grid; place-items: center; padding: 16px; animation: fade .2s; } @keyframes fade { from { opacity: 0; } }
@@ -258,7 +263,7 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   .foot { background: var(--navy-900); color: #d6e2f5; padding: 28px 16px 90px; margin-top: 10px; text-align: center; } .foot-in { max-width: 760px; margin: 0 auto; display: grid; gap: 8px; } .foot b { color: #fff; font-size: 17px; }
   .foot a { color: var(--gold); font-weight: 700; text-decoration: none; } .foot a:hover { text-decoration: underline; } .foot .sep { opacity: .4; margin: 0 8px; }
   /* accessibility options */
-  .a11y-fab { position: fixed; right: 12px; top: 12px; z-index: 96; width: 42px; height: 42px; border-radius: 50%; border: 2px solid #fff; background: #1d5fb8; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .15s; } .a11y-fab:hover { transform: scale(1.06); } .a11y-fab:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px #1d5fb8; }
+  .a11y-fab { position: relative; z-index: 96; width: 42px; height: 42px; flex: none; border-radius: 50%; border: 2px solid #fff; background: #1d5fb8; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .15s; } .a11y-fab:hover { transform: scale(1.06); } .a11y-fab:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px #1d5fb8; }
   .a11y-panel { position: fixed; right: 12px; top: 62px; z-index: 97; width: min(300px, calc(100vw - 28px)); background: #fff; color: var(--ink); border: 1px solid var(--line-2); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(11,33,64,.35); } .a11y-panel[hidden] { display: none; }
   @media (max-width: 560px) { .hero { padding-top: 66px; } }
   .a11y-panel h2 { font-size: 16px; margin: 0 0 10px; } .a11y-panel .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; } .a11y-panel .row > b { width: 100%; font-size: 13px; }
@@ -341,7 +346,7 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
 </head>
 <body>
 <a class="skip" href="#apply">Skip to the application form</a>
-<button type="button" class="statbtn" id="statusBtn" aria-label="Check application status"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.2 15.2L20 20M8 10.6l1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Check status</span></button>
+<div class="tools" id="tools"><button type="button" class="langbtn" id="langBtn" data-noi18n aria-label="മലയാളത്തിലേക്ക് മാറ്റുക" lang="ml">മലയാളം</button><button type="button" class="statbtn" id="statusBtn" aria-label="Check application status"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.2 15.2L20 20M8 10.6l1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Check status</span></button></div>
 <div class="dlbar" id="dlbar" hidden><span>⏳ Closes in <b id="dlbarT"></b></span></div>
 <header class="hero"><div class="in">
   <div>
@@ -399,6 +404,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   }
 
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function setMonths(a) { MON = a; }
   function isIso(s) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return false;
     var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
@@ -428,7 +434,378 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     setTimeout(function () { t.remove(); }, kind === 'err' ? 7000 : 3500);
   }
 
-  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtMonthYear: fmtMonthYear, lastDay: lastDay, ageOn: ageOn, addDays: addDays, toast: toast };
+  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtMonthYear: fmtMonthYear, setMonths: setMonths, lastDay: lastDay, ageOn: ageOn, addDays: addDays, toast: toast };
+})(window);
+
+</script>
+<script>
+/* Malayalam wording for the application page (the "മലയാളം" button).
+ *
+ * How to edit: each line is   "English text as it appears on the page": "Malayalam text",
+ *  - change only the part after the colon; keep the English part exactly as it is.
+ *  - {n}, {d}, {b} ... stand for a number, date or name that the page fills in. Keep them in the Malayalam line.
+ *  - lines with <b> ... </b> keep their tags; the bold part should wrap the same idea in Malayalam.
+ * Anything not listed here simply stays in English. */
+window.DCIP_ML = {
+  /* ---------- top of the page ---------- */
+  "Skip to the application form": "അപേക്ഷാ ഫോമിലേക്ക് പോകുക",
+  "Check application status": "അപേക്ഷയുടെ നില പരിശോധിക്കുക",
+  "Check status": "നില അറിയാം",
+  "Accessibility options": "ഉപയോഗ സൗകര്യങ്ങൾ",
+  "⏳ Closes in": "⏳ അവസാനിക്കാൻ",
+  "Applications open": "അപേക്ഷകൾ സ്വീകരിക്കുന്നു",
+  "Applications closed": "അപേക്ഷകൾ അവസാനിച്ചു",
+  "11 Years of Compassion": "11 വർഷത്തെ കാരുണ്യയാത്ര",
+  "Follow DCIP on Instagram (opens in a new tab)": "DCIP-യെ ഇൻസ്റ്റാഗ്രാമിൽ പിന്തുടരുക (പുതിയ ടാബിൽ തുറക്കും)",
+  "Follow us on Instagram": "ഇൻസ്റ്റാഗ്രാമിൽ ഞങ്ങളെ പിന്തുടരൂ",
+  "A Decade of Shaping Tomorrow, Today.": "ഇന്നിലൂടെ നാളെയെ രൂപപ്പെടുത്തുന്ന ഒരു ദശകം.",
+  "<span class=\"w\">A</span> <span class=\"w\">Decade</span> <span class=\"w\">of</span> <span class=\"w\">Shaping</span> <span class=\"w hl\">Tomorrow,</span> <span class=\"w hl2\">Today.</span>":
+    "<span class=\"w hl2\">ഇന്നിലൂടെ</span> <span class=\"w hl\">നാളെയെ</span> <span class=\"w\">രൂപപ്പെടുത്തുന്ന</span> <span class=\"w\">ഒരു</span> <span class=\"w\">ദശകം.</span>",
+  "Quit complaining.": "പരാതി പറയുന്നത് നിർത്തൂ.",
+  "Start creating.": "മാറ്റം സൃഷ്ടിച്ചു തുടങ്ങൂ.",
+  "Apply to the District Collector's Internship Programme, Kozhikode, and join the <b id=\"batchName\">{b}</b>. Work with the District Administration on real projects for real people.":
+    "കോഴിക്കോട് ജില്ലാ കളക്ടറുടെ ഇന്റേൺഷിപ്പ് പ്രോഗ്രാമിന്റെ <b id=\"batchName\">{b}</b> ഇതാ എത്തുന്നു. ജില്ലാ ഭരണകൂടത്തോടൊപ്പം യഥാർത്ഥ ജനങ്ങൾക്കായുള്ള യഥാർത്ഥ പദ്ധതികളിൽ പ്രവർത്തിക്കാൻ ഇപ്പോൾ അപേക്ഷിക്കൂ.",
+  "{n}th Batch": "{n}-ാം ബാച്ച്",
+  "Experience governance": "ഭരണം അനുഭവിച്ചറിയൂ",
+  "from within": "ഉള്ളിൽ നിന്ന്",
+  "under the District Collector": "ജില്ലാ കളക്ടറുടെ കീഴിൽ",
+  "with compassion at its core": "കരുണ അടിത്തറയാക്കി",
+  "for a better Kozhikode": "മെച്ചപ്പെട്ട കോഴിക്കോടിനായി",
+  "from within, with compassion at its core.": "ഉള്ളിൽ നിന്ന്, കരുണ അടിത്തറയാക്കി.",
+  "Internship": "ഇന്റേൺഷിപ്പ്",
+  "Age": "പ്രായം",
+  "Degree": "ബിരുദം",
+  "{a} to {b} years": "{a} മുതൽ {b} വയസ്സ് വരെ",
+  "Up to {b} years": "{b} വയസ്സ് വരെ",
+  "Graduation, completed by {d}": "ബിരുദം {d}-നകം പൂർത്തിയാക്കിയിരിക്കണം",
+  "DCIP Kozhikode crest": "DCIP കോഴിക്കോട് ലോഗോ",
+  "Applications close in": "അപേക്ഷിക്കാനുള്ള സമയം അവസാനിക്കാൻ",
+  "days": "ദിവസം", "hrs": "മണിക്കൂർ", "min": "മിനിറ്റ്", "sec": "സെക്കൻഡ്",
+  "d": "ദി", "h": "മ", "m": "മി", "s": "സെ",
+  "Last date: {d} IST": "അവസാന തീയതി: {d} IST",
+  "DCIP highlights": "DCIP ദൃശ്യങ്ങൾ",
+  "DCIP highlight {n}": "DCIP ദൃശ്യം {n}",
+  "Open DCIP on Instagram": "DCIP-യെ ഇൻസ്റ്റാഗ്രാമിൽ തുറക്കുക",
+  "See our other activities": "ഞങ്ങളുടെ മറ്റു പ്രവർത്തനങ്ങൾ കാണൂ",
+  "See more": "കൂടുതൽ കാണൂ",
+  "Open": "തുറക്കുക",
+  "Instagram": "ഇൻസ്റ്റാഗ്രാം",
+  "Instagram @{h}": "ഇൻസ്റ്റാഗ്രാം @{h}",
+  "Registration is closed": "രജിസ്ട്രേഷൻ അവസാനിച്ചു",
+  "The registration for the DCIP {b} is not open at the moment. Thank you for your interest.": "DCIP {b}-ന്റെ രജിസ്ട്രേഷൻ ഇപ്പോൾ തുറന്നിട്ടില്ല. താൽപര്യത്തിന് നന്ദി.",
+
+  /* ---------- the form ---------- */
+  "Apply for the {b}": "അപേക്ഷിക്കാം: {b}",
+  "It takes about 5 minutes. Upload your CV and we'll fill in what we can. You only check it and complete the rest.": "ഏകദേശം 5 മിനിറ്റ് മതി. നിങ്ങളുടെ CV അപ്‌ലോഡ് ചെയ്യൂ; വായിച്ചെടുക്കാവുന്ന വിവരങ്ങൾ ഞങ്ങൾ പൂരിപ്പിച്ചുകൊള്ളാം. നിങ്ങൾ പരിശോധിച്ച് ബാക്കി പൂർത്തിയാക്കിയാൽ മതി.",
+  "Choose your CV": "നിങ്ങളുടെ CV തിരഞ്ഞെടുക്കുക",
+  "or drop it here · PDF, DOC or DOCX · up to {n} MB": "അല്ലെങ്കിൽ ഇവിടെ ഇടുക · PDF, DOC അല്ലെങ്കിൽ DOCX · പരമാവധി {n} MB",
+  "{n} KB · tap to change": "{n} KB · മാറ്റാൻ തൊടൂ",
+  "Your CV is read in your browser to pre-fill the form. It goes only to the DCIP team.": "ഫോം പൂരിപ്പിക്കാനായി നിങ്ങളുടെ CV നിങ്ങളുടെ ബ്രൗസറിൽ തന്നെ വായിക്കുന്നു. അത് DCIP ടീമിന് മാത്രമേ ലഭിക്കൂ.",
+  "To pre-fill the form, the text of your CV is read automatically and processed by an AI service. It is not stored, and your CV file goes only to the DCIP team.": "ഫോം പൂരിപ്പിക്കാനായി നിങ്ങളുടെ CV-യിലെ എഴുത്ത് സ്വയമേവ വായിച്ച് ഒരു AI സേവനം വഴി പരിശോധിക്കുന്നു. അത് സൂക്ഷിച്ചുവയ്ക്കില്ല; CV ഫയൽ DCIP ടീമിന് മാത്രമേ ലഭിക്കൂ.",
+  "Reading your CV…": "നിങ്ങളുടെ CV വായിക്കുന്നു…",
+  "✓ CV attached. We can only read <b>PDF</b> and <b>DOCX</b> files for auto-fill, so please fill in the form yourself.": "✓ CV ചേർത്തിട്ടുണ്ട്. സ്വയം പൂരിപ്പിക്കാൻ <b>PDF</b>, <b>DOCX</b> ഫയലുകൾ മാത്രമേ വായിക്കാൻ കഴിയൂ; അതിനാൽ ദയവായി ഫോം സ്വയം പൂരിപ്പിക്കൂ.",
+  "✓ CV attached. We could not read details from it (that happens with scanned or image-only files) – no problem, please fill in the form below yourself.": "✓ CV ചേർത്തിട്ടുണ്ട്. അതിൽ നിന്ന് വിവരങ്ങൾ വായിച്ചെടുക്കാനായില്ല (സ്കാൻ ചെയ്ത ഫയലുകളിൽ ഇത് സംഭവിക്കാറുണ്ട്) – സാരമില്ല, താഴെയുള്ള ഫോം സ്വയം പൂരിപ്പിക്കൂ.",
+  "✓ CV attached. Please fill in the form below yourself.": "✓ CV ചേർത്തിട്ടുണ്ട്. താഴെയുള്ള ഫോം സ്വയം പൂരിപ്പിക്കൂ.",
+  "✨ We found <b>{n}</b> in your CV: {list}. They are filled in below – <b>please check each one</b> and complete the rest.": "✨ നിങ്ങളുടെ CV-യിൽ നിന്ന് <b>{n}</b> കണ്ടെത്തി: {list}. അവ താഴെ പൂരിപ്പിച്ചിട്ടുണ്ട് – <b>ഓരോന്നും പരിശോധിച്ച്</b> ബാക്കി പൂർത്തിയാക്കൂ.",
+  "{k} details": "{k} വിവരങ്ങൾ",
+  "1 detail": "1 വിവരം",
+  "name": "പേര്", "date of birth": "ജനനത്തീയതി", "gender": "ലിംഗം", "e-mail": "ഇ-മെയിൽ", "mobile number": "മൊബൈൽ നമ്പർ", "second mobile": "രണ്ടാമത്തെ മൊബൈൽ",
+  "district": "ജില്ല", "state": "സംസ്ഥാനം", "local body": "തദ്ദേശ സ്ഥാപനം", "qualification": "യോഗ്യത", "master's college": "ബിരുദാനന്തര കോളേജ്",
+  "degree stream": "ബിരുദ കോഴ്സ്", "degree": "ബിരുദം", "subject": "വിഷയം", "college": "കോളേജ്", "completion month": "പൂർത്തിയാക്കിയ മാസം",
+  "e-mail address": "ഇ-മെയിൽ വിലാസം",
+  "Your CV mentions <b>{y}</b>. Please pick the month (the expected month if you are in your final year).": "നിങ്ങളുടെ CV-യിൽ <b>{y}</b> എന്നാണ് കാണുന്നത്. ദയവായി മാസം തിരഞ്ഞെടുക്കൂ (അവസാന വർഷ വിദ്യാർത്ഥിയാണെങ്കിൽ പ്രതീക്ഷിക്കുന്ന മാസം).",
+  "Full name": "പൂർണ്ണ നാമം",
+  "Use your name as it is on your certificates.": "സർട്ടിഫിക്കറ്റുകളിൽ ഉള്ളതുപോലെ പേര് നൽകുക.",
+  "Date of birth": "ജനനത്തീയതി",
+  "DD / MM / YYYY": "ദിവസം / മാസം / വർഷം",
+  "Open calendar": "കലണ്ടർ തുറക്കുക",
+  "Gender": "ലിംഗം",
+  "Female": "സ്ത്രീ", "Male": "പുരുഷൻ", "Other": "മറ്റുള്ളവ",
+  "E-mail address": "ഇ-മെയിൽ വിലാസം",
+  "We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.": "സ്ഥിരീകരണ സന്ദേശം ഞങ്ങൾ ഈ വിലാസത്തിലേക്ക് അയയ്ക്കും; <b>തുടർന്നുള്ള എല്ലാ അറിയിപ്പുകളും</b> ഇവിടെത്തന്നെയാകും ലഭിക്കുക. അക്ഷരത്തെറ്റ് ഇല്ലെന്ന് ഒന്നുകൂടി ഉറപ്പാക്കൂ.",
+  "Mobile number": "മൊബൈൽ നമ്പർ",
+  "10-digit number": "10 അക്ക നമ്പർ",
+  "The number we will call if you are shortlisted. Please keep it switched on.": "ഷോർട്ട്‌ലിസ്റ്റ് ചെയ്താൽ ഞങ്ങൾ വിളിക്കുന്ന നമ്പറാണിത്. ഫോൺ ഓണാക്കി വയ്ക്കുക.",
+  "Another number": "മറ്റൊരു നമ്പർ",
+  "(optional)": "(ഓപ്ഷണൽ)",
+  "Is this number on WhatsApp?": "ഈ നമ്പറിൽ വാട്സ്ആപ്പ് ഉണ്ടോ?",
+  "Yes, it is": "ഉണ്ട്",
+  "No, I use a different number": "ഇല്ല, മറ്റൊരു നമ്പറാണ് ഉപയോഗിക്കുന്നത്",
+  "Your WhatsApp number": "നിങ്ങളുടെ വാട്സ്ആപ്പ് നമ്പർ",
+  "10-digit WhatsApp number": "10 അക്ക വാട്സ്ആപ്പ് നമ്പർ",
+  "We may send interview updates on WhatsApp.": "അഭിമുഖ വിവരങ്ങൾ വാട്സ്ആപ്പിൽ അയച്ചേക്കാം.",
+  "District of residence": "താമസിക്കുന്ന ജില്ല",
+  "Thiruvananthapuram": "തിരുവനന്തപുരം", "Kollam": "കൊല്ലം", "Pathanamthitta": "പത്തനംതിട്ട", "Alappuzha": "ആലപ്പുഴ", "Kottayam": "കോട്ടയം", "Idukki": "ഇടുക്കി",
+  "Ernakulam": "എറണാകുളം", "Thrissur": "തൃശ്ശൂർ", "Palakkad": "പാലക്കാട്", "Malappuram": "മലപ്പുറം", "Kozhikode": "കോഴിക്കോട്", "Wayanad": "വയനാട്",
+  "Kannur": "കണ്ണൂർ", "Kasaragod": "കാസർഗോഡ്", "Outside Kerala": "കേരളത്തിന് പുറത്ത്",
+  "You can be from anywhere, as long as you can do the internship in Kozhikode.": "എവിടെ നിന്നുള്ളവർക്കും അപേക്ഷിക്കാം; ഇന്റേൺഷിപ്പ് കോഴിക്കോട്ട് ചെയ്യാൻ കഴിയണം എന്നു മാത്രം.",
+  "Which state?": "ഏത് സംസ്ഥാനം?",
+  "Start typing, then pick your state from the list": "ടൈപ്പ് ചെയ്യാൻ തുടങ്ങൂ, എന്നിട്ട് പട്ടികയിൽ നിന്ന് സംസ്ഥാനം തിരഞ്ഞെടുക്കൂ",
+  "Local body": "തദ്ദേശ സ്ഥാപനം",
+  "Start typing your panchayat / municipality / corporation": "പഞ്ചായത്ത് / മുനിസിപ്പാലിറ്റി / കോർപ്പറേഷൻ ടൈപ്പ് ചെയ്യാൻ തുടങ്ങൂ",
+  "Type a few letters and pick your local body from the list that appears.": "ഏതാനും അക്ഷരങ്ങൾ ടൈപ്പ് ചെയ്ത്, കാണുന്ന പട്ടികയിൽ നിന്ന് തദ്ദേശ സ്ഥാപനം തിരഞ്ഞെടുക്കൂ.",
+  "Highest educational qualification": "ഉയർന്ന വിദ്യാഭ്യാസ യോഗ്യത",
+  "Bachelor's Degree (completed)": "ബിരുദം (പൂർത്തിയായി)",
+  "Bachelor's Degree (final year – results pending)": "ബിരുദം (അവസാന വർഷം – ഫലം വരാനുണ്ട്)",
+  "Master's Degree (completed)": "ബിരുദാനന്തര ബിരുദം (പൂർത്തിയായി)",
+  "Choose the highest level you have <b>completed</b>. If you are in your final year, pick “final year – results pending”.": "<b>പൂർത്തിയാക്കിയ</b> ഏറ്റവും ഉയർന്ന യോഗ്യത തിരഞ്ഞെടുക്കൂ. അവസാന വർഷ വിദ്യാർത്ഥിയാണെങ്കിൽ “അവസാന വർഷം – ഫലം വരാനുണ്ട്” തിരഞ്ഞെടുക്കൂ.",
+  "Where did you complete your master's degree?": "ബിരുദാനന്തര ബിരുദം എവിടെ നിന്നാണ് പൂർത്തിയാക്കിയത്?",
+  "Start typing the college / university": "കോളേജ് / സർവകലാശാല ടൈപ്പ് ചെയ്യാൻ തുടങ്ങൂ",
+  "Tell us the college or university for your master's.": "ബിരുദാനന്തര ബിരുദം പഠിച്ച കോളേജോ സർവകലാശാലയോ അറിയിക്കൂ.",
+  "UG / bachelor's degree stream": "ബിരുദ കോഴ്സ് (UG)",
+  "Please tell us your degree, e.g. Bachelor of Fine Arts": "നിങ്ങളുടെ ബിരുദം ഏതെന്ന് എഴുതൂ, ഉദാ. ബാച്ചിലർ ഓഫ് ഫൈൻ ആർട്സ്",
+  "Your degree": "നിങ്ങളുടെ ബിരുദം",
+  "UG subject / specialisation": "ബിരുദ വിഷയം / സ്പെഷ്യലൈസേഷൻ",
+  "e.g. Political Science, Economics": "ഉദാ. രാഷ്ട്രമീമാംസ, സാമ്പത്തികശാസ്ത്രം",
+  "Name of UG institution": "ബിരുദം പഠിച്ച സ്ഥാപനത്തിന്റെ പേര്",
+  "Start typing your college / university": "കോളേജ് / സർവകലാശാലയുടെ പേര് ടൈപ്പ് ചെയ്യാൻ തുടങ്ങൂ",
+  "Pick from the list if you see your college; otherwise type its full name.": "പട്ടികയിൽ നിങ്ങളുടെ കോളേജ് കാണുന്നുണ്ടെങ്കിൽ അത് തിരഞ്ഞെടുക്കൂ; ഇല്ലെങ്കിൽ മുഴുവൻ പേര് ടൈപ്പ് ചെയ്യൂ.",
+  "UG completion month": "ബിരുദം പൂർത്തിയാക്കിയ മാസം",
+  "Select month and year": "മാസവും വർഷവും തിരഞ്ഞെടുക്കൂ",
+  "The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before {d}.": "ബിരുദം പൂർത്തിയാക്കിയ മാസം; അവസാന വർഷ വിദ്യാർത്ഥിയാണെങ്കിൽ <b>പ്രതീക്ഷിക്കുന്ന മാസം</b>. ഇത് {d} അല്ലെങ്കിൽ അതിന് മുമ്പായിരിക്കണം.",
+  "What made you decide to apply to DCIP this year?": "ഈ വർഷം DCIP-ക്ക് അപേക്ഷിക്കാൻ നിങ്ങളെ പ്രേരിപ്പിച്ചത് എന്താണ്?",
+  "What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.": "<b>ജീവിതത്തിലെ ഈ ഘട്ടത്തിൽ</b> DCIP-ക്ക് അപേക്ഷിക്കാൻ നിങ്ങളെ പ്രേരിപ്പിച്ചത് എന്താണ്? കഴിഞ്ഞ കുറച്ച് മാസങ്ങളിലെ <b>ഒരു പ്രത്യേക നിമിഷമോ അനുഭവമോ നിരീക്ഷണമോ</b> ഓർത്തെടുത്ത് എഴുതൂ.",
+  "What about DCIP's way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.": "ജില്ലാ ഭരണകൂടവുമായി ചേർന്നുള്ള DCIP-യുടെ പ്രവർത്തനരീതിയിൽ ഇപ്പോൾ നിങ്ങളെ ആകർഷിക്കുന്നത് എന്താണ്? നിങ്ങളെ നന്നായി അറിയുന്ന ഒരാളോട് നിങ്ങളുടെ തീരുമാനം വിശദീകരിക്കുന്നതുപോലെ എഴുതൂ.",
+  "Write in your own words": "സ്വന്തം വാക്കുകളിൽ എഴുതൂ",
+  "Please type your answer yourself; pasting is switched off.": "ഉത്തരം സ്വയം ടൈപ്പ് ചെയ്യൂ; പേസ്റ്റ് ചെയ്യാൻ കഴിയില്ല.",
+  "/ {a} words · minimum {b}": "/ {a} വാക്ക് · കുറഞ്ഞത് {b}",
+  "Choose <b>one</b> question and answer it <span class=\"req\">*</span>": "താഴെയുള്ളവയിൽ <b>ഒരു</b> ചോദ്യം തിരഞ്ഞെടുത്ത് ഉത്തരം എഴുതൂ <span class=\"req\">*</span>",
+  "150–200 words": "150–200 വാക്കുകൾ",
+  "Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.": "നിങ്ങളുടെ ജീവിതമോ കുടുംബമോ ഒരു നിർണായക നിമിഷമോ സമൂഹസേവനത്തിലും പൊതുവിഷയങ്ങളിലും നിങ്ങൾക്ക് താൽപര്യം ഉണ്ടാക്കിയത് എങ്ങനെയെന്ന് ചുരുക്കി എഴുതൂ. നിങ്ങളുടെ മൂല്യങ്ങൾ, വളർന്ന സാഹചര്യം, ജീവിതത്തിലെ വഴിത്തിരിവ് എന്നിവയെക്കുറിച്ചും പറയാം.",
+  "A)": "A)", "B)": "B)",
+  "How has your personal background shaped your interest in social or governance issues?": "നിങ്ങളുടെ വ്യക്തിപരമായ പശ്ചാത്തലം സാമൂഹിക, ഭരണ വിഷയങ്ങളിലുള്ള നിങ്ങളുടെ താൽപര്യത്തെ എങ്ങനെ രൂപപ്പെടുത്തി?",
+  "Who or what has most influenced your sense of public responsibility, and how?": "പൊതു ഉത്തരവാദിത്തത്തെക്കുറിച്ചുള്ള നിങ്ങളുടെ ബോധത്തെ ഏറ്റവുമധികം സ്വാധീനിച്ചത് ആരാണ് / എന്താണ്, എങ്ങനെ?",
+  "First tick A or B above, then write your answer in your own words": "ആദ്യം മുകളിൽ A അല്ലെങ്കിൽ B ടിക്ക് ചെയ്യൂ, എന്നിട്ട് സ്വന്തം വാക്കുകളിൽ ഉത്തരം എഴുതൂ",
+  "Your answer to question {q}, in your own words": "{q} എന്ന ചോദ്യത്തിനുള്ള നിങ്ങളുടെ ഉത്തരം, സ്വന്തം വാക്കുകളിൽ",
+  "How did you hear about DCIP?": "DCIP-യെക്കുറിച്ച് നിങ്ങൾ എങ്ങനെ അറിഞ്ഞു?",
+  "Facebook": "ഫേസ്ബുക്ക്", "LinkedIn": "ലിങ്ക്ഡ്ഇൻ", "College / University": "കോളേജ് / സർവകലാശാല", "DCIP Alumni": "DCIP പൂർവ വിദ്യാർത്ഥികൾ",
+  "Friend / Family": "സുഹൃത്ത് / കുടുംബം", "DCIP Website": "DCIP വെബ്സൈറ്റ്", "Newspaper / Media": "പത്രം / മാധ്യമങ്ങൾ", "WhatsApp": "വാട്സ്ആപ്പ്",
+  "Please tell us where you heard about DCIP": "DCIP-യെക്കുറിച്ച് എവിടെ നിന്ന് അറിഞ്ഞു എന്ന് പറയൂ",
+  "Where you heard about DCIP": "DCIP-യെക്കുറിച്ച് അറിഞ്ഞ ഇടം",
+  "Select all that apply. It helps us reach more students like you.": "ബാധകമായവയെല്ലാം തിരഞ്ഞെടുക്കൂ. നിങ്ങളെപ്പോലുള്ള കൂടുതൽ വിദ്യാർത്ഥികളിലേക്ക് എത്താൻ ഇത് ഞങ്ങളെ സഹായിക്കും.",
+  "I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.": "ഞാൻ നൽകിയ വിവരങ്ങൾ സത്യവും പൂർണ്ണവുമാണെന്ന് പ്രഖ്യാപിക്കുന്നു. തെറ്റായ വിവരങ്ങൾ നൽകിയാൽ അയോഗ്യത ഉണ്ടാകുമെന്നും, തുടർന്നുള്ള എല്ലാ ആശയവിനിമയവും മുകളിൽ നൽകിയ ഇ-മെയിൽ വിലാസത്തിലും മൊബൈൽ നമ്പറുകളിലുമായിരിക്കുമെന്നും ഞാൻ മനസ്സിലാക്കുന്നു.",
+  "Please accept the declaration.": "പ്രഖ്യാപനം അംഗീകരിക്കൂ.",
+  "Submit application": "അപേക്ഷ സമർപ്പിക്കുക",
+  "Submitting…": "സമർപ്പിക്കുന്നു…",
+  "DCIP on Instagram": "DCIP ഇൻസ്റ്റാഗ്രാമിൽ",
+  "Need help? We are happy to talk.": "സഹായം വേണോ? സംസാരിക്കാൻ ഞങ്ങൾ തയ്യാർ.",
+
+  /* ---------- messages while filling in ---------- */
+  "Please upload your CV.": "നിങ്ങളുടെ CV അപ്‌ലോഡ് ചെയ്യൂ.",
+  "The CV must be a PDF, DOC or DOCX file.": "CV ഒരു PDF, DOC അല്ലെങ്കിൽ DOCX ഫയൽ ആയിരിക്കണം.",
+  "The file is larger than {n} MB.": "ഫയലിന്റെ വലുപ്പം {n} MB-യിൽ കൂടുതലാണ്.",
+  "One moment – we are still reading your CV…": "ഒരു നിമിഷം – ഞങ്ങൾ ഇപ്പോഴും നിങ്ങളുടെ CV വായിക്കുകയാണ്…",
+  "Please enter your full name.": "പൂർണ്ണ നാമം നൽകൂ.",
+  "Please enter your date of birth.": "ജനനത്തീയതി നൽകൂ.",
+  "Please choose one.": "ഒന്ന് തിരഞ്ഞെടുക്കൂ.",
+  "Please enter a valid e-mail address.": "ശരിയായ ഇ-മെയിൽ വിലാസം നൽകൂ.",
+  "This e-mail address has already applied.": "ഈ ഇ-മെയിൽ വിലാസത്തിൽ നിന്ന് ഇതിനകം അപേക്ഷിച്ചിട്ടുണ്ട്.",
+  "An application with this e-mail address has already been received. Please use a different e-mail address, or check your status.": "ഈ ഇ-മെയിൽ വിലാസത്തിൽ നിന്നുള്ള അപേക്ഷ ഇതിനകം ലഭിച്ചിട്ടുണ്ട്. മറ്റൊരു ഇ-മെയിൽ വിലാസം ഉപയോഗിക്കൂ, അല്ലെങ്കിൽ അപേക്ഷയുടെ നില പരിശോധിക്കൂ.",
+  "Enter a valid 10-digit mobile number.": "ശരിയായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകൂ.",
+  "Please tell us whether this number is on WhatsApp.": "ഈ നമ്പറിൽ വാട്സ്ആപ്പ് ഉണ്ടോ എന്ന് അറിയിക്കൂ.",
+  "Enter your 10-digit WhatsApp number.": "10 അക്ക വാട്സ്ആപ്പ് നമ്പർ നൽകൂ.",
+  "Enter a valid 10-digit mobile number or leave it blank.": "ശരിയായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകൂ, അല്ലെങ്കിൽ ഒഴിച്ചിടൂ.",
+  "Please choose your district.": "ജില്ല തിരഞ്ഞെടുക്കൂ.",
+  "Please pick your state from the list.": "പട്ടികയിൽ നിന്ന് സംസ്ഥാനം തിരഞ്ഞെടുക്കൂ.",
+  "Please enter your local body.": "തദ്ദേശ സ്ഥാപനം നൽകൂ.",
+  "Please enter where you completed your master's degree.": "ബിരുദാനന്തര ബിരുദം എവിടെ പൂർത്തിയാക്കി എന്ന് നൽകൂ.",
+  "Please tell us your degree.": "നിങ്ങളുടെ ബിരുദം ഏതെന്ന് അറിയിക്കൂ.",
+  "This is required.": "ഇത് നിർബന്ധമാണ്.",
+  "Please pick the completion month.": "പൂർത്തിയാക്കിയ മാസം തിരഞ്ഞെടുക്കൂ.",
+  "Please write at least {n} words (you have {c}).": "കുറഞ്ഞത് {n} വാക്കുകൾ എഴുതൂ (ഇപ്പോൾ {c}).",
+  "Please write at least {n} words (you have {c}); 150 to 200 is ideal.": "കുറഞ്ഞത് {n} വാക്കുകൾ എഴുതൂ (ഇപ്പോൾ {c}); 150 മുതൽ 200 വരെയാണ് അനുയോജ്യം.",
+  "Please keep your answer within {n} words.": "ഉത്തരം {n} വാക്കിനുള്ളിൽ ഒതുക്കൂ.",
+  "Please keep your answer within {n} words (150 to 200 is ideal).": "ഉത്തരം {n} വാക്കിനുള്ളിൽ ഒതുക്കൂ (150 മുതൽ 200 വരെയാണ് അനുയോജ്യം).",
+  "Please tick the question you are answering: A or B.": "ഏത് ചോദ്യത്തിനാണ് ഉത്തരം എഴുതുന്നതെന്ന് A അല്ലെങ്കിൽ B ടിക്ക് ചെയ്യൂ.",
+  "Please choose at least one option.": "ഒരു ഓപ്ഷനെങ്കിലും തിരഞ്ഞെടുക്കൂ.",
+  "Please tell us where you heard about DCIP.": "DCIP-യെക്കുറിച്ച് എവിടെ നിന്ന് അറിഞ്ഞു എന്ന് പറയൂ.",
+  "Please correct the highlighted field ({n}).": "അടയാളപ്പെടുത്തിയ ഭാഗം ശരിയാക്കൂ ({n}).",
+  "Please correct the highlighted fields ({n}).": "അടയാളപ്പെടുത്തിയ ഭാഗങ്ങൾ ശരിയാക്കൂ ({n}).",
+  "Age on {d}: {a} ✓": "{d}-ലെ പ്രായം: {a} ✓",
+  "Applicants must be {r} on {d}.": "{d}-ന് അപേക്ഷകർ {r} ആയിരിക്കണം.",
+  "between {a} and {b} years old": "{a}-നും {b}-നും ഇടയിൽ പ്രായമുള്ളവർ",
+  "not older than {b} years": "{b} വയസ്സിൽ കൂടാത്തവർ",
+  "You will be {a} on {d}.": "{d}-ന് നിങ്ങൾക്ക് {a} വയസ്സാകും.",
+  "You may apply, but the application will be marked for review.": "നിങ്ങൾക്ക് അപേക്ഷിക്കാം, പക്ഷേ അപേക്ഷ പുനഃപരിശോധനയ്ക്കായി അടയാളപ്പെടുത്തും.",
+  "The UG degree must be completed on or before {d}.": "ബിരുദം {d}-ന് മുമ്പോ അന്നോ പൂർത്തിയാക്കിയിരിക്കണം.",
+  "You have chosen \"completed\", so the month cannot be in the future. If you are in your final year, choose \"final year – results pending\".": "“പൂർത്തിയായി” എന്ന് തിരഞ്ഞെടുത്തതിനാൽ മാസം ഭാവിയിലാകാൻ പാടില്ല. അവസാന വർഷ വിദ്യാർത്ഥിയാണെങ്കിൽ “അവസാന വർഷം – ഫലം വരാനുണ്ട്” തിരഞ്ഞെടുക്കൂ.",
+  "You have chosen \"results pending\" but the month is long past. Please check the qualification and the month.": "“ഫലം വരാനുണ്ട്” എന്ന് തിരഞ്ഞെടുത്തെങ്കിലും ആ മാസം വളരെ മുമ്പാണ്. യോഗ്യതയും മാസവും ഒന്നുകൂടി പരിശോധിക്കൂ.",
+  "UG completes in {m}. Your final result will need to be confirmed.": "ബിരുദം {m}-ൽ പൂർത്തിയാകും. അന്തിമ ഫലം സ്ഥിരീകരിക്കേണ്ടിവരും.",
+  "Based on the details entered, you are not eligible to apply.": "നൽകിയ വിവരങ്ങൾ അനുസരിച്ച് നിങ്ങൾക്ക് അപേക്ഷിക്കാൻ യോഗ്യതയില്ല.",
+
+  /* ---------- success page ---------- */
+  "You're in! Application received": "അപേക്ഷ ലഭിച്ചു! 🎉",
+  "Thank you for applying to DCIP.": "DCIP-ക്ക് അപേക്ഷിച്ചതിന് നന്ദി.",
+  "A confirmation with the details you submitted is on its way to <b>{e}</b>. Check your spam folder if you don't see it.": "നിങ്ങൾ നൽകിയ വിവരങ്ങൾ ഉൾപ്പെടെയുള്ള സ്ഥിരീകരണം <b>{e}</b> എന്ന വിലാസത്തിലേക്ക് അയച്ചിട്ടുണ്ട്. കാണുന്നില്ലെങ്കിൽ സ്പാം ഫോൾഡർ പരിശോധിക്കൂ.",
+  "Your application is safely recorded. The confirmation e-mail could not be sent just now; we will send it shortly.": "നിങ്ങളുടെ അപേക്ഷ സുരക്ഷിതമായി രേഖപ്പെടുത്തി. സ്ഥിരീകരണ ഇ-മെയിൽ ഇപ്പോൾ അയയ്ക്കാനായില്ല; ഉടൻ അയയ്ക്കും.",
+  "You can check where your application stands any time with <b>Check application status</b> at the top of the page.": "പേജിന്റെ മുകളിലുള്ള <b>അപേക്ഷയുടെ നില പരിശോധിക്കുക</b> ഉപയോഗിച്ച് നിങ്ങളുടെ അപേക്ഷ ഏത് ഘട്ടത്തിലാണെന്ന് എപ്പോൾ വേണമെങ്കിലും അറിയാം.",
+
+  /* ---------- dialogs and status ---------- */
+  "Notice": "അറിയിപ്പ്",
+  "You have already applied": "നിങ്ങൾ ഇതിനകം അപേക്ഷിച്ചിട്ടുണ്ട്",
+  "An application with <b>{e}</b> is already on record. Each e-mail address can apply only once.": "<b>{e}</b> എന്ന വിലാസത്തിൽ നിന്നുള്ള അപേക്ഷ ഇതിനകം രേഖയിലുണ്ട്. ഒരു ഇ-മെയിൽ വിലാസത്തിൽ നിന്ന് ഒരു തവണ മാത്രമേ അപേക്ഷിക്കാൻ കഴിയൂ.",
+  "Want to see where your application stands? Check it with this e-mail address or your mobile number.": "നിങ്ങളുടെ അപേക്ഷ ഏത് ഘട്ടത്തിലാണെന്ന് അറിയണോ? ഈ ഇ-മെയിൽ വിലാസമോ മൊബൈൽ നമ്പറോ ഉപയോഗിച്ച് പരിശോധിക്കാം.",
+  "Check my application status": "എന്റെ അപേക്ഷയുടെ നില പരിശോധിക്കുക",
+  "Use a different e-mail address": "മറ്റൊരു ഇ-മെയിൽ വിലാസം ഉപയോഗിക്കുക",
+  "Check your application status": "അപേക്ഷയുടെ നില പരിശോധിക്കുക",
+  "Enter the e-mail address <b>or</b> the mobile number you gave while applying.": "അപേക്ഷിച്ചപ്പോൾ നൽകിയ ഇ-മെയിൽ വിലാസം <b>അല്ലെങ്കിൽ</b> മൊബൈൽ നമ്പർ നൽകൂ.",
+  "E-mail address or 10-digit mobile": "ഇ-മെയിൽ വിലാസം അല്ലെങ്കിൽ 10 അക്ക മൊബൈൽ",
+  "E-mail address or mobile number": "ഇ-മെയിൽ വിലാസം അല്ലെങ്കിൽ മൊബൈൽ നമ്പർ",
+  "Please enter your e-mail address or mobile number.": "ഇ-മെയിൽ വിലാസമോ മൊബൈൽ നമ്പറോ നൽകൂ.",
+  "Checking…": "പരിശോധിക്കുന്നു…",
+  "No application found": "അപേക്ഷ കണ്ടെത്താനായില്ല",
+  "We could not find an application with that {w}. Please check it, or try the other one (the one you gave while applying).": "ഈ {w} ഉപയോഗിച്ച് ഒരു അപേക്ഷയും കണ്ടെത്താനായില്ല. ഒന്നുകൂടി പരിശോധിക്കൂ, അല്ലെങ്കിൽ അപേക്ഷിച്ചപ്പോൾ നൽകിയ മറ്റേത് ശ്രമിച്ചുനോക്കൂ.",
+  "Hello {n} · applied on {d}": "{n}, നമസ്കാരം · അപേക്ഷിച്ച തീയതി {d}",
+  "Application received": "അപേക്ഷ ലഭിച്ചു",
+  "Thank you for applying to the District Collector's Internship Programme. Your application is with the DCIP team. If you are shortlisted, we will reach out on your registered e-mail and WhatsApp / mobile.": "ജില്ലാ കളക്ടറുടെ ഇന്റേൺഷിപ്പ് പ്രോഗ്രാമിന് അപേക്ഷിച്ചതിന് നന്ദി. നിങ്ങളുടെ അപേക്ഷ DCIP ടീമിന്റെ പക്കലുണ്ട്. ഷോർട്ട്‌ലിസ്റ്റ് ചെയ്താൽ, നിങ്ങളുടെ ഇ-മെയിലിലും വാട്സ്ആപ്പ് / മൊബൈലിലും ഞങ്ങൾ ബന്ധപ്പെടും.",
+  "Your interview": "നിങ്ങളുടെ അഭിമുഖം",
+  "link": "ലിങ്ക്",
+  "Close": "അടയ്ക്കുക",
+
+  /* ---------- accessibility panel ---------- */
+  "Accessibility": "ഉപയോഗ സൗകര്യങ്ങൾ",
+  "Text size": "അക്ഷര വലുപ്പം", "Normal": "സാധാരണം", "Large": "വലുത്", "Extra large": "ഏറ്റവും വലുത്",
+  "Display": "ഡിസ്പ്ലേ", "High contrast": "ഉയർന്ന കോൺട്രാസ്റ്റ്", "Calm motion": "ചലനം കുറയ്ക്കുക", "Reset": "പഴയപടിയാക്കുക",
+
+  /* ---------- chat ---------- */
+  "Have a question?": "സംശയമുണ്ടോ?",
+  "Ask DCIP": "DCIP-യോട് ചോദിക്കൂ",
+  "Ask DCIP 👋": "DCIP-യോട് ചോദിക്കൂ 👋",
+  "Online · happy to help with your questions": "ഓൺലൈൻ · നിങ്ങളുടെ സംശയങ്ങൾക്ക് മറുപടി നൽകാൻ തയ്യാർ",
+  "Close chat": "ചാറ്റ് അടയ്ക്കുക",
+  "Type your question here…": "നിങ്ങളുടെ ചോദ്യം ഇവിടെ ടൈപ്പ് ചെയ്യൂ…",
+  "Type your question": "നിങ്ങളുടെ ചോദ്യം ടൈപ്പ് ചെയ്യൂ",
+  "Send": "അയയ്ക്കുക",
+  "Chats are saved to improve our answers. Please don't share personal details.": "ഞങ്ങളുടെ മറുപടികൾ മെച്ചപ്പെടുത്താനായി ചാറ്റുകൾ സൂക്ഷിക്കുന്നു. വ്യക്തിപരമായ വിവരങ്ങൾ പങ്കിടരുത്.",
+  "Hi there! 👋 I'm your DCIP guide, happy to help with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>\"I am in my final year, can I apply?\"</i> or <i>\"is there a stipend?\"</i>":
+    "നമസ്കാരം! 👋 ഞാൻ നിങ്ങളുടെ DCIP വഴികാട്ടിയാണ്; ഇന്റേൺഷിപ്പിനെയും അപേക്ഷയെയും കുറിച്ച് സഹായിക്കാൻ സന്തോഷമേയുള്ളൂ.<br><br>താഴെയുള്ള <b>വിഷയം തൊടാം</b>, അല്ലെങ്കിൽ <b>നിങ്ങളുടെ ചോദ്യം സ്വന്തം വാക്കുകളിൽ എഴുതാം</b>, ഉദാഹരണത്തിന് <i>\"ഞാൻ അവസാന വർഷ വിദ്യാർത്ഥിയാണ്, അപേക്ഷിക്കാമോ?\"</i> അല്ലെങ്കിൽ <i>\"സ്റ്റൈപ്പൻഡ് ഉണ്ടോ?\"</i>",
+  "About DCIP": "DCIP-യെക്കുറിച്ച്", "Eligibility": "യോഗ്യത", "How to apply": "എങ്ങനെ അപേക്ഷിക്കാം", "Selection process": "തിരഞ്ഞെടുപ്പ് പ്രക്രിയ",
+  "Internship details": "ഇന്റേൺഷിപ്പ് വിശദാംശങ്ങൾ", "Scope of work": "പ്രവർത്തന മേഖല", "Help and contact": "സഹായവും ബന്ധപ്പെടലും",
+  "← All topics": "← എല്ലാ വിഷയങ്ങളും",
+  "Here is what people usually ask about <b>{t}</b>. Tap one, or type your own question:": "<b>{t}</b> സംബന്ധിച്ച് സാധാരണയായി ചോദിക്കുന്നത് ഇതൊക്കെയാണ്. ഒന്ന് തൊടൂ, അല്ലെങ്കിൽ സ്വന്തം ചോദ്യം ടൈപ്പ് ചെയ്യൂ:",
+  "Sure! What would you like to know? Pick a topic, or type your question.": "തീർച്ചയായും! എന്താണ് അറിയേണ്ടത്? ഒരു വിഷയം തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ ചോദ്യം ടൈപ്പ് ചെയ്യൂ.",
+  "Anything else I can help with? Type it in your own words or pick a topic.": "മറ്റെന്തെങ്കിലും സഹായം വേണോ? സ്വന്തം വാക്കുകളിൽ ടൈപ്പ് ചെയ്യൂ, അല്ലെങ്കിൽ ഒരു വിഷയം തിരഞ്ഞെടുക്കൂ.",
+  "Hello! 😊 Tell me what you would like to know, or pick a topic.": "നമസ്കാരം! 😊 എന്താണ് അറിയേണ്ടതെന്ന് പറയൂ, അല്ലെങ്കിൽ ഒരു വിഷയം തിരഞ്ഞെടുക്കൂ.",
+  "Go to the application form →": "അപേക്ഷാ ഫോമിലേക്ക് പോകൂ →",
+  "Sorry, I could not get an answer just now. Please try one of the topics below or reach out to the team directly; they will be glad to help.": "ക്ഷമിക്കണം, ഇപ്പോൾ മറുപടി ലഭിച്ചില്ല. താഴെയുള്ള ഒരു വിഷയം ശ്രമിച്ചുനോക്കൂ, അല്ലെങ്കിൽ ടീമിനെ നേരിട്ട് ബന്ധപ്പെടൂ; അവർ സന്തോഷത്തോടെ സഹായിക്കും.",
+  "Sorry, I could not get an answer just now. Please try one of the topics below.": "ക്ഷമിക്കണം, ഇപ്പോൾ മറുപടി ലഭിച്ചില്ല. താഴെയുള്ള ഒരു വിഷയം ശ്രമിച്ചുനോക്കൂ.",
+
+  /* ---------- date pickers ---------- */
+  "Choose a date": "തീയതി തിരഞ്ഞെടുക്കൂ",
+  "Previous month": "കഴിഞ്ഞ മാസം", "Next month": "അടുത്ത മാസം", "Month": "മാസം", "Year": "വർഷം",
+  "Clear": "മായ്ക്കുക",
+  "Choose a month and year": "മാസവും വർഷവും തിരഞ്ഞെടുക്കൂ",
+  "Previous year": "കഴിഞ്ഞ വർഷം", "Next year": "അടുത്ത വർഷം",
+  "Jan": "ജനു", "Feb": "ഫെബ്രു", "Mar": "മാർ", "Apr": "ഏപ്രി", "May": "മേയ്", "Jun": "ജൂൺ",
+  "Jul": "ജൂലൈ", "Aug": "ഓഗ", "Sep": "സെപ്റ്റം", "Oct": "ഒക്ടോ", "Nov": "നവം", "Dec": "ഡിസം"
+};
+
+</script>
+<script>
+/* Language switch (English / മലയാളം) for the application page.
+ * The Malayalam wording lives in lang-ml.js: one line per English phrase, easy to correct.
+ * Texts on the page are swapped in place (nothing is reloaded), phrases built in code go through DCIPLang.t(). */
+(function (w) {
+  'use strict';
+  var KEY = 'dcip_lang_v1', DICT = w.DCIP_ML || {}, lang = 'en', listeners = [], busy = false;
+  var texts = [], htmls = [], attrs = [], ATTR = ['placeholder', 'aria-label', 'title', 'alt'];
+  var EN_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var ML_MON = ['ജനു', 'ഫെബ്രു', 'മാർ', 'ഏപ്രി', 'മേയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗ', 'സെപ്റ്റം', 'ഒക്ടോ', 'നവം', 'ഡിസം'];
+  try { var saved = localStorage.getItem(KEY); if (saved) lang = saved === 'ml' ? 'ml' : 'en'; else if (/^ml/i.test(navigator.language || '')) lang = 'ml'; } catch (e) {}
+
+  function norm(s) { return String(s).replace(/\s+/g, ' ').trim(); }
+  /* Entries written with {name} stand for any text in that place, e.g. "Hello {name} · applied on {date}". */
+  var pats = null;
+  function patterns() {
+    if (pats) return pats; pats = [];
+    Object.keys(DICT).forEach(function (k) {
+      if (k.indexOf('{') < 0) return;
+      var names = [], re = k.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{(\w+)\}/g, function (m, n) { names.push(n); return '(.+?)'; });
+      pats.push({ re: new RegExp('^' + re + '$'), names: names, to: DICT[k] });
+    });
+    pats.sort(function (a, b) { return b.re.source.length - a.re.source.length; });
+    return pats;
+  }
+  function months(v) { return String(v).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, function (m) { return ML_MON[EN_MON.indexOf(m)]; }); }
+  /** A piece of text inside a pattern: a phrase from the dictionary, or a date with its month in Malayalam. */
+  function part(v) { var m = match(norm(v)); return m != null ? m : months(v); }
+  function match(k) {
+    if (DICT[k] != null) return DICT[k];
+    if (k.length > 400 || !/[A-Za-z]/.test(k)) return null;
+    var p = patterns();
+    for (var i = 0; i < p.length; i++) {
+      var m = p[i].re.exec(k); if (!m) continue;
+      var vars = {}; p[i].names.forEach(function (n, j) { vars[n] = part(m[j + 1]); });
+      return p[i].to.replace(/\{(\w+)\}/g, function (x, n) { return vars[n] != null ? vars[n] : x; });
+    }
+    return null;
+  }
+  /** Phrase in the current language. {name} placeholders are filled from vars. */
+  function t(s, vars) {
+    var out = lang === 'ml' ? match(norm(s)) : null; if (out == null) out = s;
+    return vars ? String(out).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? (lang === 'ml' ? months(vars[k]) : vars[k]) : m; }) : out;
+  }
+  var seen = null;          // collecting mode (used to build the dictionary)
+  function look(key) { if (seen) { seen[key] = 1; return null; } return match(key); }
+
+  function skip(el) { return /^(SCRIPT|STYLE|NOSCRIPT|SVG)$/i.test(el.tagName) || el.hasAttribute('data-noi18n') || (el.classList && el.classList.contains('sky')); }
+  function inner(el) { return /^(TEXTAREA|SELECT)$/i.test(el.tagName); }   // their own attributes are translated, what is typed or chosen inside is left alone
+  function tx(node) {
+    if (node.nodeType === 3) {
+      var k = norm(node.nodeValue), m = k && look(k);
+      if (m != null) { var raw = node.nodeValue; texts.push([node, raw]); node.nodeValue = raw.match(/^\s*/)[0] + m + raw.match(/\s*$/)[0]; }
+      return;
+    }
+    if (node.nodeType !== 1 || skip(node)) return;
+    ATTR.forEach(function (a) {
+      if (!node.hasAttribute(a)) return; var v = node.getAttribute(a), m = look(norm(v));
+      if (m != null) { attrs.push([node, a, v]); node.setAttribute(a, m); }
+    });
+    if (inner(node)) return;
+    if (node.children.length && node.textContent.length < 1200) {
+      var hk = norm(node.innerHTML), hm = hk.length < 1500 ? look(hk) : null;
+      if (hm != null) { htmls.push([node, node.innerHTML]); node.innerHTML = hm; return; }
+    }
+    for (var c = node.firstChild; c; c = c.nextSibling) tx(c);
+  }
+  function run(root) { busy = true; try { tx(root || document.body); } finally { busy = false; } }
+  function restore() {
+    busy = true;
+    try {
+      htmls.forEach(function (r) { if (r[0].isConnected) r[0].innerHTML = r[1]; });
+      texts.forEach(function (r) { if (r[0].isConnected) r[0].nodeValue = r[1]; });
+      attrs.forEach(function (r) { if (r[0].isConnected) r[0].setAttribute(r[1], r[2]); });
+    } finally { busy = false; }
+    texts = []; htmls = []; attrs = [];
+  }
+  var mo = new MutationObserver(function (list) {
+    if (busy || lang !== 'ml') return;
+    busy = true;
+    try { list.forEach(function (m) { [].forEach.call(m.addedNodes, function (n) { if (n.isConnected) tx(n); }); }); } finally { busy = false; }
+  });
+  function font() {
+    if (document.getElementById('mlFont')) return;
+    var l = document.createElement('link'); l.id = 'mlFont'; l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800&display=swap'; document.head.appendChild(l);
+  }
+  function set(l, quiet) {
+    l = l === 'ml' ? 'ml' : 'en';
+    if (l === lang && quiet !== 'init') return;
+    if (lang === 'ml') restore();
+    lang = l; document.documentElement.lang = l === 'ml' ? 'ml' : 'en';
+    try { if (quiet !== 'init') localStorage.setItem(KEY, l); } catch (e) {}
+    if (w.DCIP && w.DCIP.setMonths) w.DCIP.setMonths(l === 'ml' ? ML_MON : EN_MON);
+    if (l === 'ml') { font(); run(document.body); }
+    var b = document.getElementById('langBtn'); if (b) { b.textContent = l === 'ml' ? 'English' : 'മലയാളം'; b.setAttribute('aria-label', l === 'ml' ? 'Switch to English' : 'മലയാളത്തിലേക്ക് മാറ്റുക'); b.lang = l === 'ml' ? 'en' : 'ml'; }
+    listeners.forEach(function (f) { try { f(l); } catch (e) {} });
+  }
+  function init() {
+    mo.observe(document.body, { childList: true, subtree: true });
+    var b = document.getElementById('langBtn'); if (b) b.onclick = function () { set(lang === 'ml' ? 'en' : 'ml'); };
+    set(lang, 'init');
+  }
+  w.DCIPLang = { t: t, set: set, get: function () { return lang; }, onChange: function (f) { listeners.push(f); }, run: run,
+    collect: function (root) { seen = {}; var d = DICT; DICT = {}; try { run(root || document.body); } finally { DICT = d; } var r = Object.keys(seen); seen = null; return r; } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })(window);
 
 </script>
@@ -925,7 +1302,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       '<div class="row"><b>Text size</b><button type="button" class="o" data-a11y="size0">Normal</button><button type="button" class="o" data-a11y="size1">Large</button><button type="button" class="o" data-a11y="size2">Extra large</button></div>' +
       '<div class="row"><b>Display</b><button type="button" class="o" data-a11y="hc">High contrast</button><button type="button" class="o" data-a11y="calm">Calm motion</button></div>' +
       '<div class="row"><button type="button" class="o" id="a11yReset">Reset</button></div></div>';
-    document.body.appendChild(d);
+    var tools = document.getElementById('tools'); while (d.firstChild) (d.firstChild.id === 'a11yFab' && tools ? tools : document.body).appendChild(d.firstChild);
     var fab = document.getElementById('a11yFab'), panel = document.getElementById('a11yPanel');
     fab.onclick = function () { var open = panel.hidden; panel.hidden = !open; fab.setAttribute('aria-expanded', open); if (open) panel.querySelector('button').focus(); };
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { panel.hidden = true; fab.setAttribute('aria-expanded', 'false'); fab.focus(); } });
@@ -945,7 +1322,12 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
  * The hidden input keeps the ISO value, so the rest of the form reads it as before. */
 (function (w) {
   'use strict';
-  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MON_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MON_ML = ['ജനുവരി', 'ഫെബ്രുവരി', 'മാർച്ച്', 'ഏപ്രിൽ', 'മേയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗസ്റ്റ്', 'സെപ്റ്റംബർ', 'ഒക്ടോബർ', 'നവംബർ', 'ഡിസംബർ'];
+  var WK_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'], WK_ML = ['ഞാ', 'തി', 'ചൊ', 'ബു', 'വ്യാ', 'വെ', 'ശ'];
+  function isMl() { return window.DCIPLang && window.DCIPLang.get() === 'ml'; }
+  var MON = { get length() { return 12; }, map: function (f) { return (isMl() ? MON_ML : MON_EN).map(f); } };
+  function mon(i) { return (isMl() ? MON_ML : MON_EN)[i]; }
   var SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function pad(n) { return ('0' + n).slice(-2); }
   function ld(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
@@ -997,12 +1379,12 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       function paint() {
         var y0 = +min.slice(0, 4), y1 = +max.slice(0, 4), first = new Date(Date.UTC(view.y, view.m - 1, 1)).getUTCDay(), n = ld(view.y, view.m), cells = '';
         for (var i = 0; i < first; i++) cells += '<span></span>';
-        for (var d = 1; d <= n; d++) { var v = iso(view.y, view.m, d), dis = v < min || v > max; cells += '<button type="button" class="dp-d' + (v === cur ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-v="' + v + '" aria-label="' + d + ' ' + MON[view.m - 1] + ' ' + view.y + '">' + d + '</button>'; }
+        for (var d = 1; d <= n; d++) { var v = iso(view.y, view.m, d), dis = v < min || v > max; cells += '<button type="button" class="dp-d' + (v === cur ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-v="' + v + '" aria-label="' + d + ' ' + mon(view.m - 1) + ' ' + view.y + '">' + d + '</button>'; }
         var yrs = ''; for (var y = y1; y >= y0; y--) yrs += '<option' + (y === view.y ? ' selected' : '') + '>' + y + '</option>';
         pop.innerHTML = '<div class="dp-head"><button type="button" class="dp-nav" data-n="-1" aria-label="Previous month">‹</button>' +
           '<select class="dp-m" aria-label="Month">' + MON.map(function (m, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === view.m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
           '<select class="dp-y" aria-label="Year">' + yrs + '</select><button type="button" class="dp-nav" data-n="1" aria-label="Next month">›</button></div>' +
-          '<div class="dp-wk">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div><div class="dp-grid">' + cells + '</div>' +
+          '<div class="dp-wk">' + (isMl() ? WK_ML : WK_EN).map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div><div class="dp-grid">' + cells + '</div>' +
           '<div class="dp-foot"><button type="button" class="dp-link" data-clear>Clear</button><button type="button" class="dp-link" data-close>Close</button></div>';
         pop.querySelector('.dp-m').onchange = function () { view.m = +this.value; paint(); focusDay(); };
         pop.querySelector('.dp-y').onchange = function () { view.y = +this.value; paint(); focusDay(); };
@@ -1031,7 +1413,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   /* --------------------------------------------- month picker --------------------------------------------- */
   function month(hidden, o) {
     o = o || {}; var min = o.min || '1980-01', max = o.max || '2035-12', wrap = shell(hidden, 'month', 'Select month and year'), inp = wrap.querySelector('.dp-in'), btn = wrap.querySelector('.dp-btn');
-    function show() { var v = hidden.value; inp.value = /^\d{4}-\d{2}/.test(v) ? MON[+v.slice(5, 7) - 1] + ' ' + v.slice(0, 4) : ''; }
+    function show() { var v = hidden.value; inp.value = /^\d{4}-\d{2}/.test(v) ? mon(+v.slice(5, 7) - 1) + ' ' + v.slice(0, 4) : ''; }
     function set(y, m) { var v = y ? iso(y, m, ld(y, m)) : ''; if (hidden.value === v) { show(); return; } hidden.value = v; show(); emit(hidden); }
     hidden.addEventListener('input', show); show();
     function open() {
@@ -1042,7 +1424,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       function paint() {
         var y0 = +min.slice(0, 4), y1 = +max.slice(0, 4), cells = SHORT.map(function (s, i) {
           var key = y + '-' + pad(i + 1), dis = key < min || key > max;
-          return '<button type="button" class="dp-mo' + (cur && cur.y === y && cur.m === i + 1 ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-m="' + (i + 1) + '" aria-label="' + MON[i] + ' ' + y + '">' + s + '</button>';
+          return '<button type="button" class="dp-mo' + (cur && cur.y === y && cur.m === i + 1 ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-m="' + (i + 1) + '" aria-label="' + mon(i) + ' ' + y + '">' + s + '</button>';
         }).join('');
         pop.innerHTML = '<div class="dp-head"><button type="button" class="dp-nav" data-n="-1" aria-label="Previous year"' + (y <= y0 ? ' disabled' : '') + '>‹</button><b class="dp-year" aria-live="polite">' + y + '</b><button type="button" class="dp-nav" data-n="1" aria-label="Next year"' + (y >= y1 ? ' disabled' : '') + '>›</button></div>' +
           '<div class="dp-months">' + cells + '</div><div class="dp-foot"><button type="button" class="dp-link" data-clear>Clear</button><button type="button" class="dp-link" data-close>Close</button></div>';
@@ -1169,9 +1551,11 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       setTimeout(function () { if (window.DCIPCv && window.DCIPCv.prefetch) window.DCIPCv.prefetch(); }, 4000);
     }
   }
+  function ML() { return window.DCIPLang && window.DCIPLang.get() === 'ml'; }
   function calm() { return document.documentElement.classList.contains('a11y-calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-  function ageText() { return C.minAge ? C.minAge + ' to ' + C.maxAge + ' years' : 'Up to ' + C.maxAge + ' years'; }
-  function ageRule() { return C.minAge ? 'between ' + C.minAge + ' and ' + C.maxAge + ' years old' : 'not older than ' + C.maxAge + ' years'; }
+  function T(s, v) { return window.DCIPLang ? window.DCIPLang.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] != null ? v[k] : m; }); }
+  function ageText() { return C.minAge ? T('{a} to {b} years', { a: C.minAge, b: C.maxAge }) : T('Up to {b} years', { b: C.maxAge }); }
+  function ageRule() { return C.minAge ? T('between {a} and {b} years old', { a: C.minAge, b: C.maxAge }) : T('not older than {b} years', { b: C.maxAge }); }
 
   /* ------------------------------------------ landing page ------------------------------------------ */
   function heroFx() {
@@ -1194,13 +1578,13 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     if (isNaN(end)) return;
     var box = $('#dl'), t = $('#dlT'), bar = $('#dlBar'), top = $('#dlbar'), topT = $('#dlbarT'), hero = $('.hero'), WINDOW = 30 * 86400000;
     box.hidden = false; top.hidden = false;
-    $('#dlWhen').textContent = 'Last date: ' + new Date(end).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST';
+    $('#dlWhen').textContent = T('Last date: {d} IST', { d: new Date(end).toLocaleString(ML() ? 'ml-IN' : 'en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) });
     function tick() {
       var left = end - Date.now();
       if (left <= 0) { clearInterval(iv); location.reload(); return; }
       var d = Math.floor(left / 86400000), h = Math.floor(left % 86400000 / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
-      t.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(function (x) { return '<div><b>' + ('0' + x[0]).slice(-2) + '</b><span>' + x[1] + '</span></div>'; }).join('');
-      topT.textContent = (d ? d + 'd ' : '') + ('0' + h).slice(-2) + 'h ' + ('0' + m).slice(-2) + 'm' + (d ? '' : ' ' + ('0' + s).slice(-2) + 's');
+      t.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(function (x) { return '<div><b>' + ('0' + x[0]).slice(-2) + '</b><span>' + T(x[1]) + '</span></div>'; }).join('');
+      topT.textContent = (d ? d + T('d') + ' ' : '') + ('0' + h).slice(-2) + T('h') + ' ' + ('0' + m).slice(-2) + T('m') + (d ? '' : ' ' + ('0' + s).slice(-2) + T('s'));
       bar.style.width = Math.max(2, Math.min(100, (1 - left / WINDOW) * 100)) + '%';
       var urgent = left < 2 * 86400000; box.classList.toggle('urgent', urgent); top.classList.toggle('urgent', urgent);
       top.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 40 : 400));
@@ -1213,7 +1597,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   function renderBanners(list) {
     var box = $('#banners'); clearInterval(timers.bn); if (!box) return; if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
     box.innerHTML = '<div class="bn" id="bn">' + list.map(function (b, i) {
-      return '<figure class="slide" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || 'DCIP highlight ' + (i + 1)) + '" referrerpolicy="no-referrer" decoding="async">' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
+      return '<figure class="slide" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || T('DCIP highlight {n}', { n: i + 1 })) + '" referrerpolicy="no-referrer" decoding="async">' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
     }).join('') + '<div class="dots" aria-hidden="true"></div></div>';
     var slides = $$('.slide', box), at = -1, timer = null, loaded = 0;
     function dots() { var d = $('.dots', box); d.innerHTML = slides.map(function (s, i) { return '<span aria-current="' + (i === at) + '"></span>'; }).join(''); d.style.display = slides.length > 1 ? '' : 'none'; }
@@ -1238,7 +1622,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
     var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
     if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
-    parts.push('<a href="' + esc((C.instagram && C.instagram.page) || 'https://www.instagram.com/dcipkkd/') + '" target="_blank" rel="noopener noreferrer">Instagram @' + esc((C.instagram && C.instagram.handle) || 'dcipkkd') + '</a>');
+    parts.push('<a href="' + esc((C.instagram && C.instagram.page) || 'https://www.instagram.com/dcipkkd/') + '" target="_blank" rel="noopener noreferrer">' + T('Instagram') + ' @' + esc((C.instagram && C.instagram.handle) || 'dcipkkd') + '</a>');
     if (false) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
     parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
     $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
@@ -1250,9 +1634,9 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
-    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See our other activities') + '</small></span></div>' +
       '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + esc(p.thumb) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
-      '<div class="go"><span>See more</span><i>Open ↗</i></div></a>';
+      '<div class="go"><span>' + T('See more') + '</span><i>' + T('Open') + ' ↗</i></div></a>';
     $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
     var cards = $$('.igcard'), at = 0;
     cards.forEach(function (c) { $$('img', c).forEach(function (im) { im.addEventListener('error', function () { im.remove(); }); }); });
@@ -1267,10 +1651,15 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     window.DCIP_igvis = vis; vis();
   }
 
+  /** "Oct 2026 – Feb 2027" in the chosen language, built from the dates; the saved text is used when they are missing. */
+  function periodText() {
+    if (!ML() || !C.intakeStart || !C.intakeEnd) return C.period;
+    return D.fmtMonthYear(C.intakeStart) + ' – ' + D.fmtMonthYear(C.intakeEnd);
+  }
   function renderFacts() {
-    var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
+    var facts = [[T('Internship'), periodText()], [T('Age'), ageText()], [T('Degree'), T('Graduation, completed by {d}', { d: D.fmtDate(C.ugBy) })]];
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
-    $('#batchName').textContent = C.batch; $('#badge').classList.toggle('closed', !C.open); $('#badgeText').textContent = C.open ? 'Applications open' : 'Applications closed';
+    $('#batchName').textContent = C.batch; $('#badge').classList.toggle('closed', !C.open); $('#badgeText').textContent = C.open ? T('Applications open') : T('Applications closed');
   }
 
   /* --------------------------------------------- the form --------------------------------------------- */
@@ -1390,7 +1779,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
     applying = false;
-    if (f.completionYear && !f.completionYM && !val('completion') && $('#compNote')) $('#compNote').innerHTML = 'Your CV mentions <b>' + esc(f.completionYear) + '</b>. Please pick the month (the expected month if you are in your final year).';
+    if (f.completionYear && !f.completionYM && !val('completion') && $('#compNote')) $('#compNote').innerHTML = T('Your CV mentions <b>{y}</b>. Please pick the month (the expected month if you are in your final year).', { y: esc(f.completionYear) });
     return filled;
   }
 
@@ -1398,7 +1787,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   function checkFile(file) {
     var ext = file.name.split('.').pop().toLowerCase();
     if (C.cvExt.indexOf(ext) < 0) return 'The CV must be a PDF, DOC or DOCX file.';
-    if (file.size > C.cvMaxBytes) return 'The file is larger than ' + (C.cvMaxBytes / 1048576) + ' MB.';
+    if (file.size > C.cvMaxBytes) return T('The file is larger than {n} MB.', { n: C.cvMaxBytes / 1048576 });
     return '';
   }
   function bindCv() {
@@ -1407,7 +1796,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       var file = inp.files[0]; clearErr('cv'); cvStatus('');
       if (!file) { $('#dropTitle').textContent = 'Choose your CV'; drop.classList.remove('has'); return; }
       var bad = checkFile(file); if (bad) { setErr('cv', bad); return; }
-      $('#dropTitle').textContent = file.name; drop.classList.add('has'); $('#dropSub').textContent = Math.max(1, Math.round(file.size / 1024)) + ' KB · tap to change';
+      $('#dropTitle').textContent = file.name; drop.classList.add('has'); $('#dropSub').textContent = T('{n} KB · tap to change', { n: Math.max(1, Math.round(file.size / 1024)) });
       var ext = file.name.split('.').pop().toLowerCase();
       if (ext === 'doc') { cvStatus('✓ CV attached. We can only read <b>PDF</b> and <b>DOCX</b> files for auto-fill, so please fill in the form yourself.', 'info'); return; }
       cvBusy = true; cvStatus('<span class="spin"></span> Reading your CV…', 'busy');
@@ -1415,7 +1804,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
         cvBusy = false;
         var filled = applyFields(res.fields || {});
         if (filled.length) {
-          cvStatus('✨ We found <b>' + filled.length + ' detail' + (filled.length > 1 ? 's' : '') + '</b> in your CV: ' + filled.map(function (k) { return esc(NICE[k]); }).join(', ') + '. They are filled in below – <b>please check each one</b> and complete the rest.', 'ok');
+          cvStatus(T('✨ We found <b>{n}</b> in your CV: {list}. They are filled in below – <b>please check each one</b> and complete the rest.', { n: filled.length > 1 ? T('{k} details', { k: filled.length }) : T('1 detail'), list: filled.map(function (k) { return esc(T(NICE[k])); }).join(', ') }), 'ok');
           liveChecks();
         } else cvStatus('✓ CV attached. We could not read details from it (that happens with scanned or image-only files) – no problem, please fill in the form below yourself.', 'info');
       }, function () { cvBusy = false; cvStatus('✓ CV attached. Please fill in the form below yourself.', 'info'); });
@@ -1464,7 +1853,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       ta.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
       ta.addEventListener('dragover', function (e) { e.preventDefault(); });
     }
-    $('#bq').addEventListener('input', function () { $('#background').placeholder = 'Your answer to question ' + this.value + ', in your own words'; });
+    $('#bq').addEventListener('input', function () { $('#background').placeholder = T('Your answer to question {q}, in your own words', { q: this.value }); });
     wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', MAX_WORDS, 150, 200);
     $('#email').addEventListener('change', function () { checkDuplicate(); });
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
@@ -1513,14 +1902,14 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       if (!v) { out.innerHTML = '<div class="alert bad">Please enter your e-mail address or mobile number.</div>'; return; }
       go.disabled = true; go.textContent = 'Checking…'; out.innerHTML = '';
       D.call('checkStatus', v).then(function (r) {
-        if (!r.found) { out.innerHTML = '<div class="stres none"><b>No application found</b><p>We could not find an application with that ' + (v.indexOf('@') >= 0 ? 'e-mail address' : 'mobile number') + '. Please check it, or try the other one (the one you gave while applying).</p></div>'; return; }
+        if (!r.found) { out.innerHTML = '<div class="stres none"><b>' + T('No application found') + '</b><p>' + T('We could not find an application with that {w}. Please check it, or try the other one (the one you gave while applying).', { w: T(v.indexOf('@') >= 0 ? 'e-mail address' : 'mobile number') }) + '</p></div>'; return; }
         var iv = r.interview ? '<div class="stiv"><b>Your interview</b><div>' + esc(D.fmtDate(r.interview.date)) + ' · ' + esc(r.interview.slot) + '</div>' + (r.interview.venue ? '<div>' + esc(r.interview.venue) + '</div>' : '') + '<div>' + esc(r.interview.mode) + (r.interview.link ? ' · <a href="' + esc(r.interview.link) + '" target="_blank" rel="noopener">link</a>' : '') + '</div></div>' : '';
-        out.innerHTML = '<div class="stres ' + esc(r.tone) + '"><small>Hello ' + esc(r.name) + ' · applied on ' + esc(D.fmtDate(r.applied)) + '</small><div class="stlabel">' + esc(r.label) + '</div><p>' + esc(r.message) + '</p>' + iv + '</div>';
+        out.innerHTML = '<div class="stres ' + esc(r.tone) + '"><small>' + T('Hello {n} · applied on {d}', { n: esc(r.name), d: esc(D.fmtDate(r.applied)) }) + '</small><div class="stlabel">' + esc(r.label) + '</div><p>' + esc(r.message) + '</p>' + iv + '</div>';
       }, function (e) { out.innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>'; }).then(function () { go.disabled = false; go.textContent = 'Check status'; });
     };
   }
   var stBtn = $('#statusBtn'); if (stBtn) stBtn.onclick = function () { openStatus(''); };
-  if (stBtn) { var solid = function () { stBtn.classList.toggle('solid', window.scrollY > 24); }; window.addEventListener('scroll', solid, { passive: true }); solid(); }
+  if (stBtn) { var lb = $('#langBtn'), solid = function () { stBtn.classList.toggle('solid', window.scrollY > 24); if (lb) lb.classList.toggle('solid', window.scrollY > 24); }; window.addEventListener('scroll', solid, { passive: true }); solid(); }
 
   /* ---------- draft (kept in this browser only; never the CV) ---------- */
   function saveDraft() { try { var o = {}; FIELDS.forEach(function (id) { if ($('#' + id)) o[id] = $('#' + id).value; }); localStorage.setItem(draftKey, JSON.stringify(o)); } catch (e) {} }
@@ -1602,29 +1991,29 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     var dob = val('dob');
     if (D.isIso(dob)) {
       var a = D.ageOn(dob, C.ageAsOn); out.age = a;
-      var rule = 'Applicants must be ' + ageRule() + ' on ' + D.fmtDate(C.ageAsOn) + '.';
+      var rule = T('Applicants must be {r} on {d}.', { r: ageRule(), d: D.fmtDate(C.ageAsOn) });
       if (a > C.maxAge || (C.minAge && a < C.minAge)) {
-        var m = 'You will be ' + a + ' on ' + D.fmtDate(C.ageAsOn) + '. ' + rule;
-        if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' You may apply, but the application will be marked for review.';
+        var m = T('You will be {a} on {d}.', { a: a, d: D.fmtDate(C.ageAsOn) }) + ' ' + rule;
+        if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' ' + T('You may apply, but the application will be marked for review.');
       }
     }
     var comp = val('completion'), q = val('qual'), pending = /pending/i.test(q);
     if (D.isIso(comp)) {
-      if (comp > C.ugBy) { var m2 = 'The UG degree must be completed on or before ' + D.fmtDate(C.ugBy) + '.'; if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' You may apply, but the application will be marked for review.'; }
-      else if (q && !pending && comp.slice(0, 7) > C.today.slice(0, 7)) out.compBlock = 'You have chosen "completed", so the month cannot be in the future. If you are in your final year, choose "final year – results pending".';
-      else if (pending && comp < D.addDays(C.today, -180)) out.compWarn = 'You have chosen "results pending" but the month is long past. Please check the qualification and the month.';
-      else if (pending) out.compNote = 'UG completes in ' + D.fmtMonthYear(comp) + '. Your final result will need to be confirmed.';
+      if (comp > C.ugBy) { var m2 = T('The UG degree must be completed on or before {d}.', { d: D.fmtDate(C.ugBy) }); if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' ' + T('You may apply, but the application will be marked for review.'); }
+      else if (q && !pending && comp.slice(0, 7) > C.today.slice(0, 7)) out.compBlock = T('You have chosen "completed", so the month cannot be in the future. If you are in your final year, choose "final year – results pending".');
+      else if (pending && comp < D.addDays(C.today, -180)) out.compWarn = T('You have chosen "results pending" but the month is long past. Please check the qualification and the month.');
+      else if (pending) out.compNote = T('UG completes in {m}. Your final result will need to be confirmed.', { m: D.fmtMonthYear(comp) });
     }
     return out;
   }
   function liveChecks() {
     var r = check();
-    live('dob', r.age != null && !r.ageBlock && !r.ageWarn ? 'ok' : r.ageWarn ? 'warnmsg' : '', r.age != null && !r.ageBlock ? (r.ageWarn ? r.ageWarn : 'Age on ' + D.fmtDate(C.ageAsOn) + ': ' + r.age + ' ✓') : '');
+    live('dob', r.age != null && !r.ageBlock && !r.ageWarn ? 'ok' : r.ageWarn ? 'warnmsg' : '', r.age != null && !r.ageBlock ? (r.ageWarn ? r.ageWarn : T('Age on {d}: {a} ✓', { d: D.fmtDate(C.ageAsOn), a: r.age })) : '');
     live('completion', r.compWarn ? 'warnmsg' : r.compNote ? 'okmsg' : '', r.compWarn || r.compNote || '');
     if (r.ageBlock) setErr('dob', r.ageBlock); if (r.compBlock) setErr('completion', r.compBlock);
     var blocked = !!(r.ageBlock || r.compBlock);
     $('#submit').disabled = blocked;
-    $('#submitNote').textContent = blocked ? 'Based on the details entered, you are not eligible to apply.' : '';
+    $('#submitNote').textContent = blocked ? T('Based on the details entered, you are not eligible to apply.') : '';
   }
   function live(id, cls, text) { var e = $('#live-' + id); if (e) e.innerHTML = text ? '<div class="' + (cls === 'ok' ? 'okmsg' : cls) + '">' + esc(text) + '</div>' : ''; }
 
@@ -1654,10 +2043,10 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
     if (!D.isIso(val('completion'))) errs.completion = 'Please pick the completion month.'; else if (r.compBlock) errs.completion = r.compBlock;
     var wc = words(val('motivation')).length;
-    if (wc < MIN_WORDS) errs.motivation = 'Please write at least ' + MIN_WORDS + ' words (you have ' + wc + ').'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
+    if (wc < MIN_WORDS) errs.motivation = T('Please write at least {n} words (you have {c}).', { n: MIN_WORDS, c: wc }); else if (wc > MAX_WORDS) errs.motivation = T('Please keep your answer within {n} words.', { n: MAX_WORDS });
     if (!val('bq')) errs.bq = 'Please tick the question you are answering: A or B.';
     var bwc = words(val('background')).length;
-    if (bwc < MIN_WORDS) errs.background = 'Please write at least ' + MIN_WORDS + ' words (you have ' + bwc + '); 150 to 200 is ideal.'; else if (bwc > MAX_WORDS) errs.background = 'Please keep your answer within ' + MAX_WORDS + ' words (150 to 200 is ideal).';
+    if (bwc < MIN_WORDS) errs.background = T('Please write at least {n} words (you have {c}); 150 to 200 is ideal.', { n: MIN_WORDS, c: bwc }); else if (bwc > MAX_WORDS) errs.background = T('Please keep your answer within {n} words (150 to 200 is ideal).', { n: MAX_WORDS });
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
     var file = $('#cv').files[0];
@@ -1684,7 +2073,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     if (keys.length) {
       keys.forEach(function (k) { setErr(k, errs[k]); });
       var first = $('#fld-' + (ALIAS[keys[0]] || keys[0])); if (first) first.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
-      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + ' (' + keys.length + ').</div>';
+      $('#formAlert').innerHTML = '<div class="alert bad">' + T(keys.length > 1 ? 'Please correct the highlighted fields ({n}).' : 'Please correct the highlighted field ({n}).', { n: keys.length }) + '</div>';
       return;
     }
     var btn = $('#submit'); btn.disabled = true; btn.textContent = 'Submitting…';
@@ -1733,6 +2122,13 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   });
 
   }
+  /* switching language: redraw the parts that are built in code (the rest of the page is swapped by i18n.js) */
+  if (window.DCIPLang) window.DCIPLang.onChange(function () {
+    if (!booted || !C) return;
+    safe(function () { renderFacts(); renderFooter(); renderInstagram(); countdown(); });
+    safe(function () { var cv = $('#cv'), sub = $('#dropSub'); if (cv && cv.files && cv.files[0] && sub) sub.textContent = T('{n} KB · tap to change', { n: Math.max(1, Math.round(cv.files[0].size / 1024)) }); });
+    safe(function () { if (pickers.dob) { pickers.dob.show(); pickers.completion.show(); } if ($('#form')) liveChecks(); });
+  });
   startUp();
 })();
 
@@ -1911,7 +2307,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     // no confident keyword match: ask the server (AI)
     busy = true; $('#chatChips').innerHTML = '';
     var typing = say('bot typing', '<span></span><span></span><span></span>');
-    D.call('chatAsk', q, history.slice(-6, -1)).then(function (r) {
+    D.call('chatAsk', q, history.slice(-6, -1), window.DCIPLang && window.DCIPLang.get() === 'ml' ? 'ml' : 'en').then(function (r) {
       typing.remove(); busy = false;
       var contact = faq.filter(function (f) { return /contact/i.test(f.topic); })[0];
       logMsg('b', r.answer, r.source === 'ai' ? 'ai' : 'none');

@@ -171,7 +171,7 @@
     // no confident keyword match: ask the server (AI)
     busy = true; $('#chatChips').innerHTML = '';
     var typing = say('bot typing', '<span></span><span></span><span></span>');
-    D.call('chatAsk', q, history.slice(-6, -1)).then(function (r) {
+    D.call('chatAsk', q, history.slice(-6, -1), window.DCIPLang && window.DCIPLang.get() === 'ml' ? 'ml' : 'en').then(function (r) {
       typing.remove(); busy = false;
       var contact = faq.filter(function (f) { return /contact/i.test(f.topic); })[0];
       logMsg('b', r.answer, r.source === 'ai' ? 'ai' : 'none');

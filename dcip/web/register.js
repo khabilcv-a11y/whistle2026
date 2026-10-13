@@ -22,9 +22,11 @@
       setTimeout(function () { if (window.DCIPCv && window.DCIPCv.prefetch) window.DCIPCv.prefetch(); }, 4000);
     }
   }
+  function ML() { return window.DCIPLang && window.DCIPLang.get() === 'ml'; }
   function calm() { return document.documentElement.classList.contains('a11y-calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-  function ageText() { return C.minAge ? C.minAge + ' to ' + C.maxAge + ' years' : 'Up to ' + C.maxAge + ' years'; }
-  function ageRule() { return C.minAge ? 'between ' + C.minAge + ' and ' + C.maxAge + ' years old' : 'not older than ' + C.maxAge + ' years'; }
+  function T(s, v) { return window.DCIPLang ? window.DCIPLang.t(s, v) : String(s).replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] != null ? v[k] : m; }); }
+  function ageText() { return C.minAge ? T('{a} to {b} years', { a: C.minAge, b: C.maxAge }) : T('Up to {b} years', { b: C.maxAge }); }
+  function ageRule() { return C.minAge ? T('between {a} and {b} years old', { a: C.minAge, b: C.maxAge }) : T('not older than {b} years', { b: C.maxAge }); }
 
   /* ------------------------------------------ landing page ------------------------------------------ */
   function heroFx() {
@@ -47,13 +49,13 @@
     if (isNaN(end)) return;
     var box = $('#dl'), t = $('#dlT'), bar = $('#dlBar'), top = $('#dlbar'), topT = $('#dlbarT'), hero = $('.hero'), WINDOW = 30 * 86400000;
     box.hidden = false; top.hidden = false;
-    $('#dlWhen').textContent = 'Last date: ' + new Date(end).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST';
+    $('#dlWhen').textContent = T('Last date: {d} IST', { d: new Date(end).toLocaleString(ML() ? 'ml-IN' : 'en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) });
     function tick() {
       var left = end - Date.now();
       if (left <= 0) { clearInterval(iv); location.reload(); return; }
       var d = Math.floor(left / 86400000), h = Math.floor(left % 86400000 / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
-      t.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(function (x) { return '<div><b>' + ('0' + x[0]).slice(-2) + '</b><span>' + x[1] + '</span></div>'; }).join('');
-      topT.textContent = (d ? d + 'd ' : '') + ('0' + h).slice(-2) + 'h ' + ('0' + m).slice(-2) + 'm' + (d ? '' : ' ' + ('0' + s).slice(-2) + 's');
+      t.innerHTML = [[d, 'days'], [h, 'hrs'], [m, 'min'], [s, 'sec']].map(function (x) { return '<div><b>' + ('0' + x[0]).slice(-2) + '</b><span>' + T(x[1]) + '</span></div>'; }).join('');
+      topT.textContent = (d ? d + T('d') + ' ' : '') + ('0' + h).slice(-2) + T('h') + ' ' + ('0' + m).slice(-2) + T('m') + (d ? '' : ' ' + ('0' + s).slice(-2) + T('s'));
       bar.style.width = Math.max(2, Math.min(100, (1 - left / WINDOW) * 100)) + '%';
       var urgent = left < 2 * 86400000; box.classList.toggle('urgent', urgent); top.classList.toggle('urgent', urgent);
       top.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 40 : 400));
@@ -66,7 +68,7 @@
   function renderBanners(list) {
     var box = $('#banners'); clearInterval(timers.bn); if (!box) return; if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
     box.innerHTML = '<div class="bn" id="bn">' + list.map(function (b, i) {
-      return '<figure class="slide" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || 'DCIP highlight ' + (i + 1)) + '" referrerpolicy="no-referrer" decoding="async">' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
+      return '<figure class="slide" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || T('DCIP highlight {n}', { n: i + 1 })) + '" referrerpolicy="no-referrer" decoding="async">' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
     }).join('') + '<div class="dots" aria-hidden="true"></div></div>';
     var slides = $$('.slide', box), at = -1, timer = null, loaded = 0;
     function dots() { var d = $('.dots', box); d.innerHTML = slides.map(function (s, i) { return '<span aria-current="' + (i === at) + '"></span>'; }).join(''); d.style.display = slides.length > 1 ? '' : 'none'; }
@@ -91,7 +93,7 @@
     var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
     var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
     if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
-    parts.push('<a href="' + esc((C.instagram && C.instagram.page) || 'https://www.instagram.com/dcipkkd/') + '" target="_blank" rel="noopener noreferrer">Instagram @' + esc((C.instagram && C.instagram.handle) || 'dcipkkd') + '</a>');
+    parts.push('<a href="' + esc((C.instagram && C.instagram.page) || 'https://www.instagram.com/dcipkkd/') + '" target="_blank" rel="noopener noreferrer">' + T('Instagram') + ' @' + esc((C.instagram && C.instagram.handle) || 'dcipkkd') + '</a>');
     if (false) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
     parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
     $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
@@ -103,9 +105,9 @@
     var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
-    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See our other activities') + '</small></span></div>' +
       '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + esc(p.thumb) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
-      '<div class="go"><span>See more</span><i>Open ↗</i></div></a>';
+      '<div class="go"><span>' + T('See more') + '</span><i>' + T('Open') + ' ↗</i></div></a>';
     $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
     var cards = $$('.igcard'), at = 0;
     cards.forEach(function (c) { $$('img', c).forEach(function (im) { im.addEventListener('error', function () { im.remove(); }); }); });
@@ -120,10 +122,15 @@
     window.DCIP_igvis = vis; vis();
   }
 
+  /** "Oct 2026 – Feb 2027" in the chosen language, built from the dates; the saved text is used when they are missing. */
+  function periodText() {
+    if (!ML() || !C.intakeStart || !C.intakeEnd) return C.period;
+    return D.fmtMonthYear(C.intakeStart) + ' – ' + D.fmtMonthYear(C.intakeEnd);
+  }
   function renderFacts() {
-    var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
+    var facts = [[T('Internship'), periodText()], [T('Age'), ageText()], [T('Degree'), T('Graduation, completed by {d}', { d: D.fmtDate(C.ugBy) })]];
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
-    $('#batchName').textContent = C.batch; $('#badge').classList.toggle('closed', !C.open); $('#badgeText').textContent = C.open ? 'Applications open' : 'Applications closed';
+    $('#batchName').textContent = C.batch; $('#badge').classList.toggle('closed', !C.open); $('#badgeText').textContent = C.open ? T('Applications open') : T('Applications closed');
   }
 
   /* --------------------------------------------- the form --------------------------------------------- */
@@ -243,7 +250,7 @@
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
     applying = false;
-    if (f.completionYear && !f.completionYM && !val('completion') && $('#compNote')) $('#compNote').innerHTML = 'Your CV mentions <b>' + esc(f.completionYear) + '</b>. Please pick the month (the expected month if you are in your final year).';
+    if (f.completionYear && !f.completionYM && !val('completion') && $('#compNote')) $('#compNote').innerHTML = T('Your CV mentions <b>{y}</b>. Please pick the month (the expected month if you are in your final year).', { y: esc(f.completionYear) });
     return filled;
   }
 
@@ -251,7 +258,7 @@
   function checkFile(file) {
     var ext = file.name.split('.').pop().toLowerCase();
     if (C.cvExt.indexOf(ext) < 0) return 'The CV must be a PDF, DOC or DOCX file.';
-    if (file.size > C.cvMaxBytes) return 'The file is larger than ' + (C.cvMaxBytes / 1048576) + ' MB.';
+    if (file.size > C.cvMaxBytes) return T('The file is larger than {n} MB.', { n: C.cvMaxBytes / 1048576 });
     return '';
   }
   function bindCv() {
@@ -260,7 +267,7 @@
       var file = inp.files[0]; clearErr('cv'); cvStatus('');
       if (!file) { $('#dropTitle').textContent = 'Choose your CV'; drop.classList.remove('has'); return; }
       var bad = checkFile(file); if (bad) { setErr('cv', bad); return; }
-      $('#dropTitle').textContent = file.name; drop.classList.add('has'); $('#dropSub').textContent = Math.max(1, Math.round(file.size / 1024)) + ' KB · tap to change';
+      $('#dropTitle').textContent = file.name; drop.classList.add('has'); $('#dropSub').textContent = T('{n} KB · tap to change', { n: Math.max(1, Math.round(file.size / 1024)) });
       var ext = file.name.split('.').pop().toLowerCase();
       if (ext === 'doc') { cvStatus('✓ CV attached. We can only read <b>PDF</b> and <b>DOCX</b> files for auto-fill, so please fill in the form yourself.', 'info'); return; }
       cvBusy = true; cvStatus('<span class="spin"></span> Reading your CV…', 'busy');
@@ -268,7 +275,7 @@
         cvBusy = false;
         var filled = applyFields(res.fields || {});
         if (filled.length) {
-          cvStatus('✨ We found <b>' + filled.length + ' detail' + (filled.length > 1 ? 's' : '') + '</b> in your CV: ' + filled.map(function (k) { return esc(NICE[k]); }).join(', ') + '. They are filled in below – <b>please check each one</b> and complete the rest.', 'ok');
+          cvStatus(T('✨ We found <b>{n}</b> in your CV: {list}. They are filled in below – <b>please check each one</b> and complete the rest.', { n: filled.length > 1 ? T('{k} details', { k: filled.length }) : T('1 detail'), list: filled.map(function (k) { return esc(T(NICE[k])); }).join(', ') }), 'ok');
           liveChecks();
         } else cvStatus('✓ CV attached. We could not read details from it (that happens with scanned or image-only files) – no problem, please fill in the form below yourself.', 'info');
       }, function () { cvBusy = false; cvStatus('✓ CV attached. Please fill in the form below yourself.', 'info'); });
@@ -317,7 +324,7 @@
       ta.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
       ta.addEventListener('dragover', function (e) { e.preventDefault(); });
     }
-    $('#bq').addEventListener('input', function () { $('#background').placeholder = 'Your answer to question ' + this.value + ', in your own words'; });
+    $('#bq').addEventListener('input', function () { $('#background').placeholder = T('Your answer to question {q}, in your own words', { q: this.value }); });
     wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', MAX_WORDS, 150, 200);
     $('#email').addEventListener('change', function () { checkDuplicate(); });
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
@@ -366,14 +373,14 @@
       if (!v) { out.innerHTML = '<div class="alert bad">Please enter your e-mail address or mobile number.</div>'; return; }
       go.disabled = true; go.textContent = 'Checking…'; out.innerHTML = '';
       D.call('checkStatus', v).then(function (r) {
-        if (!r.found) { out.innerHTML = '<div class="stres none"><b>No application found</b><p>We could not find an application with that ' + (v.indexOf('@') >= 0 ? 'e-mail address' : 'mobile number') + '. Please check it, or try the other one (the one you gave while applying).</p></div>'; return; }
+        if (!r.found) { out.innerHTML = '<div class="stres none"><b>' + T('No application found') + '</b><p>' + T('We could not find an application with that {w}. Please check it, or try the other one (the one you gave while applying).', { w: T(v.indexOf('@') >= 0 ? 'e-mail address' : 'mobile number') }) + '</p></div>'; return; }
         var iv = r.interview ? '<div class="stiv"><b>Your interview</b><div>' + esc(D.fmtDate(r.interview.date)) + ' · ' + esc(r.interview.slot) + '</div>' + (r.interview.venue ? '<div>' + esc(r.interview.venue) + '</div>' : '') + '<div>' + esc(r.interview.mode) + (r.interview.link ? ' · <a href="' + esc(r.interview.link) + '" target="_blank" rel="noopener">link</a>' : '') + '</div></div>' : '';
-        out.innerHTML = '<div class="stres ' + esc(r.tone) + '"><small>Hello ' + esc(r.name) + ' · applied on ' + esc(D.fmtDate(r.applied)) + '</small><div class="stlabel">' + esc(r.label) + '</div><p>' + esc(r.message) + '</p>' + iv + '</div>';
+        out.innerHTML = '<div class="stres ' + esc(r.tone) + '"><small>' + T('Hello {n} · applied on {d}', { n: esc(r.name), d: esc(D.fmtDate(r.applied)) }) + '</small><div class="stlabel">' + esc(r.label) + '</div><p>' + esc(r.message) + '</p>' + iv + '</div>';
       }, function (e) { out.innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>'; }).then(function () { go.disabled = false; go.textContent = 'Check status'; });
     };
   }
   var stBtn = $('#statusBtn'); if (stBtn) stBtn.onclick = function () { openStatus(''); };
-  if (stBtn) { var solid = function () { stBtn.classList.toggle('solid', window.scrollY > 24); }; window.addEventListener('scroll', solid, { passive: true }); solid(); }
+  if (stBtn) { var lb = $('#langBtn'), solid = function () { stBtn.classList.toggle('solid', window.scrollY > 24); if (lb) lb.classList.toggle('solid', window.scrollY > 24); }; window.addEventListener('scroll', solid, { passive: true }); solid(); }
 
   /* ---------- draft (kept in this browser only; never the CV) ---------- */
   function saveDraft() { try { var o = {}; FIELDS.forEach(function (id) { if ($('#' + id)) o[id] = $('#' + id).value; }); localStorage.setItem(draftKey, JSON.stringify(o)); } catch (e) {} }
@@ -455,29 +462,29 @@
     var dob = val('dob');
     if (D.isIso(dob)) {
       var a = D.ageOn(dob, C.ageAsOn); out.age = a;
-      var rule = 'Applicants must be ' + ageRule() + ' on ' + D.fmtDate(C.ageAsOn) + '.';
+      var rule = T('Applicants must be {r} on {d}.', { r: ageRule(), d: D.fmtDate(C.ageAsOn) });
       if (a > C.maxAge || (C.minAge && a < C.minAge)) {
-        var m = 'You will be ' + a + ' on ' + D.fmtDate(C.ageAsOn) + '. ' + rule;
-        if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' You may apply, but the application will be marked for review.';
+        var m = T('You will be {a} on {d}.', { a: a, d: D.fmtDate(C.ageAsOn) }) + ' ' + rule;
+        if (C.enforceAge === 'BLOCK') out.ageBlock = m; else out.ageWarn = m + ' ' + T('You may apply, but the application will be marked for review.');
       }
     }
     var comp = val('completion'), q = val('qual'), pending = /pending/i.test(q);
     if (D.isIso(comp)) {
-      if (comp > C.ugBy) { var m2 = 'The UG degree must be completed on or before ' + D.fmtDate(C.ugBy) + '.'; if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' You may apply, but the application will be marked for review.'; }
-      else if (q && !pending && comp.slice(0, 7) > C.today.slice(0, 7)) out.compBlock = 'You have chosen "completed", so the month cannot be in the future. If you are in your final year, choose "final year – results pending".';
-      else if (pending && comp < D.addDays(C.today, -180)) out.compWarn = 'You have chosen "results pending" but the month is long past. Please check the qualification and the month.';
-      else if (pending) out.compNote = 'UG completes in ' + D.fmtMonthYear(comp) + '. Your final result will need to be confirmed.';
+      if (comp > C.ugBy) { var m2 = T('The UG degree must be completed on or before {d}.', { d: D.fmtDate(C.ugBy) }); if (C.enforceCompletion === 'BLOCK') out.compBlock = m2; else out.compWarn = m2 + ' ' + T('You may apply, but the application will be marked for review.'); }
+      else if (q && !pending && comp.slice(0, 7) > C.today.slice(0, 7)) out.compBlock = T('You have chosen "completed", so the month cannot be in the future. If you are in your final year, choose "final year – results pending".');
+      else if (pending && comp < D.addDays(C.today, -180)) out.compWarn = T('You have chosen "results pending" but the month is long past. Please check the qualification and the month.');
+      else if (pending) out.compNote = T('UG completes in {m}. Your final result will need to be confirmed.', { m: D.fmtMonthYear(comp) });
     }
     return out;
   }
   function liveChecks() {
     var r = check();
-    live('dob', r.age != null && !r.ageBlock && !r.ageWarn ? 'ok' : r.ageWarn ? 'warnmsg' : '', r.age != null && !r.ageBlock ? (r.ageWarn ? r.ageWarn : 'Age on ' + D.fmtDate(C.ageAsOn) + ': ' + r.age + ' ✓') : '');
+    live('dob', r.age != null && !r.ageBlock && !r.ageWarn ? 'ok' : r.ageWarn ? 'warnmsg' : '', r.age != null && !r.ageBlock ? (r.ageWarn ? r.ageWarn : T('Age on {d}: {a} ✓', { d: D.fmtDate(C.ageAsOn), a: r.age })) : '');
     live('completion', r.compWarn ? 'warnmsg' : r.compNote ? 'okmsg' : '', r.compWarn || r.compNote || '');
     if (r.ageBlock) setErr('dob', r.ageBlock); if (r.compBlock) setErr('completion', r.compBlock);
     var blocked = !!(r.ageBlock || r.compBlock);
     $('#submit').disabled = blocked;
-    $('#submitNote').textContent = blocked ? 'Based on the details entered, you are not eligible to apply.' : '';
+    $('#submitNote').textContent = blocked ? T('Based on the details entered, you are not eligible to apply.') : '';
   }
   function live(id, cls, text) { var e = $('#live-' + id); if (e) e.innerHTML = text ? '<div class="' + (cls === 'ok' ? 'okmsg' : cls) + '">' + esc(text) + '</div>' : ''; }
 
@@ -507,10 +514,10 @@
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
     if (!D.isIso(val('completion'))) errs.completion = 'Please pick the completion month.'; else if (r.compBlock) errs.completion = r.compBlock;
     var wc = words(val('motivation')).length;
-    if (wc < MIN_WORDS) errs.motivation = 'Please write at least ' + MIN_WORDS + ' words (you have ' + wc + ').'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
+    if (wc < MIN_WORDS) errs.motivation = T('Please write at least {n} words (you have {c}).', { n: MIN_WORDS, c: wc }); else if (wc > MAX_WORDS) errs.motivation = T('Please keep your answer within {n} words.', { n: MAX_WORDS });
     if (!val('bq')) errs.bq = 'Please tick the question you are answering: A or B.';
     var bwc = words(val('background')).length;
-    if (bwc < MIN_WORDS) errs.background = 'Please write at least ' + MIN_WORDS + ' words (you have ' + bwc + '); 150 to 200 is ideal.'; else if (bwc > MAX_WORDS) errs.background = 'Please keep your answer within ' + MAX_WORDS + ' words (150 to 200 is ideal).';
+    if (bwc < MIN_WORDS) errs.background = T('Please write at least {n} words (you have {c}); 150 to 200 is ideal.', { n: MIN_WORDS, c: bwc }); else if (bwc > MAX_WORDS) errs.background = T('Please keep your answer within {n} words (150 to 200 is ideal).', { n: MAX_WORDS });
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
     var file = $('#cv').files[0];
@@ -537,7 +544,7 @@
     if (keys.length) {
       keys.forEach(function (k) { setErr(k, errs[k]); });
       var first = $('#fld-' + (ALIAS[keys[0]] || keys[0])); if (first) first.scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'center' });
-      $('#formAlert').innerHTML = '<div class="alert bad">Please correct the highlighted field' + (keys.length > 1 ? 's' : '') + ' (' + keys.length + ').</div>';
+      $('#formAlert').innerHTML = '<div class="alert bad">' + T(keys.length > 1 ? 'Please correct the highlighted fields ({n}).' : 'Please correct the highlighted field ({n}).', { n: keys.length }) + '</div>';
       return;
     }
     var btn = $('#submit'); btn.disabled = true; btn.textContent = 'Submitting…';
@@ -586,5 +593,12 @@
   });
 
   }
+  /* switching language: redraw the parts that are built in code (the rest of the page is swapped by i18n.js) */
+  if (window.DCIPLang) window.DCIPLang.onChange(function () {
+    if (!booted || !C) return;
+    safe(function () { renderFacts(); renderFooter(); renderInstagram(); countdown(); });
+    safe(function () { var cv = $('#cv'), sub = $('#dropSub'); if (cv && cv.files && cv.files[0] && sub) sub.textContent = T('{n} KB · tap to change', { n: Math.max(1, Math.round(cv.files[0].size / 1024)) }); });
+    safe(function () { if (pickers.dob) { pickers.dob.show(); pickers.completion.show(); } if ($('#form')) liveChecks(); });
+  });
   startUp();
 })();

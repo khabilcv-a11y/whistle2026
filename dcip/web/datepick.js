@@ -4,7 +4,12 @@
  * The hidden input keeps the ISO value, so the rest of the form reads it as before. */
 (function (w) {
   'use strict';
-  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MON_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MON_ML = ['ജനുവരി', 'ഫെബ്രുവരി', 'മാർച്ച്', 'ഏപ്രിൽ', 'മേയ്', 'ജൂൺ', 'ജൂലൈ', 'ഓഗസ്റ്റ്', 'സെപ്റ്റംബർ', 'ഒക്ടോബർ', 'നവംബർ', 'ഡിസംബർ'];
+  var WK_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'], WK_ML = ['ഞാ', 'തി', 'ചൊ', 'ബു', 'വ്യാ', 'വെ', 'ശ'];
+  function isMl() { return window.DCIPLang && window.DCIPLang.get() === 'ml'; }
+  var MON = { get length() { return 12; }, map: function (f) { return (isMl() ? MON_ML : MON_EN).map(f); } };
+  function mon(i) { return (isMl() ? MON_ML : MON_EN)[i]; }
   var SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function pad(n) { return ('0' + n).slice(-2); }
   function ld(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
@@ -56,12 +61,12 @@
       function paint() {
         var y0 = +min.slice(0, 4), y1 = +max.slice(0, 4), first = new Date(Date.UTC(view.y, view.m - 1, 1)).getUTCDay(), n = ld(view.y, view.m), cells = '';
         for (var i = 0; i < first; i++) cells += '<span></span>';
-        for (var d = 1; d <= n; d++) { var v = iso(view.y, view.m, d), dis = v < min || v > max; cells += '<button type="button" class="dp-d' + (v === cur ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-v="' + v + '" aria-label="' + d + ' ' + MON[view.m - 1] + ' ' + view.y + '">' + d + '</button>'; }
+        for (var d = 1; d <= n; d++) { var v = iso(view.y, view.m, d), dis = v < min || v > max; cells += '<button type="button" class="dp-d' + (v === cur ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-v="' + v + '" aria-label="' + d + ' ' + mon(view.m - 1) + ' ' + view.y + '">' + d + '</button>'; }
         var yrs = ''; for (var y = y1; y >= y0; y--) yrs += '<option' + (y === view.y ? ' selected' : '') + '>' + y + '</option>';
         pop.innerHTML = '<div class="dp-head"><button type="button" class="dp-nav" data-n="-1" aria-label="Previous month">‹</button>' +
           '<select class="dp-m" aria-label="Month">' + MON.map(function (m, i) { return '<option value="' + (i + 1) + '"' + (i + 1 === view.m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
           '<select class="dp-y" aria-label="Year">' + yrs + '</select><button type="button" class="dp-nav" data-n="1" aria-label="Next month">›</button></div>' +
-          '<div class="dp-wk">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div><div class="dp-grid">' + cells + '</div>' +
+          '<div class="dp-wk">' + (isMl() ? WK_ML : WK_EN).map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div><div class="dp-grid">' + cells + '</div>' +
           '<div class="dp-foot"><button type="button" class="dp-link" data-clear>Clear</button><button type="button" class="dp-link" data-close>Close</button></div>';
         pop.querySelector('.dp-m').onchange = function () { view.m = +this.value; paint(); focusDay(); };
         pop.querySelector('.dp-y').onchange = function () { view.y = +this.value; paint(); focusDay(); };
@@ -90,7 +95,7 @@
   /* --------------------------------------------- month picker --------------------------------------------- */
   function month(hidden, o) {
     o = o || {}; var min = o.min || '1980-01', max = o.max || '2035-12', wrap = shell(hidden, 'month', 'Select month and year'), inp = wrap.querySelector('.dp-in'), btn = wrap.querySelector('.dp-btn');
-    function show() { var v = hidden.value; inp.value = /^\d{4}-\d{2}/.test(v) ? MON[+v.slice(5, 7) - 1] + ' ' + v.slice(0, 4) : ''; }
+    function show() { var v = hidden.value; inp.value = /^\d{4}-\d{2}/.test(v) ? mon(+v.slice(5, 7) - 1) + ' ' + v.slice(0, 4) : ''; }
     function set(y, m) { var v = y ? iso(y, m, ld(y, m)) : ''; if (hidden.value === v) { show(); return; } hidden.value = v; show(); emit(hidden); }
     hidden.addEventListener('input', show); show();
     function open() {
@@ -101,7 +106,7 @@
       function paint() {
         var y0 = +min.slice(0, 4), y1 = +max.slice(0, 4), cells = SHORT.map(function (s, i) {
           var key = y + '-' + pad(i + 1), dis = key < min || key > max;
-          return '<button type="button" class="dp-mo' + (cur && cur.y === y && cur.m === i + 1 ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-m="' + (i + 1) + '" aria-label="' + MON[i] + ' ' + y + '">' + s + '</button>';
+          return '<button type="button" class="dp-mo' + (cur && cur.y === y && cur.m === i + 1 ? ' sel' : '') + '"' + (dis ? ' disabled' : '') + ' data-m="' + (i + 1) + '" aria-label="' + mon(i) + ' ' + y + '">' + s + '</button>';
         }).join('');
         pop.innerHTML = '<div class="dp-head"><button type="button" class="dp-nav" data-n="-1" aria-label="Previous year"' + (y <= y0 ? ' disabled' : '') + '>‹</button><b class="dp-year" aria-live="polite">' + y + '</b><button type="button" class="dp-nav" data-n="1" aria-label="Next year"' + (y >= y1 ? ' disabled' : '') + '>›</button></div>' +
           '<div class="dp-months">' + cells + '</div><div class="dp-foot"><button type="button" class="dp-link" data-clear>Clear</button><button type="button" class="dp-link" data-close>Close</button></div>';
