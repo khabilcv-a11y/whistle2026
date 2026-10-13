@@ -8,12 +8,31 @@
   var WA_YES = 'Yes, it is', WA_NO = 'No, I use a different number', MAX_WORDS = 1000;
   var pickers = {};
 
-  D.getConfig().then(function (c) {
-    C = c; render(); heroFx(); renderBanners(c.banners || []); countdown();
-    if (window.DCIPSkyline) window.DCIPSkyline.mount($('.hero'));
-    if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(c);
+  /* The form shows at once from the last configuration this browser saw, then quietly checks with the server (so a repeat visit never waits). */
+  var CFGKEY = 'dcip_cfg_v2', booted = false, touched = false, timers = {};
+  function istToday() { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+  function strip(c) { var o = {}; Object.keys(c).forEach(function (k) { if (k !== 'today') o[k] = c[k]; }); return JSON.stringify(o); }
+  function boot() {
+    render(); renderBanners(C.banners || []); countdown();
+    if (!booted) {
+      booted = true; heroFx();
+      if (window.DCIPSkyline) window.DCIPSkyline.mount($('.hero'));
+      setTimeout(function () { if (window.DCIPChat && window.DCIPChat.init) window.DCIPChat.init(C); }, 2500);
+      setTimeout(function () { if (window.DCIPCv && window.DCIPCv.prefetch) window.DCIPCv.prefetch(); }, 4000);
+    }
+  }
+  var cached = null; try { cached = JSON.parse(localStorage.getItem(CFGKEY) || 'null'); } catch (e) {}
+  if (cached && cached.c && cached.c.batch) { C = cached.c; C.today = istToday(); boot(); }
+  D.getConfig().then(function (fresh) {
+    try { localStorage.setItem(CFGKEY, JSON.stringify({ c: fresh })); } catch (e) {}
+    if (!booted) { C = fresh; boot(); return; }
+    if (strip(fresh) === strip(C)) return;
+    var reopen = fresh.open !== C.open;
+    C = fresh;
+    if (!touched || reopen) boot();                                   // nothing typed yet: simply show the new version
+    else { renderFacts(); renderFooter(); renderInstagram(); renderBanners(C.banners || []); countdown(); }   // keep what was typed
   }, function (e) {
-    $('#main').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
+    if (!booted) $('#main').innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>';
   });
 
   function calm() { return document.documentElement.classList.contains('a11y-calm') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
@@ -35,7 +54,8 @@
 
   /** Time left to apply: shown in the header and, once the header has scrolled away, in a slim bar at the top. */
   function countdown() {
-    if (!C.deadline || !C.open) return;
+    clearInterval(timers.dl);
+    if (!C.deadline || !C.open) { $('#dl').hidden = true; $('#dlbar').hidden = true; return; }
     var end = new Date(String(C.deadline).replace(' ', 'T') + (String(C.deadline).length <= 16 ? ':00' : '') + '+05:30').getTime();
     if (isNaN(end)) return;
     var box = $('#dl'), t = $('#dlT'), bar = $('#dlBar'), top = $('#dlbar'), topT = $('#dlbarT'), hero = $('.hero'), WINDOW = 30 * 86400000;
@@ -51,13 +71,13 @@
       var urgent = left < 2 * 86400000; box.classList.toggle('urgent', urgent); top.classList.toggle('urgent', urgent);
       top.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 40 : 400));
     }
-    var iv = setInterval(tick, 1000); tick();
-    window.addEventListener('scroll', function () { top.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 40 : 400)); }, { passive: true });
+    clearInterval(timers.dl); var iv = timers.dl = setInterval(tick, 1000); tick();
+    if (!timers.dlScroll) { timers.dlScroll = true; window.addEventListener('scroll', function () { top.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 40 : 400)); }, { passive: true }); }
   }
 
   /** The slider turns by itself: no buttons. A picture that cannot be loaded is skipped quietly. */
   function renderBanners(list) {
-    var box = $('#banners'); if (!box || !list.length) return;
+    var box = $('#banners'); clearInterval(timers.bn); if (!box) return; if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
     box.innerHTML = '<div class="bn" id="bn">' + list.map(function (b, i) {
       return '<figure class="slide" style="margin:0"><img src="' + esc(b.url) + '" alt="' + esc(b.caption || 'DCIP highlight ' + (i + 1)) + '" referrerpolicy="no-referrer" decoding="async">' + (b.caption ? '<figcaption class="cap">' + esc(b.caption) + '</figcaption>' : '') + '</figure>';
     }).join('') + '<div class="dots" aria-hidden="true"></div></div>';
@@ -69,7 +89,7 @@
       var cur = slides[at].querySelector('img'), nx = slides[(at + 1) % slides.length].querySelector('img'); if (nx) nx.loading = 'eager';
       dots();
     }
-    function start() { clearInterval(timer); if (slides.length > 1 && !calm()) timer = setInterval(function () { if (!document.hidden) show(at + 1); }, 5200); }
+    function start() { clearInterval(timer); if (slides.length > 1 && !calm()) timer = timers.bn = setInterval(function () { if (!document.hidden) show(at + 1); }, 5200); }
     $$('img', box).forEach(function (im) {
       im.addEventListener('load', function () { loaded++; if (loaded === 1) { box.hidden = false; show(Math.max(0, slides.indexOf(im.closest('.slide')))); start(); } });
       im.addEventListener('error', function () {
@@ -77,7 +97,7 @@
         if (!slides.length) { box.hidden = true; return; } if (was) show(0); else dots();
       });
     });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) start(); });
+    if (!timers.bnVis) { timers.bnVis = true; document.addEventListener('visibilitychange', function () { if (!document.hidden) start(); }); }
   }
 
   function renderFooter() {
@@ -91,8 +111,8 @@
 
   /** The Instagram chip and footer link always show; the preview card appears once posts have been added in the admin portal. */
   function renderInstagram() {
-    var ig = C.instagram || {}; if (!ig.page) return;
-    var chip = $('#igChip'); chip.href = ig.page; chip.hidden = false;
+    var ig = C.instagram || {}; clearInterval(timers.ig); $('#igFix').innerHTML = ''; $('#igInline').innerHTML = ''; if (!ig.page) return;
+    var chip = $('#igChip'); chip.href = ig.page; chip.hidden = false; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
     var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
@@ -105,10 +125,17 @@
       var n = $$('.igcard')[0] ? $$('img', $$('.igcard')[0]).length : 0; if (n < 2 || calm()) return; at = (at + 1) % n;
       cards.forEach(function (c) { var ims = $$('img', c); ims.forEach(function (im, i) { im.classList.toggle('on', i === at); }); var cur = ims[at]; if (cur) { c.href = cur.dataset.u; $('figcaption', c).textContent = cur.dataset.c || ''; } });
     }
-    setInterval(function () { if (!document.hidden) turn(); }, 3200);
+    clearInterval(timers.ig); timers.ig = setInterval(function () { if (!document.hidden) turn(); }, 3200);
     var hero = $('.hero'), fix = $('#igFix');
     function vis() { fix.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 80 : 500) && !$('.success')); }
-    window.addEventListener('scroll', vis, { passive: true }); vis();
+    if (!timers.igScroll) { timers.igScroll = true; window.addEventListener('scroll', function () { vis(); }, { passive: true }); }
+    window.DCIP_igvis = vis; vis();
+  }
+
+  function renderFacts() {
+    var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
+    $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
+    $('#batchName').textContent = C.batch; $('#badge').classList.toggle('closed', !C.open); $('#badgeText').textContent = C.open ? 'Applications open' : 'Applications closed';
   }
 
   /* --------------------------------------------- the form --------------------------------------------- */
@@ -116,14 +143,13 @@
     $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
     renderFooter(); renderInstagram();
-    var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
-    $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
+    renderFacts();
     if (!C.open) {
       $('#badge').classList.add('closed'); $('#badgeText').textContent = 'Applications closed';
       $('#main').innerHTML = '<h2>Registration is closed</h2><p>The registration for the DCIP ' + esc(C.batch) + ' is not open at the moment. Thank you for your interest.</p>';
       return;
     }
-    $('#main').removeAttribute('style');
+    $('#main').removeAttribute('style'); $('#main').removeAttribute('aria-busy');
     var states = C.states || [];
     $('#main').innerHTML =
       '<form id="form" novalidate autocomplete="on">' +
@@ -294,6 +320,7 @@
     mo.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
     mo.addEventListener('dragover', function (e) { e.preventDefault(); });
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
+    $('#form').addEventListener('input', function () { touched = true; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
   }
 

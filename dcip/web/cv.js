@@ -269,8 +269,12 @@
   function loadLib(id) {
     if (libs[id]) return libs[id];
     var el = document.getElementById('lib-' + id);
-    libs[id] = (el && el.textContent.trim().length > 50 ? Promise.resolve(el.textContent) : el && el.dataset.src ? fetch(el.dataset.src).then(function (r) { return r.text(); }) : Promise.reject(new Error('Reader not available')))
+    function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }); }
+    libs[id] = (el && el.textContent.trim().length > 50 ? Promise.resolve(el.textContent)
+      : el && el.dataset.src ? get(el.dataset.src).catch(function () { if (el.dataset.alt) return get(el.dataset.alt); throw new Error('Reader not available'); })
+      : Promise.reject(new Error('Reader not available')))
       .then(function (code) { return URL.createObjectURL(new Blob([code], { type: 'text/javascript' })); });
+    libs[id].catch(function () { delete libs[id]; });
     return libs[id];
   }
   function runScript(id) {
@@ -376,6 +380,11 @@
    * Reads a CV file and resolves to { fields, text, source: 'ai'|'basic' }. Never rejects for unreadable files: it resolves with empty fields.
    * ctx: { districts, colleges, localBodies, today, ai: boolean, askServer: function(text) → Promise<{ai, fields}> }
    */
+  /** Quietly fetches the readers in the background a few seconds after the page is up, so the first CV opens fast (skipped on data-saver connections). */
+  w.DCIPCv.prefetch = function () {
+    var c = navigator.connection; if (c && (c.saveData || /2g/.test(c.effectiveType || ''))) return;
+    loadLib('pdfjs').catch(function () {}); loadLib('pdfworker').catch(function () {}); loadLib('jszip').catch(function () {});
+  };
   w.DCIPCv.read = function (file, ctx) {
     return readText(file).then(function (res) {
       var text = String(res.text || '').trim();

@@ -7,22 +7,27 @@ W = os.path.join(ROOT, 'web'); OUT = os.path.join(ROOT, 'dist')
 def read(p, mode='r'):
     with open(os.path.join(W, p), mode, **({'encoding': 'utf-8'} if mode == 'r' else {})) as f: return f.read()
 def js(code): return code.replace('</script', '<\\/script')
-logo = 'data:image/png;base64,' + base64.b64encode(read('logo.png', 'rb')).decode()
+logo = 'data:image/webp;base64,' + base64.b64encode(read('logo-hero.webp', 'rb')).decode()     # small copies keep the pages light
+favicon = 'data:image/png;base64,' + base64.b64encode(read('logo-fav.png', 'rb')).decode()
 
 CONFIG = ("<script>\n// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL BETWEEN THE QUOTES (it ends in /exec) ======\n"
           "window.DCIP_CONFIG = { apiUrl: '__API_URL__' };\n// ================================================================================\n</script>")
 
 LAZY = {'lib-pdfjs': 'vendor/pdf.min.js', 'lib-pdfworker': 'vendor/pdf.worker.min.js', 'lib-jszip': 'vendor/jszip.min.js'}
+# the CV readers are big (1.5 MB): the public form fetches them from a CDN only after the page is up (admin keeps them inside)
+CDN = {'lib-pdfjs': 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'lib-pdfworker': 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js', 'lib-jszip': 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'}
 
 def build(page, scripts, css_files):
     html = read(page)
     for lid, path in LAZY.items():   # inert text/plain blocks: only started when a CV is chosen
         tag = '<script type="text/plain" id="%s" data-src="%s"></script>' % (lid, path)
-        if tag in html: html = html.replace(tag, '<script type="text/plain" id="%s">%s</script>' % (lid, read(path).replace('</script', '<\\/script')))
+        if tag in html:
+            if page == 'index.html': html = html.replace(tag, '<script type="text/plain" id="%s" data-src="%s" data-alt="%s"></script>' % (lid, CDN[lid], path))
+            else: html = html.replace(tag, '<script type="text/plain" id="%s">%s</script>' % (lid, read(path).replace('</script', '<\\/script')))
     css = '\n'.join(read(c) for c in css_files)
     # the inlined CSS goes where the first <link rel=stylesheet> was, so the page's own <style> still comes after it
     html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', lambda m, _c=[0]: (_c.__setitem__(0, _c[0] + 1) or ('<style>\n%s\n</style>\n' % css if _c[0] == 1 else '')), html)
-    html = html.replace('<link rel="icon" href="logo.png">', '<link rel="icon" href="%s">' % logo)
+    html = html.replace('<link rel="icon" href="logo.png">', '<link rel="icon" href="%s">' % favicon)
     html = html.replace('src="logo.png"', 'src="%s"' % logo)
     html = re.sub(r'\s*<script src="[^"]+"></script>', '', html)          # drop external script tags
     body = CONFIG + '\n' + '\n'.join('<script>\n%s\n</script>' % js(read(s)) for s in scripts)

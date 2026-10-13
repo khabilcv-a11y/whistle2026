@@ -7,8 +7,10 @@
 <meta name="description" content="Apply for the District Collector's Internship Programme (DCIP), Kozhikode.">
 <meta name="theme-color" content="#0b2140">
 <link rel="icon" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="styles.css">
 <style>
   :root {
@@ -19,7 +21,7 @@
   body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--ink); }
 
   /* ---------- hero ---------- */
-  .hero { position: relative; overflow: hidden; color: #fff; padding: 26px 18px 64px;
+  .hero { position: relative; overflow: hidden; color: #fff; padding: 26px 18px 120px;
     background: radial-gradient(900px 420px at 88% -10%, rgba(246,168,28,.28), transparent 60%), radial-gradient(700px 380px at -5% 110%, rgba(211,32,47,.32), transparent 60%), linear-gradient(135deg, var(--navy-900), var(--navy-700) 55%, var(--navy-500)); }
   .hero::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1.2px, transparent 1.2px); background-size: 22px 22px; mask-image: linear-gradient(to bottom, #000, transparent 85%); pointer-events: none; }
   .hero .in { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
@@ -143,7 +145,7 @@
   @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
 
   .skip { position: absolute; left: 8px; top: -60px; z-index: 200; background: #fff; color: var(--navy-900); font-weight: 800; padding: 10px 16px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.3); } .skip:focus { top: 8px; }
-  .badges { display: flex; flex-wrap: wrap; gap: 8px; } .badge.gold { background: linear-gradient(135deg, #f6a81c, #ffd27a); color: #2a1c00; border-color: transparent; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .badge.gold { background: linear-gradient(135deg, #f6a81c, #ffd27a); color: #2a1c00; border-color: transparent; }
   .decade { font-size: clamp(34px, 7vw, 62px); line-height: 1.04; letter-spacing: -.025em; margin: 18px 0 10px; font-weight: 800; }
   .decade .w { display: inline-block; opacity: 0; transform: translateY(18px); animation: rise .7s cubic-bezier(.2,.8,.2,1) forwards; }
   .decade .w:nth-child(1) { animation-delay: .05s } .decade .w:nth-child(2) { animation-delay: .15s } .decade .w:nth-child(3) { animation-delay: .25s } .decade .w:nth-child(4) { animation-delay: .35s } .decade .w:nth-child(5) { animation-delay: .5s } .decade .w:nth-child(6) { animation-delay: .65s }
@@ -231,7 +233,13 @@
   html.a11y-hc .dp-pop { border: 2px solid #000; } html.a11y-hc .dp-d.sel, html.a11y-hc .dp-mo.sel { background: #000; color: #fff; }
   .card { position: relative; }
   /* ---------- Instagram ---------- */
-  .badge.ig { background: linear-gradient(135deg, #833ab4, #fd1d1d 60%, #fcb045); border-color: transparent; color: #fff; text-decoration: none; } .badge.ig:hover { filter: brightness(1.1); }
+  .igf { display: inline-flex; align-items: center; gap: 9px; margin: 0; padding: 4px 14px 4px 4px; border-radius: 999px; text-decoration: none; color: #fff; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); transition: transform .15s, background .15s, border-color .15s; }
+  .igf:hover { transform: translateY(-2px); background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.5); } .igf:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .igf-ic { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 30% 105%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); box-shadow: 0 4px 12px rgba(214,36,159,.4); flex: none; }
+  .igf-tx { display: grid; line-height: 1.15; } .igf-tx small { font-size: 10.5px; color: #c9d8ef; font-weight: 600; } .igf-tx b { font-size: 14px; letter-spacing: .1px; }
+  .igf-go { margin-left: 4px; font-weight: 800; color: var(--gold); transition: transform .15s; } .igf:hover .igf-go { transform: translateX(3px); }
+  .skel { display: grid; gap: 16px; padding: 6px 0; } .skel i { display: block; height: 48px; border-radius: 14px; background: linear-gradient(90deg, #eef2f8 25%, #f8fafd 40%, #eef2f8 60%); background-size: 300% 100%; animation: sk 1.3s ease-in-out infinite; } @keyframes sk { to { background-position: -150% 0; } }
+  html.a11y-calm .skel i { animation: none; }
   .igcard { display: block; width: 244px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 10px; box-shadow: 0 14px 40px rgba(11,33,64,.2); text-decoration: none; color: var(--ink); transition: transform .15s; } .igcard:hover { transform: translateY(-2px); }
   .igcard .hd { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; font-size: 13px; } .igcard .hd b { display: block; line-height: 1.1; } .igcard .hd small { color: var(--muted); }
   .igcard .av { width: 30px; height: 30px; border-radius: 50%; flex: none; background: conic-gradient(from 200deg, #fcb045, #fd1d1d, #833ab4, #fcb045); padding: 2px; } .igcard .av i { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--navy-700); border: 2px solid #fff; }
@@ -251,13 +259,13 @@
 <div class="dlbar" id="dlbar" hidden><span>⏳ Closes in <b id="dlbarT"></b></span></div>
 <header class="hero"><div class="in">
   <div>
-    <div class="badges"><span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span><span class="badge gold">11 Years of Compassion</span><a class="badge ig" id="igChip" href="#" target="_blank" rel="noopener" hidden>📷 Follow on Instagram</a></div>
+    <div class="badges"><span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span><span class="badge gold">11 Years of Compassion</span><a class="igf" id="igChip" href="#" target="_blank" rel="noopener" hidden aria-label="Follow DCIP on Instagram"><span class="igf-ic"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.2" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="12" cy="12" r="4.1" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="17.1" cy="6.9" r="1.2" fill="#fff"/></svg></span><span class="igf-tx"><small>Follow us on Instagram</small><b id="igHandle">@dcipkkd</b></span><span class="igf-go" aria-hidden="true">→</span></a></div>
     <h1 class="decade" aria-label="A Decade of Shaping Tomorrow, Today."><span class="w">A</span> <span class="w">Decade</span> <span class="w">of</span> <span class="w">Shaping</span> <span class="w hl">Tomorrow,</span> <span class="w hl2">Today.</span></h1>
     <p class="slogan">Quit complaining. <b>Start creating.</b></p>
     <p class="lead">Apply to the District Collector's Internship Programme, Kozhikode, and join the <b id="batchName">34th Batch</b>. Work with the District Administration on real projects for real people.</p>
     <p class="rotor" aria-live="off">Experience governance <span class="rot" id="rotor" aria-hidden="true"><span class="on">from within</span><span>under the District Collector</span><span>with compassion at its core</span><span>for a better Kozhikode</span></span><span class="sr"> from within, with compassion at its core.</span></p>
     <div class="facts" id="facts"></div>
-    <div class="stats" aria-label="DCIP in numbers"><div><b data-count="11">11</b><span>years of compassion</span></div><div><b data-count="30" data-plus="1">30+</b><span>batches of interns</span></div><div><b>#</b><span>compassionisthekey</span></div></div>
+
   </div>
   <aside class="side"><img class="logo" src="logo.png" alt="DCIP Kozhikode crest">
     <div class="dl" id="dl" hidden aria-live="off"><span class="dl-lbl">Applications close in</span><div class="dl-t" id="dlT" role="timer"></div><div class="dl-bar" aria-hidden="true"><i id="dlBar"></i></div><small id="dlWhen"></small></div></aside>
@@ -265,7 +273,7 @@
 
 <section class="banners" id="banners" hidden aria-roledescription="carousel" aria-label="DCIP highlights"></section>
 
-<main id="apply" tabindex="-1"><div class="card" id="main" style="color:var(--muted)">Loading…</div></main>
+<main id="apply" tabindex="-1"><div class="card" id="main" aria-busy="true"><div class="skel" aria-hidden="true"><i style="width:55%;height:28px"></i><i style="width:90%"></i><i style="height:120px"></i><i></i><i></i><i style="width:70%"></i></div><span class="sr">Loading the form…</span></div></main>
 <div class="igin" id="igInline" hidden></div>
 <aside class="igfix" id="igFix" hidden aria-label="DCIP on Instagram"></aside>
 <footer class="foot" id="foot"><div class="foot-in"><b>Need help? We are happy to talk.</b><div id="contact">Reply to the e-mail you receive from us, or visit <a href="https://www.dcip.co.in">www.dcip.co.in</a>.</div></div></footer>
