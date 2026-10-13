@@ -148,7 +148,7 @@
     var states = C.states || [];
     $('#main').innerHTML =
       '<form id="form" novalidate autocomplete="on">' +
-      '<div class="formhead"><h2>Apply for the ' + esc(C.batch) + '</h2><p>It takes about 5 minutes. Upload your CV and we\'ll fill in what we can. You only check it and complete the rest.</p></div>' +
+      '<div class="formhead"><h2>Apply for the ' + esc(C.batch) + '</h2><p>Upload your CV and we\'ll fill in what we can. You only check it and complete the rest.</p></div>' +
       '<div class="grid">' +
       '<div class="full"><div class="field" id="fld-cv"><label class="drop" for="cv" id="drop"><span class="drop-ic" aria-hidden="true">📄</span><b id="dropTitle">Choose your CV</b><span class="muted" id="dropSub">or drop it here · PDF, DOC or DOCX · up to ' + (C.cvMaxBytes / 1048576) + ' MB</span>' +
         '<input type="file" id="cv" class="sr" accept=".pdf,.doc,.docx,application/pdf"></label><div class="err"></div>' +
@@ -158,7 +158,7 @@
       f('dob', 'Date of birth', '<input type="hidden" id="dob">', '', '<span id="ageNote"></span>') +
       f('gender', 'Gender', choice('gender', C.genders)) +
       f('email', 'E-mail address', '<input type="email" id="email" autocomplete="email" maxlength="120">', 'full', 'We will send your confirmation here, and <b>all further updates</b> too. Please double-check the spelling.') +
-      f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">', '', 'The number we will call if you are shortlisted. Please keep it switched on.') +
+      f('mobile', 'Mobile number', '<input type="tel" id="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="14" placeholder="10-digit number">', '', 'Our team will use this number to contact you about your application and interview. Please make sure it is active and reachable.') +
       f('altMobile', 'Another number <span class="muted">(optional)</span>', '<input type="tel" id="altMobile" inputmode="numeric" maxlength="14">', '', null, true) +
       '<div class="field full wa hidden" id="fld-waSame"><span class="q" id="lbl-waSame">Is this number on WhatsApp? <span class="req">*</span></span>' + choice('waSame', [WA_YES, WA_NO]) + '<div class="err"></div></div>' +
       f('whatsapp', 'Your WhatsApp number', '<input type="tel" id="whatsapp" inputmode="numeric" maxlength="14" placeholder="10-digit WhatsApp number">', 'full hidden', 'We may send interview updates on WhatsApp.') +
@@ -167,19 +167,18 @@
       f('lbName', 'Local body', '<div class="acwrap"><input type="text" id="lbName" autocomplete="off" maxlength="80" placeholder="Start typing your panchayat / municipality / corporation"></div>', 'full hidden',
         'Type a few letters and pick your local body from the list that appears.') +
       f('qual', 'Highest educational qualification', choice('qual', C.quals), 'full', 'Choose the highest level you have <b>completed</b>. If you are in your final year, pick “final year – results pending”.') +
-      f('mastersInstitution', 'Where did you complete your master\'s degree?', '<div class="acwrap"><input type="text" id="mastersInstitution" autocomplete="off" maxlength="150" placeholder="Start typing the college / university"></div>', 'full hidden', 'Tell us the college or university for your master\'s.') +
       f('stream', 'UG / bachelor\'s degree stream', choice('stream', C.streams || STREAMS, false, 'dense') + '<input type="text" id="streamOther" class="other-in hidden" maxlength="80" placeholder="Please tell us your degree, e.g. Bachelor of Fine Arts" aria-label="Your degree">', 'full') +
       f('specialisation', 'UG subject / specialisation', '<input type="text" id="specialisation" maxlength="100" placeholder="e.g. Political Science, Economics">') +
       f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', '', 'Pick from the list if you see your college; otherwise type its full name.') +
       f('completion', 'UG completion month', '<input type="hidden" id="completion">', 'full',
         '<span id="compNote">The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before ' + esc(D.fmtDate(C.ugBy)) + '.</span>') +
       f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="6000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote"></span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
-        '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p><p>What about DCIP\'s way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.</p>') +
+        '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p>') +
       f('background', 'Choose <b>one</b> question and answer it', '<input type="hidden" id="bq"><div class="opts qopts" id="opts-bq" role="radiogroup" aria-labelledby="lbl-background" data-for="bq">' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="A"><i class="qdot" aria-hidden="true"></i><span><b>A)</b> How has your personal background shaped your interest in social or governance issues?</span></button>' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="B"><i class="qdot" aria-hidden="true"></i><span><b>B)</b> Who or what has most influenced your sense of public responsibility, and how?</span></button></div>' +
-        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote"></span><span><b id="bcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
-        '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.</p>') +
+         '<div class="qlead qdesc"><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.</p></div>' +
+        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote"></span><span><b id="bcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full') +
       f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply. It helps us reach more students like you.') +
       '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
       '</div>' +
@@ -195,7 +194,6 @@
     var L = window.DCIP_LISTS || {};
     typeahead($('#lbName'), L.kozhikodeLocalBodies || []);
     typeahead($('#institution'), L.colleges || []);
-    typeahead($('#mastersInstitution'), L.colleges || []);
     typeahead($('#state'), states, { all: true });
     bindCv();
   }
@@ -225,9 +223,9 @@
 
   /* ----------------------------------------------- CV auto-fill ----------------------------------------------- */
   var applying = false, cvBusy = false, autoIds = {};
-  var MAP = { fullName: 'fullName', dob: 'dob', gender: 'gender', email: 'email', mobile: 'mobile', altMobile: 'altMobile', district: 'district', state: 'state', localBody: 'lbName', qual: 'qual', mastersInstitution: 'mastersInstitution',
+  var MAP = { fullName: 'fullName', dob: 'dob', gender: 'gender', email: 'email', mobile: 'mobile', altMobile: 'altMobile', district: 'district', state: 'state', localBody: 'lbName', qual: 'qual',
     stream: 'stream', streamOther: 'streamOther', specialisation: 'specialisation', institution: 'institution', completionYM: 'completion' };
-  var NICE = { fullName: 'name', dob: 'date of birth', gender: 'gender', email: 'e-mail', mobile: 'mobile number', altMobile: 'second mobile', district: 'district', state: 'state', localBody: 'local body', qual: 'qualification', mastersInstitution: 'master\'s college',
+  var NICE = { fullName: 'name', dob: 'date of birth', gender: 'gender', email: 'e-mail', mobile: 'mobile number', altMobile: 'second mobile', district: 'district', state: 'state', localBody: 'local body', qual: 'qualification',
     stream: 'degree stream', streamOther: 'degree', specialisation: 'subject', institution: 'college', completionYM: 'completion month' };
   function mark(id) { var f = $('#fld-' + id); if (f) f.classList.add('autofilled'); }
   function unmark(id) { delete autoIds[id]; var f = $('#fld-' + id); if (f) f.classList.remove('autofilled'); }
@@ -235,12 +233,12 @@
   /** Puts CV details into the empty fields (never over something the applicant typed) and marks them so they get checked. */
   function applyFields(f) {
     var filled = []; applying = true;
+    if (/^master/i.test(f.qual || val('qual'))) { f = Object.assign({}, f, { institution: f.mastersInstitution || '', stream: '', streamOther: '', specialisation: '', completionYM: '', completion: '' }); }   // the CV's bachelor's details do not belong under a master's degree
     if (f.completion && !f.completionYM && /^\d{4}-\d{2}/.test(f.completion)) f.completionYM = f.completion.slice(0, 7);
     Object.keys(MAP).forEach(function (k) {
       var id = MAP[k], v = f[k], el = $('#' + id); if (!v || !el) return;
       if (id === 'lbName' && val('district') !== 'Kozhikode') return;
       if (id === 'state' && val('district') !== 'Outside Kerala') return;
-      if (id === 'mastersInstitution' && !/^master/i.test(val('qual'))) return;
       if (id === 'streamOther' && val('stream') !== 'Other') return;
       if (id === 'completion') { var m = /^(\d{4})-(\d{2})/.exec(v); if (!m) return; v = m[1] + '-' + m[2] + '-' + ('0' + D.lastDay(+m[1], +m[2])).slice(-2); }
       var cur = String(el.value || '').trim(); if (cur && !autoIds[id]) return;
@@ -273,6 +271,7 @@
       cvBusy = true; cvStatus('<span class="spin"></span> Reading your CV…', 'busy');
       w_read(file).then(function (res) {
         cvBusy = false;
+        if (res.readerFailed) { cvStatus(T('✓ CV attached. The automatic reader could not start (please check your internet connection) – please fill in the form below yourself.'), 'info'); return; }
         var filled = applyFields(res.fields || {});
         if (filled.length) {
           cvStatus(T('✨ We found <b>{n}</b> in your CV: {list}. They are filled in below – <b>please check each one</b> and complete the rest.', { n: filled.length > 1 ? T('{k} details', { k: filled.length }) : T('1 detail'), list: filled.map(function (k) { return esc(T(NICE[k])); }).join(', ') }), 'ok');
@@ -297,7 +296,7 @@
   }
 
   /* in the order they appear on the page (the first mistake is scrolled to) */
-  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'mastersInstitution', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'bq', 'background', 'heardFrom', 'heardOther'];
+  var FIELDS = ['fullName', 'dob', 'gender', 'email', 'mobile', 'altMobile', 'waSame', 'whatsapp', 'district', 'state', 'lbName', 'qual', 'stream', 'streamOther', 'specialisation', 'institution', 'completion', 'motivation', 'bq', 'background', 'heardFrom', 'heardOther'];
   function val(id) { var e = $('#' + id); return e ? String(e.value).replace(/\s+/g, ' ').trim() : ''; }
   function words(s) { return String(s || '').trim().split(/\s+/).filter(Boolean); }
 
@@ -306,7 +305,7 @@
       var e = $('#' + id); if (!e) return;
       ['input', 'change'].forEach(function (ev) { e.addEventListener(ev, function () {
         if (!applying) unmark(id); clearErr(id); saveDraft();
-        if (id === 'district') updateLocalBody(); if (id === 'mobile' || id === 'waSame') updateWa(); if (id === 'qual') updateMasters(); if (id === 'stream') updateStream(); if (id === 'heardFrom') updateHeard();
+        if (id === 'district') updateLocalBody(); if (id === 'mobile' || id === 'waSame') updateWa(); if (id === 'qual') updateQual(); if (id === 'stream') updateStream(); if (id === 'heardFrom') updateHeard();
         liveChecks();
       }); });
     });
@@ -409,10 +408,25 @@
     $('#fld-whatsapp').classList.toggle('hidden', !(ok && same === WA_NO));
     if (same !== WA_NO) $('#whatsapp').value = '';
   }
-  function updateMasters() { showIf('mastersInstitution', /^master/i.test(val('qual')), true); }
+  /** The questions below the qualification follow it: bachelor's details for a bachelor's degree, master's details for a master's degree. */
+  var PG_STREAMS = ['M.A', 'M.Sc', 'M.Com', 'M.Tech / M.E', 'MBA / MBM', 'MCA', 'LL.M', 'M.Ed', 'MSW', 'M.Arch', 'M.Pharm', 'Other'], lastM = false;
+  function isMasters() { return /^master/i.test(val('qual')); }
+  function setLabel(id, text) { var l = $('#lbl-' + id); if (l && l.firstChild) l.firstChild.nodeValue = T(text) + ' '; }
+  function updateQual() {
+    var m = isMasters();
+    setLabel('stream', m ? 'Master\'s degree stream' : 'UG / bachelor\'s degree stream'); setLabel('specialisation', m ? 'Master\'s subject / specialisation' : 'UG subject / specialisation');
+    setLabel('institution', m ? 'Name of master\'s institution' : 'Name of UG institution'); setLabel('completion', m ? 'Master\'s completion month' : 'UG completion month');
+    if (m === lastM) return; lastM = m;
+    var list = m ? PG_STREAMS : (C.streams || STREAMS);
+    $('#stream').dataset.options = JSON.stringify(list);
+    $('#opts-stream').innerHTML = list.map(function (o) { return '<button type="button" class="opt" role="radio" aria-checked="false" data-v="' + esc(o) + '">' + esc(o) + '</button>'; }).join('');
+    ['stream', 'streamOther', 'specialisation', 'institution'].forEach(function (id) { var e = $('#' + id); if (e && e.value && !(id === 'stream' && list.indexOf(e.value) >= 0)) { e.value = ''; unmark(id); } });
+    var c = $('#completion'); if (c && c.value) { c.value = ''; unmark('completion'); if (pickers.completion) pickers.completion.show(); }
+    syncChoice('stream'); updateStream();
+  }
   function updateStream() { showIf('streamOther', val('stream') === 'Other', true); }
   function updateHeard() { showIf('heardOther', chosenList('heardFrom').indexOf('Other') >= 0, true); }
-  function updateAll() { updateLocalBody(); updateWa(); updateMasters(); updateStream(); updateHeard(); }
+  function updateAll() { updateLocalBody(); updateWa(); updateQual(); updateStream(); updateHeard(); }
   function stateName() {
     var v = val('state').toLowerCase(), m = (C.states || []).filter(function (x) { return x.toLowerCase() === v; })[0];
     return m || '';
@@ -513,7 +527,6 @@
     if (val('district') === 'Outside Kerala' && !stateName()) errs.state = 'Please pick your state from the list.';
     if (val('district') === 'Kozhikode' && !val('lbName')) errs.lbName = 'Please enter your local body.';
     if (!val('qual')) errs.qual = 'Please choose one.';
-    if (/^master/i.test(val('qual')) && !val('mastersInstitution')) errs.mastersInstitution = 'Please enter where you completed your master\'s degree.';
     if (!val('stream')) errs.stream = 'Please choose one.';
     else if (val('stream') === 'Other' && val('streamOther').length < 3) errs.streamOther = 'Please tell us your degree.';
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
@@ -522,7 +535,7 @@
     if (wc < MIN_WORDS) errs.motivation = T('Please write at least {n} words (you have {c}).', { n: MIN_WORDS, c: wc }); else if (wc > MAX_WORDS) errs.motivation = T('Please keep your answer within {n} words.', { n: MAX_WORDS });
     if (!val('bq')) errs.bq = 'Please tick the question you are answering: A or B.';
     var bwc = words(val('background')).length;
-    if (bwc < MIN_WORDS) errs.background = T('Please write at least {n} words (you have {c}); 150 to 200 is ideal.', { n: MIN_WORDS, c: bwc }); else if (bwc > MAX_WORDS) errs.background = T('Please keep your answer within {n} words (150 to 200 is ideal).', { n: MAX_WORDS });
+    if (bwc < MIN_WORDS) errs.background = T('Please write at least {n} words (you have {c}).', { n: MIN_WORDS, c: bwc }); else if (bwc > MAX_WORDS) errs.background = T('Please keep your answer within {n} words.', { n: MAX_WORDS });
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
     var file = $('#cv').files[0];
@@ -558,7 +571,7 @@
       return D.call('submitApplication', {
         fullName: val('fullName'), dob: val('dob'), gender: val('gender'), email: val('email').toLowerCase(), mobile: val('mobile'),
         whatsappSame: val('waSame') === WA_YES, whatsapp: val('whatsapp'), altMobile: val('altMobile'),
-        district: val('district'), state: val('district') === 'Outside Kerala' ? stateName() : '', localBody: localBody(), qual: val('qual'), mastersInstitution: val('mastersInstitution'),
+        district: val('district'), state: val('district') === 'Outside Kerala' ? stateName() : '', localBody: localBody(), qual: val('qual'), mastersInstitution: isMasters() ? val('institution') : '',
         stream: val('stream') === 'Other' ? 'Other: ' + val('streamOther') : val('stream'), specialisation: val('specialisation'),
         institution: val('institution'), completion: val('completion'), motivation: String($('#motivation').value).trim(), backgroundQ: val('bq'), background: String($('#background').value).trim(),
         heardFrom: chosenList('heardFrom').map(function (x) { return x === 'Other' ? 'Other: ' + val('heardOther') : x; }), cv: cv,

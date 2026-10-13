@@ -420,14 +420,13 @@ test('setup: an older Chat_Log layout is moved aside (rows kept) instead of fail
   env.store.sheets.Chat_Log = keep; delete env.store.sheets.Chat_Log_backup; delete env.store.sheets[old];
 });
 
-test('form fields: WhatsApp, how they heard, master\'s college, legacy master\'s value', () => {
+test('form fields: WhatsApp, how they heard, master\'s institution, legacy master\'s value', () => {
   const mk = (o) => base(Object.assign({ email: 'f' + (++n) + '@example.com', mobile: '90000' + String(10000 + n), fullName: 'Field Test' + n }, o));
   fails('submitApplication', /WhatsApp number/, mk({ whatsappSame: false, whatsapp: '' }));
   fails('submitApplication', /WhatsApp number/, mk({ whatsappSame: false, whatsapp: '12345' }));
   fails('submitApplication', /how you heard/, mk({ heardFrom: [] }));
   fails('submitApplication', /how you heard/, mk({ heardFrom: ['Carrier pigeon'] }));
-  fails('submitApplication', /master's degree/i, mk({ qual: "Master's Degree (completed)", mastersInstitution: '' }));
-  call('submitApplication', mk({ whatsappSame: false, whatsapp: '+91 98470 77777', heardFrom: ['Instagram', 'Friend / Family', 'Instagram'], qual: "Master's Degree (completed)", mastersInstitution: 'University of Delhi' }));
+  call('submitApplication', mk({ whatsappSame: false, whatsapp: '+91 98470 77777', heardFrom: ['Instagram', 'Friend / Family', 'Instagram'], qual: "Master's Degree (completed)", institution: 'University of Delhi' }));   // for a master's degree the one institution asked is the master's
   const a = call('getAdminState', login()).applications.filter(x => x.fullName.startsWith('Field Test')).pop();
   assert.equal(a.whatsapp, '9847077777'); assert.equal(a.heardFrom, 'Instagram, Friend / Family'); assert.equal(a.mastersInstitution, 'University of Delhi'); assert.equal(a.qual, "Master's Degree (completed)");
   const same = call('getAdminState', login()).applications.find(x => x.email === 'asha@example.com'); assert.equal(same.whatsapp, same.mobile);

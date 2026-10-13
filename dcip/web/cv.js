@@ -270,8 +270,14 @@
     if (libs[id]) return libs[id];
     var el = document.getElementById('lib-' + id);
     function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }); }
+    /* the site's own copy first, then the CDNs; the whole round is repeated once before giving up */
+    function fetchAny() {
+      var urls = [el && el.dataset.src].concat(el && el.dataset.alt ? el.dataset.alt.split(/\s+/) : []).filter(Boolean), n = 0;
+      function next() { if (n >= urls.length) return Promise.reject(new Error('Reader not available')); return get(urls[n++]).then(function (t) { if (t.length < 5000 || /^\s*</.test(t)) throw new Error('bad file'); return t; }).catch(next); }
+      return next();
+    }
     libs[id] = (el && el.textContent.trim().length > 50 ? Promise.resolve(el.textContent)
-      : el && el.dataset.src ? get(el.dataset.src).catch(function () { if (el.dataset.alt) return get(el.dataset.alt); throw new Error('Reader not available'); })
+      : el ? fetchAny().catch(function () { return new Promise(function (r) { setTimeout(r, 1500); }).then(fetchAny); })
       : Promise.reject(new Error('Reader not available')))
       .then(function (code) { return URL.createObjectURL(new Blob([code], { type: 'text/javascript' })); });
     libs[id].catch(function () { delete libs[id]; });
@@ -400,6 +406,6 @@
         });
         return { fields: merged, text: text, source: 'ai' };
       }, function () { return { fields: local, text: text, source: 'basic' }; });
-    }, function () { return { fields: {}, text: '', source: 'none' }; });
+    }, function (e) { return { fields: {}, text: '', source: 'none', readerFailed: /Reader not available|Could not start/.test(String(e && e.message)) }; });
   };
 })(typeof window !== 'undefined' ? window : this);

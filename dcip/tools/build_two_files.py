@@ -14,15 +14,17 @@ CONFIG = ("<script>\n// ====== PASTE YOUR GOOGLE APPS SCRIPT WEB-APP URL BETWEEN
           "window.DCIP_CONFIG = { apiUrl: '__API_URL__' };\n// ================================================================================\n</script>")
 
 LAZY = {'lib-pdfjs': 'vendor/pdf.min.js', 'lib-pdfworker': 'vendor/pdf.worker.min.js', 'lib-jszip': 'vendor/jszip.min.js'}
-# the CV readers are big (1.5 MB): the public form fetches them from a CDN only after the page is up (admin keeps them inside)
-CDN = {'lib-pdfjs': 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'lib-pdfworker': 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js', 'lib-jszip': 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'}
+# the CV readers are big (1.5 MB): the public form fetches them only after the page is up, first from the site's own vendor/ folder (deploy it next to index.html), then from CDNs (admin keeps them inside)
+CDN = {'lib-pdfjs': ['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'],
+       'lib-pdfworker': ['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js', 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'],
+       'lib-jszip': ['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js', 'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js']}
 
 def build(page, scripts, css_files):
     html = read(page)
     for lid, path in LAZY.items():   # inert text/plain blocks: only started when a CV is chosen
         tag = '<script type="text/plain" id="%s" data-src="%s"></script>' % (lid, path)
         if tag in html:
-            if page == 'index.html': html = html.replace(tag, '<script type="text/plain" id="%s" data-src="%s" data-alt="%s"></script>' % (lid, CDN[lid], path))
+            if page == 'index.html': html = html.replace(tag, '<script type="text/plain" id="%s" data-src="%s" data-alt="%s"></script>' % (lid, path, ' '.join(CDN[lid])))
             else: html = html.replace(tag, '<script type="text/plain" id="%s">%s</script>' % (lid, read(path).replace('</script', '<\\/script')))
     css = '\n'.join(read(c) for c in css_files)
     # the inlined CSS goes where the first <link rel=stylesheet> was, so the page's own <style> still comes after it

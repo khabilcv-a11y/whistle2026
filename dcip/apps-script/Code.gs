@@ -1228,14 +1228,13 @@ function cleanApplication_(p, s) {
   d.state = d.district === 'Outside Kerala' ? pick_(p.state, STATES, 'state') : '';
   if (!d.localBody && d.district === 'Kozhikode') throw new Error('Please enter your local body (panchayat / municipality / corporation).');
   d.qual = pickQual_(p.qual);
-  d.mastersInstitution = /^master/i.test(d.qual) ? clean_(p.mastersInstitution).slice(0, 150) : '';
-  if (/^master/i.test(d.qual) && !d.mastersInstitution) throw new Error('Please enter the college or university where you completed your master\'s degree.');
   d.stream = clean_(p.stream);
   d.specialisation = clean_(p.specialisation);
   d.institution = clean_(p.institution);
-  if (!d.stream || !d.specialisation || !d.institution) throw new Error('Please complete the UG details (stream, subject and institution).');
+  d.mastersInstitution = /^master/i.test(d.qual) ? d.institution.slice(0, 150) : '';   // for a master's degree the institution asked is the master's one
+  if (!d.stream || !d.specialisation || !d.institution) throw new Error('Please complete your degree details (stream, subject and institution).');
   d.completion = clean_(p.completion);
-  if (!isIso_(d.completion)) throw new Error('Please enter the UG degree completion date.');
+  if (!isIso_(d.completion)) throw new Error('Please enter the degree completion month.');
   d.motivation = clean_(p.motivation);
   var mw = d.motivation.split(/\s+/).filter(Boolean).length;
   if (mw < 30) throw new Error('Please write at least 30 words about why you want to join DCIP.');
@@ -1245,7 +1244,7 @@ function cleanApplication_(p, s) {
   d.background = clean_(p.background);
   var bw = d.background.split(/\s+/).filter(Boolean).length;
   if (bw < 30) throw new Error('Please write at least 30 words for the background question (A or B).');
-  if (bw > 500 || d.background.length > 6000) throw new Error('Your answer about your background is too long (maximum 500 words; 150 to 200 is ideal).');
+  if (bw > 500 || d.background.length > 6000) throw new Error('Your answer about your background is too long (maximum 500 words).');
   if (d.altMobile && d.altMobile === d.mobile) d.altMobile = '';
   d.cv = ''; d.cvFileId = '';
   recomputeDerived_(d, s);

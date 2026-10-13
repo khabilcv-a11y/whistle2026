@@ -203,6 +203,9 @@
   .wa { background: #f1fbf6; border: 1px solid #bfe6cf; border-radius: 16px; padding: 14px; } .wa .q { font-weight: 800; margin-bottom: 8px; display: block; } .wa .who { margin-top: 10px; }
   /* footer */
   .foot { background: var(--navy-900); color: #d6e2f5; padding: 28px 16px 90px; margin-top: 10px; text-align: center; } .foot-in { max-width: 760px; margin: 0 auto; display: grid; gap: 8px; } .foot b { color: #fff; font-size: 17px; }
+  .foot a[href^="tel:"], .foot a[href^="mailto:"] { white-space: nowrap; }
+  .qdesc { margin: 0 0 10px; }
+  #contact { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 22px; } #contact .sep { display: none; }
   .foot a { color: var(--gold); font-weight: 700; text-decoration: none; } .foot a:hover { text-decoration: underline; } .foot .sep { opacity: .4; margin: 0 8px; }
   /* accessibility options */
   .a11y-fab { position: relative; z-index: 96; width: 42px; height: 42px; flex: none; border-radius: 50%; border: 2px solid #fff; background: #1d5fb8; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .15s; } .a11y-fab:hover { transform: scale(1.06); } .a11y-fab:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px #1d5fb8; }
