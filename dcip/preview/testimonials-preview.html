@@ -3,104 +3,89 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DCIP – testimonials: where it could sit (preview only, not applied)</title>
+<title>DCIP – Instagram preview card: where it could sit (preview only, not applied)</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root { --navy-900: #0b2140; --navy-700: #12335b; --navy-500: #1d4d7a; --red: #d3202f; --gold: #f6a81c; --ink: #0f1d33; --ink-2: #435069; --muted: #6a768b; --line: #e4e9f2; --bg: #f3f6fb; }
-  * { box-sizing: border-box; } body { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
-  .note { position: sticky; top: 0; z-index: 50; background: #fff8e1; border-bottom: 2px solid var(--gold); padding: 10px 16px; font-size: 14px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .note b { color: #7a4b00; } .seg { display: inline-flex; border: 1.5px solid var(--navy-700); border-radius: 999px; overflow: hidden; background: #fff; }
-  .seg button { border: 0; background: none; padding: 7px 14px; font: 700 13px inherit; font-family: inherit; cursor: pointer; } .seg button[aria-pressed=true] { background: var(--navy-700); color: #fff; }
-  .page { max-width: 980px; margin: 0 auto; padding: 18px 16px 60px; }
-  .ghost { border: 2px dashed #b9c6dc; border-radius: 16px; background: repeating-linear-gradient(45deg, #f7f9fd, #f7f9fd 10px, #f0f4fa 10px, #f0f4fa 20px); color: #7d8aa3; display: grid; place-items: center; font-weight: 700; text-align: center; padding: 14px; }
-  .hero-g { height: 130px; } .banner-g { height: 150px; margin-top: 14px; } .form-g { height: 360px; margin-top: 14px; } .foot-g { height: 80px; margin-top: 14px; }
-  /* ---- the proposed band ---- */
-  .voices { margin: 22px 0; padding: 26px 20px 22px; border-radius: 26px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700) 60%, var(--navy-500)); color: #fff; position: relative; overflow: hidden; box-shadow: 0 18px 50px rgba(11,33,64,.25); }
-  .voices::before { content: '“'; position: absolute; right: 18px; top: -34px; font-size: 220px; line-height: 1; color: rgba(255,255,255,.07); font-family: Georgia, serif; }
-  .voices h2 { margin: 0; font-size: clamp(22px, 4vw, 30px); letter-spacing: -.01em; } .voices h2 em { font-style: normal; color: var(--gold); }
-  .voices > p { margin: 4px 0 16px; color: #c9d8ef; }
-  .track { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 14px; scrollbar-width: none; } .track::-webkit-scrollbar { display: none; }
-  .card { flex: 0 0 min(330px, 82%); scroll-snap-align: start; background: #fff; color: var(--ink); border-radius: 20px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
-  .who { display: flex; gap: 12px; align-items: center; } .ph { width: 58px; height: 58px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #fff; border: 3px solid var(--gold); }
-  .who b { display: block; } .who small { color: var(--muted); }
-  .card p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2); } .card p::before { content: '“'; color: var(--gold); font-size: 26px; font-weight: 800; line-height: 0; vertical-align: -8px; margin-right: 2px; }
-  .dots { display: flex; gap: 7px; justify-content: center; margin-top: 2px; } .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.4); } .dots i.on { width: 24px; border-radius: 99px; background: var(--gold); }
-  /* instagram strip */
-  .ig { margin-top: 18px; border-top: 1px solid rgba(255,255,255,.18); padding-top: 16px; }
-  .ig h3 { margin: 0 0 10px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-  .reels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .reel { position: relative; aspect-ratio: 9 / 13; border-radius: 16px; overflow: hidden; display: grid; align-items: end; color: #fff; text-decoration: none; background: linear-gradient(160deg, #833ab4, #fd1d1d 55%, #fcb045); }
-  .reel:nth-child(2) { background: linear-gradient(160deg, #1d4d7a, #3a8fd6); } .reel:nth-child(3) { background: linear-gradient(160deg, #0f7a5a, #5fd1a0); } .reel:nth-child(4) { background: linear-gradient(160deg, #7a2a5f, #e0709e); }
-  .reel .play { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.9); color: #111; display: grid; place-items: center; font-size: 20px; padding-left: 4px; transition: transform .15s; }
-  .reel:hover .play { transform: translate(-50%, -50%) scale(1.1); }
-  .reel span { padding: 22px 12px 10px; font-weight: 700; font-size: 13px; background: linear-gradient(to top, rgba(0,0,0,.6), transparent); }
-  .follow { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; background: #fff; color: var(--navy-900); font-weight: 800; border-radius: 999px; padding: 11px 20px; text-decoration: none; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
-  .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
-  /* option B: slim strip */
-  .strip { display: none; margin: 18px 0; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px 18px; box-shadow: 0 10px 30px rgba(11,33,64,.08); gap: 14px; align-items: center; flex-wrap: wrap; }
-  .strip .q { flex: 1 1 320px; } .strip .q p { margin: 0; font-size: 16px; font-weight: 600; } .strip .q small { color: var(--muted); }
-  body[data-pos=B] .voices { display: none; } body[data-pos=B] .strip { display: flex; }
-  .where { margin-top: 18px; font-size: 14px; color: var(--ink-2); background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
-  .where li { margin: 5px 0; }
+  * { box-sizing: border-box; } body { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #e9eef6; color: var(--ink); }
+  .top { background: #fff8e1; border-bottom: 2px solid var(--gold); padding: 12px 18px; font-size: 14px; line-height: 1.5; } .top b { color: #7a4b00; }
+  .stage { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; align-items: flex-start; padding: 24px 14px 40px; }
+  .cap { text-align: center; font-weight: 800; margin: 0 0 10px; } .cap small { display: block; font-weight: 500; color: var(--muted); }
+  .scale { transform-origin: top left; }
+  /* ---------- device frames ---------- */
+  .frame { background: var(--bg); border: 10px solid #1b2433; border-radius: 22px; overflow: hidden; position: relative; box-shadow: 0 20px 50px rgba(11,33,64,.3); }
+  .desk { width: 1280px; height: 760px; } .phone { width: 390px; height: 800px; border-radius: 34px; overflow-y: auto; }
+  /* mock page parts */
+  .hero { height: 150px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700) 55%, var(--navy-500)); color: #fff; padding: 20px 28px; position: relative; }
+  .hero h1 { margin: 6px 0 4px; font-size: 30px; letter-spacing: -.02em; } .hero p { margin: 0; color: #c9d8ef; font-size: 14px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; } .chip { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 5px 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); }
+  .chip.gold { background: linear-gradient(135deg, #f6a81c, #ffd27a); color: #2a1c00; border: 0; }
+  .chip.ig { background: linear-gradient(135deg, #833ab4, #fd1d1d 60%, #fcb045); border: 0; color: #fff; text-decoration: none; }
+  .formcol { width: 520px; margin: -20px auto 0; position: relative; z-index: 2; background: #fff; border-radius: 22px; box-shadow: 0 10px 40px rgba(11,33,64,.12); padding: 22px; }
+  .phone .formcol { width: auto; margin: -16px 12px 0; padding: 16px; }
+  .fld { height: 44px; border: 1.5px solid #d3dbe8; border-radius: 12px; background: #fbfcfe; margin: 10px 0; display: flex; align-items: center; padding: 0 12px; color: #9aa6bb; font-size: 14px; }
+  .fld.s { height: 60px; } .btn { height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--red), #e8453f); color: #fff; font-weight: 800; display: grid; place-items: center; margin-top: 14px; }
+  h2.f { margin: 0 0 4px; font-size: 22px; }
+  /* ---------- THE CARD ---------- */
+  .igcard { width: 244px; background: #fff; border-radius: 20px; padding: 10px; box-shadow: 0 14px 40px rgba(11,33,64,.2); border: 1px solid var(--line); text-decoration: none; color: inherit; display: block; }
+  .igcard .hd { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; font-size: 13px; }
+  .igcard .av { width: 30px; height: 30px; border-radius: 50%; background: conic-gradient(from 200deg, #fcb045, #fd1d1d, #833ab4, #fcb045); padding: 2px; } .igcard .av i { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--navy-700); border: 2px solid #fff; }
+  .igcard .hd b { display: block; line-height: 1.1; } .igcard .hd small { color: var(--muted); }
+  .thumbs { position: relative; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: #222; }
+  .thumbs .t { position: absolute; inset: 0; opacity: 0; transition: opacity .7s; display: grid; align-items: end; color: #fff; font-weight: 700; font-size: 13px; } .thumbs .t.on { opacity: 1; }
+  .thumbs .t span { padding: 26px 12px 12px; background: linear-gradient(to top, rgba(0,0,0,.65), transparent); width: 100%; }
+  .t1 { background: linear-gradient(160deg, #2a6f4f, #5fd1a0); } .t2 { background: linear-gradient(160deg, #7a2a5f, #e0709e); } .t3 { background: linear-gradient(160deg, #1d4d7a, #3a8fd6); }
+  .play { position: absolute; right: 10px; top: 10px; z-index: 2; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 4px 9px; }
+  .cta { margin: 10px 2px 2px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 13.5px; color: var(--navy-700); } .cta i { font-style: normal; background: linear-gradient(135deg, #833ab4, #fd1d1d 60%, #fcb045); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; }
+  .igcard:hover { transform: translateY(-2px); } .igcard { transition: transform .15s; }
+  .gutter { position: absolute; top: 70px; right: 34px; } /* desktop: sits in the empty space beside the form, stays visible */
+  .below { margin: 16px 12px; display: grid; place-items: center; } .below .igcard { width: 100%; display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; padding: 10px; }
+  .below .thumbs { aspect-ratio: 1; } .below .hd { padding: 0 0 4px; } .below .cta { margin: 8px 0 0; }
+  .foot { background: var(--navy-900); color: #c9d8ef; padding: 14px; text-align: center; font-size: 13px; margin-top: 14px; } .foot a { color: var(--gold); font-weight: 700; }
+  ul.where { max-width: 980px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 18px 22px 18px 40px; line-height: 1.6; font-size: 14.5px; } ul.where li { margin: 6px 0; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 14px 40px; }
 </style>
 </head>
-<body data-pos="A">
-<div class="note"><b>Preview only: nothing here is on the live page. Names, quotes and reels are sample content.</b>
-  <span>Where it could sit:</span>
-  <span class="seg" role="group" aria-label="Placement"><button type="button" aria-pressed="true" data-p="A">A · Full band between banner and form</button><button type="button" aria-pressed="false" data-p="B">B · Slim one-line strip</button></span>
-</div>
-<div class="page">
-  <div class="ghost hero-g">Header: A Decade of Shaping – Tomorrow, Today. + countdown</div>
-  <div class="ghost banner-g">Sliding banner (admin-managed images)</div>
-
-  <!-- A: full band -->
-  <section class="voices" aria-label="Voices of DCIP interns">
-    <h2>Hear it from our <em>interns</em></h2>
-    <p>Real words from people who worked with the District Administration.</p>
-    <div class="track" id="track">
-      <article class="card"><div class="who"><div class="ph" style="background:#2a6f4f">AM</div><div><b>Aparna M.</b><small>33rd Batch · B.A Economics</small></div></div><p>I walked in thinking governance was files and fixed rules. I walked out having helped plan a drive that reached 40 families.</p></article>
-      <article class="card"><div class="who"><div class="ph" style="background:#7a2a5f">RS</div><div><b>Rahul S.</b><small>32nd Batch · B.Tech</small></div></div><p>The fortnightly reports taught me to write clearly and own my work. DCIP changed how I see public service.</p></article>
-      <article class="card"><div class="who"><div class="ph" style="background:#1d4d7a">FH</div><div><b>Fathima H.</b><small>31st Batch · B.Sc Psychology</small></div></div><p>Working beside the District Collector's team showed me compassion is a method, not just a word.</p></article>
-      <article class="card"><div class="who"><div class="ph" style="background:#a0521d">JT</div><div><b>Joel T.</b><small>30th Batch · BBA</small></div></div><p>Four months, hundreds of conversations with citizens, and a project I'm proud to show.</p></article>
-    </div>
-    <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
-    <div class="ig">
-      <h3>▶ See them in action on Instagram</h3>
-      <div class="reels">
-        <a class="reel" href="#" onclick="return false"><div class="play">▶</div><span>A day with the Collector's team</span></a>
-        <a class="reel" href="#" onclick="return false"><div class="play">▶</div><span>Field visit diaries</span></a>
-        <a class="reel" href="#" onclick="return false"><div class="play">▶</div><span>Batch 33 farewell</span></a>
-        <a class="reel" href="#" onclick="return false"><div class="play">▶</div><span>Project showcase</span></a>
+<body>
+<div class="top"><b>Preview only: nothing here is on the live page. Pictures and captions are samples.</b> Nothing is added above the form. On a wide screen the card sits in the empty space beside the form; on a phone it sits below the Submit button.</div>
+<div class="stage">
+  <div>
+    <p class="cap">Laptop / desktop<small>card floats beside the form, adds 0 px of height</small></p>
+    <div style="width:640px;height:400px"><div class="scale" style="transform:scale(.5)">
+      <div class="frame desk">
+        <div class="hero"><div class="chips"><span class="chip">● Applications open</span><span class="chip gold">11 Years of Compassion</span><a class="chip ig" href="#" onclick="return false">📷 Follow on Instagram</a></div><h1>A Decade of Shaping Tomorrow, Today.</h1><p>Header unchanged: countdown and facts stay as they are.</p></div>
+        <div class="formcol"><h2 class="f">Apply for the 34th Batch</h2><div class="fld s">Upload your CV</div><div class="fld">Full name</div><div class="fld">Date of birth</div><div class="fld">E-mail address</div><div class="fld">Mobile number</div><div class="fld">District</div><div class="btn">Submit application</div></div>
+        <a class="igcard gutter" href="#" onclick="return false"><div class="hd"><div class="av"><i></i></div><div><b>collectorkkd</b><small>Instagram · DCIP life</small></div></div>
+          <div class="thumbs"><div class="play">▶ REEL</div><div class="t t1 on"><span>A day with the Collector's team</span></div><div class="t t2"><span>Field visit diaries</span></div><div class="t t3"><span>Project showcase</span></div></div>
+          <div class="cta">See our other activities <i>Open ↗</i></div></a>
       </div>
-      <a class="follow" href="#" onclick="return false">📷 Follow @collectorkkd and @dcip for every update →</a>
-    </div>
-  </section>
-
-  <!-- B: slim strip -->
-  <section class="strip" aria-label="Voices of DCIP interns">
-    <div class="q"><p>“I walked out having helped plan a drive that reached 40 families.”</p><small>Aparna M. · 33rd Batch</small></div>
-    <a class="follow" style="margin:0;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff" href="#" onclick="return false">▶ Watch interns on Instagram →</a>
-  </section>
-
-  <div class="ghost form-g">The application form</div>
-  <div class="ghost foot-g">Footer: contact details</div>
-
-  <div class="where">
-    <b>How it would work</b>
-    <ul>
-      <li><b>Placement A (recommended on desktop):</b> a full band between the banner and the form. It builds trust right before people start typing, and adds about 520 px of scrolling.</li>
-      <li><b>Placement B:</b> one rotating quote plus an Instagram button, about 90 px tall. Better if you want the form to stay as high as possible.</li>
-      <li><b>Managed by you:</b> a new <i>Stories</i> tab in the admin portal, like Banners: photo link, quote, name, batch, and optional Instagram reel link.</li>
-      <li><b>Instagram:</b> reels open on Instagram in a new tab (they cannot play inside the page without loading Instagram's heavy scripts), which also sends people to your other activities. A thumbnail image for each reel is optional.</li>
-      <li><b>Photos:</b> square, at least 300 × 300 px, face in the centre. Without a photo the initials are shown.</li>
-    </ul>
+    </div></div>
+  </div>
+  <div>
+    <p class="cap">Phone<small>one compact card after the form; nothing above it</small></p>
+    <div style="width:312px;height:650px"><div class="scale" style="transform:scale(.8)">
+      <div class="frame phone">
+        <div class="hero" style="height:140px;padding:16px"><div class="chips"><span class="chip">● Open</span><span class="chip gold">11 Years</span><a class="chip ig" href="#" onclick="return false">📷 Instagram</a></div><h1 style="font-size:22px">A Decade of Shaping Tomorrow, Today.</h1></div>
+        <div class="formcol"><h2 class="f" style="font-size:19px">Apply for the 34th Batch</h2><div class="fld s">Upload your CV</div><div class="fld">Full name</div><div class="fld">E-mail address</div><div class="fld">…more fields…</div><div class="btn">Submit application</div></div>
+        <div class="below"><a class="igcard" href="#" onclick="return false"><div class="thumbs"><div class="play">▶</div><div class="t t1 on"></div><div class="t t2"></div><div class="t t3"></div></div>
+          <div><div class="hd"><div class="av"><i></i></div><div><b>collectorkkd</b><small>See interns in action</small></div></div><div class="cta"><span>Our other activities</span><i>Open ↗</i></div></div></a></div>
+        <div class="foot">+91 96336 93211 | projectcellclt@gmail.com | <a href="#" onclick="return false">Instagram</a></div>
+      </div>
+    </div></div>
   </div>
 </div>
+<div class="wrap">
+  <ul class="where">
+    <li><b>Why this does not crowd the form:</b> the header and form stay exactly as they are. On screens wider than about 1280 px the card floats in the empty space beside the form and follows you as you scroll, so it is always visible but never in the way. On phones and tablets it is one small card below the Submit button, so people reach the form first.</li>
+    <li><b>The preview that invites a tap:</b> a real picture from your latest reel or post, a small ▶ REEL tag, and "Open ↗". Up to three pictures fade one after another inside the same card. One tap opens your Instagram page or the post, in a new tab, so the form stays open.</li>
+    <li><b>Where the pictures come from:</b> Instagram does not let other sites fetch its thumbnails automatically, and its own links to them expire. So you add, in a new admin tab, the post link, a picture link (a screenshot saved on ImgBB, Drive or GitHub, the same way as banners) and a short caption. About two minutes per post.</li>
+    <li><b>The lighter option:</b> skip the card and keep only the small "📷 Follow on Instagram" chip in the header plus a footer link. Zero height, nothing to maintain. Full interns' stories would then stay on the DCIP website.</li>
+    <li><b>My suggestion:</b> the floating card on desktop and the one small card on phones. Intern stories and long testimonials stay on www.dcip.co.in.</li>
+  </ul>
+</div>
 <script>
-  var b = document.querySelectorAll('[data-p]');
-  [].forEach.call(b, function (x) { x.onclick = function () { document.body.dataset.pos = x.dataset.p; [].forEach.call(b, function (y) { y.setAttribute('aria-pressed', y === x); }); }; });
-  var t = document.getElementById('track'), dots = document.querySelectorAll('.dots i'), at = 0;
-  setInterval(function () { at = (at + 1) % 4; t.scrollTo({ left: t.children[at].offsetLeft - t.children[0].offsetLeft, behavior: 'smooth' }); [].forEach.call(dots, function (d, i) { d.className = i === at ? 'on' : ''; }); }, 4200);
+  var ts = document.querySelectorAll('.thumbs'), n = 0;
+  setInterval(function () { n = (n + 1) % 3; [].forEach.call(ts, function (box) { [].forEach.call(box.querySelectorAll('.t'), function (t, i) { t.classList.toggle('on', i === n); }); }); }, 2600);
 </script>
 </body>
 </html>
