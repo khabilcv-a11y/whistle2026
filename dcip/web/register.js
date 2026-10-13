@@ -173,12 +173,12 @@
       f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', '', 'Pick from the list if you see your college; otherwise type its full name.') +
       f('completion', 'UG completion month', '<input type="hidden" id="completion">', 'full',
         '<span id="compNote">The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before ' + esc(D.fmtDate(C.ugBy)) + '.</span>') +
-      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="6000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
+      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="6000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote"></span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
         '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p><p>What about DCIP\'s way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.</p>') +
       f('background', 'Choose <b>one</b> question and answer it', '<input type="hidden" id="bq"><div class="opts qopts" id="opts-bq" role="radiogroup" aria-labelledby="lbl-background" data-for="bq">' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="A"><i class="qdot" aria-hidden="true"></i><span><b>A)</b> How has your personal background shaped your interest in social or governance issues?</span></button>' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="B"><i class="qdot" aria-hidden="true"></i><span><b>B)</b> Who or what has most influenced your sense of public responsibility, and how?</span></button></div>' +
-        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
+        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote"></span><span><b id="bcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
         '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.</p>') +
       f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply. It helps us reach more students like you.') +
       '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
@@ -319,7 +319,12 @@
         el.className = w.length >= max ? 'warn' : lo && w.length && w.length < lo ? 'amber' : lo && w.length >= lo && w.length <= hi ? 'good' : lo && w.length > hi ? 'amber' : '';
       }
       ta.addEventListener('input', count); count();
-      function noPaste(e) { e.preventDefault(); if (!noted) { noted = true; var n = $('#' + noteId); n.style.color = 'var(--red)'; n.style.fontWeight = '700'; } }
+      function noPaste(e) {
+        e.preventDefault();
+        if (dlgBox) return;
+        dialog('<div class="dlg-ic" aria-hidden="true">✍️</div><h3>Please write this in your own words</h3><p>Pasted text is not accepted here. We would like to hear your own thoughts, so please type your answer yourself.</p>',
+          [{ label: 'Okay, I will type it', primary: true, run: function () { ta.focus(); } }]);
+      }
       ['paste', 'drop'].forEach(function (ev) { ta.addEventListener(ev, noPaste); });
       ta.addEventListener('beforeinput', function (e) { if (/^insertFrom(Paste|Drop|PasteAsQuotation)$/.test(e.inputType || '')) noPaste(e); });
       ta.addEventListener('dragover', function (e) { e.preventDefault(); });
