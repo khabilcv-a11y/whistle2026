@@ -116,7 +116,7 @@
       '<dt>Mobile</dt><dd><a href="tel:' + esc(a.mobile) + '">' + esc(a.mobile) + '</a>' + (a.altMobile ? ' · <a href="tel:' + esc(a.altMobile) + '">' + esc(a.altMobile) + '</a>' : '') + '</dd><dt>WhatsApp</dt><dd>' + esc(a.whatsapp || a.mobile) + (a.whatsapp ? '' : ' <span class="muted">(same as mobile)</span>') + '</dd>' +
       '<dt>Date of birth</dt><dd>' + esc(D.fmtDate(a.dob)) + ' (age ' + esc(a.age) + ')</dd><dt>Gender</dt><dd>' + esc(a.gender) + '</dd>' +
       '<dt>Location</dt><dd>' + esc(a.location) + '</dd><dt>Qualification</dt><dd>' + esc(a.qual) + (a.mastersInstitution ? ' · ' + esc(a.mastersInstitution) : '') + '</dd><dt>Heard about DCIP</dt><dd>' + esc(String(a.heardFrom || '—').replace(/\|/g, ', ')) + '</dd>' +
-      '<dt>UG</dt><dd>' + esc(A.ugText(a)) + '</dd><dt>UG completion</dt><dd>' + esc(D.fmtDate(a.completion)) + '</dd>' +
+      '<dt>UG</dt><dd>' + esc(A.ugText(a)) + '</dd><dt>UG completion</dt><dd>' + esc(D.fmtMonthYear(a.completion)) + '</dd>' +
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
       '<h4>Evaluation</h4><div class="fgrid">' +
@@ -138,7 +138,7 @@
       '<div><label class="f">Gender</label><select data-f="gender">' + A.opts(S.config.genders, a.gender) + '</select></div>' + inp('email', 'E-mail', 'email') + inp('mobile', 'Mobile', 'tel') + inp('altMobile', 'Alternate mobile', 'tel') +
       '<div><label class="f">District</label><select data-f="district">' + A.opts(S.config.districts, a.district) + '</select></div>' + inp('localBody', 'Local body') +
       '<div class="full"><label class="f">Qualification</label><select data-f="qual">' + A.opts(S.config.quals, a.qual) + '</select></div>' +
-      inp('stream', 'UG stream') + inp('specialisation', 'Subject') + '<div class="full">' + inp('institution', 'Institution') + '</div>' + inp('completion', 'UG completion date', 'date') +
+      inp('stream', 'UG stream') + inp('specialisation', 'Subject') + '<div class="full">' + inp('institution', 'Institution') + '</div>' + inp('completion', 'UG completion (use the last day of the month)', 'date') +
       '<div class="full"><label class="f">Motivation</label><textarea data-f="motivation" rows="4">' + esc(a.motivation) + '</textarea></div></div></details>' +
       '</div>' +
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
@@ -196,10 +196,10 @@
   };
 
   /* ---------- e-mail composer ---------- */
-  var SIGN = '\n\n--\nTeam DCIP\nNammude Kozhikode, District Mission Room,\nKozhikode District Collectorate,\nKozhikode - 673020\n0495 2370200.';
+  var SIGN = '\n\nWarm regards,\nTeam DCIP';
   A.TEMPLATES = {
     interview: { name: 'Interview schedule', subject: 'DCIP {{batch}} – Interview schedule',
-      body: 'Dear Candidate,\n\nCongratulations! You have been shortlisted for the DCIP {{batch}} interview scheduled on {{dateLong}}.\n\nReporting Time: (edit: e.g. 1:00 PM)\nSession: {{slot}}\nMode: {{mode}}\nVenue: {{venue}}\n\nLocation / meeting link: {{link}}\n\nPlease bring your qualifying degree certificates (originals preferred, along with attested copies) and a valid photo identity proof (Aadhaar / Voter ID / Passport).\n\nPlease follow our official website www.dcip.co.in and social media handles of @collectorkkd and DCIP for any updates.\n\nFor queries, contact:\n📞 {{phone}}\n📧 {{contactEmail}}\n\nWe look forward to meeting you and wish you all the best!' + SIGN },
+      body: 'Dear Candidate,\n\nCongratulations! You have been shortlisted for the DCIP {{batch}} interview scheduled on {{dateLong}}.\n\nReporting Time: (edit: e.g. 1:00 PM)\nSession: {{slot}}\nMode: {{mode}}\nVenue: {{venue}}\n\nLocation / meeting link: {{link}}\n\nPlease bring your qualifying degree certificates (originals preferred, along with attested copies) and a valid photo identity proof (Aadhaar / Voter ID / Passport).\n\nPlease follow our official website www.dcip.co.in and social media handles of @collectorkkd and DCIP for any updates.\n\nFor any queries, please use the contact details given below.\n\nWe look forward to meeting you and wish you all the best!' + SIGN },
     docs: { name: 'Document verification', subject: 'DCIP {{batch}} – Document verification',
       body: 'Dear Candidate,\n\nYou have been selected for the {{programme}} – {{batch}} subject to verification of your documents.\n\nPlease report with the originals of your educational certificates and a valid photo ID on {{dateLong}} ({{slot}}) at {{venue}}.' + SIGN },
     selected: { name: 'Selected', subject: 'DCIP {{batch}} – Selection',
@@ -215,11 +215,15 @@
     var q = A.S.mailQuota;
     var m = A.modal('<h3>E-mail ' + good.length + ' applicant' + (good.length === 1 ? '' : 's') + '</h3>' +
       '<p class="muted" style="margin:0 0 10px">' + esc(good.slice(0, 3).map(function (a) { return a.fullName; }).join(', ')) + (good.length > 3 ? ' and ' + (good.length - 3) + ' more' : '') + (q != null ? ' · daily e-mail quota left: <b>' + q + '</b>' : '') + '</p>' +
-      '<div class="field"><label class="f">Template</label><select id="mTpl">' + Object.keys(A.TEMPLATES).map(function (k) { return '<option value="' + k + '"' + (k === (tplKey || 'custom') ? ' selected' : '') + '>' + esc(A.TEMPLATES[k].name) + '</option>'; }).join('') + '</select></div>' +
+      '<div id="mWarn"></div><div class="field"><label class="f">Template</label><select id="mTpl">' + Object.keys(A.TEMPLATES).map(function (k) { return '<option value="' + k + '"' + (k === (tplKey || 'custom') ? ' selected' : '') + '>' + esc(A.TEMPLATES[k].name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label class="f">Subject</label><input type="text" id="mSub"></div>' +
       '<div class="field"><label class="f">Message</label><textarea id="mBody" rows="10"></textarea><div class="hint">Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} {{dateLong}} {{mode}} {{link}} {{phone}} {{contactEmail}} – filled in separately for every applicant. Review the wording before sending.</div></div>' +
       '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's') + '</button></div>');
-    function fillTpl() { var t = A.TEMPLATES[$('#mTpl', m).value]; $('#mSub', m).value = t.subject; $('#mBody', m).value = t.body; }
+    var noSess = good.filter(function (x) { return !x.session; }).length;
+    function fillTpl() {
+      var t = A.TEMPLATES[$('#mTpl', m).value]; $('#mSub', m).value = t.subject; $('#mBody', m).value = t.body;
+      $('#mWarn', m).innerHTML = noSess && /\{\{(dateLong|slot|session|venue|date)\}\}/.test(t.body) ? '<div class="alert warn" style="margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-weight:600">' + noSess + ' of ' + good.length + ' have no interview session yet, so their date, session and venue will read “(to be informed)”.</div>' : '';
+    }
     $('#mTpl', m).onchange = fillTpl; fillTpl();
     $('#mNo', m).onclick = A.closeModal;
     $('#mSend', m).onclick = function () {

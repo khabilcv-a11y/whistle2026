@@ -32,9 +32,9 @@ def build(page, scripts, css_files):
 API_URL = (sys.argv[1] if len(sys.argv) > 1 else '')
 os.makedirs(OUT, exist_ok=True)
 pages = {
-  'index.html': build('index.html', ['common.js', 'lists.js', 'cv.js', 'a11y.js', 'register.js', 'chat.js'], ['styles.css']),
+  'index.html': build('index.html', ['common.js', 'lists.js', 'cv.js', 'a11y.js', 'datepick.js', 'skyline.js', 'register.js', 'chat.js'], ['styles.css']),
   'admin.html': build('admin.html', ['vendor/exceljs.min.js', 'vendor/jspdf.umd.min.js', 'vendor/jspdf.plugin.autotable.min.js',
-                                      'common.js', 'insights.js', 'reports.js', 'admin-core.js', 'admin-reports.js', 'admin-views.js', 'admin-extra.js', 'admin-boot.js'],
+                                      'common.js', 'skyline.js', 'insights.js', 'reports.js', 'admin-core.js', 'admin-reports.js', 'admin-views.js', 'admin-extra.js', 'admin-boot.js'],
                       ['styles.css', 'admin.css']),
 }
 for name, html in pages.items():

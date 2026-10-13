@@ -24,7 +24,7 @@
         { h: 'Status', w: 11 }, { h: 'Screening', w: 12 }, { h: 'Screening notes', w: 30 }, { h: 'Flagged', w: 7 }, { h: 'Flag note', w: 16 }, { h: 'Screen score', w: 8, align: 'center' }, { h: 'Interview score', w: 8, align: 'center' },
         { h: 'Session', w: 18 }, { h: 'Remarks', w: 22 }, { h: 'Submitted', w: 17 }],
       rows: sl(list.slice().sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); }).map(function (a) {
-        return [a.id, a.fullName, a.dob, a.age, a.gender, a.email, a.mobile, a.altMobile, a.district, a.localBody, a.qual, a.stream, a.specialisation, a.institution, a.completion,
+        return [a.id, a.fullName, a.dob, a.age, a.gender, a.email, a.mobile, a.altMobile, a.district, a.localBody, a.qual, a.stream, a.specialisation, a.institution, D.fmtMonthYear(a.completion),
           a.status, a.screening, a.screeningNotes, a.flagged, a.flagNote, A.num(a.screenScore), A.num(a.interviewScore), a.session, a.remarks, a.submittedAt.replace('T', ' ')];
       })) }] };
   };
@@ -35,7 +35,7 @@
     return { filename: 'DCIP_Screening_Report', orientation: 'landscape', sheets: [{ name: 'Screening', title: 'Application screening – flags and suggested disqualifications', rowHeight: 34, fontSize: 8,
       note: 'Rules: age up to ' + A.S.settings.MAX_AGE + ' on ' + D.fmtDate(A.S.config.ageAsOn) + '; UG course completed on or before ' + D.fmtDate(A.S.config.ugBy) + '.',
       columns: [SL, { h: 'App ID', w: 11 }, { h: 'Name', w: 20 }, { h: 'Age', w: 5, align: 'center' }, { h: 'UG completion', w: 11 }, { h: 'Screening', w: 14 }, { h: 'Reasons', w: 50 }, { h: 'Flag note', w: 20 }, { h: 'Status', w: 11 }],
-      rows: sl(list.map(function (a) { return [a.id, a.fullName, a.age, a.completion, a.screening, (a.screeningNotes || '').replace(/ \| /g, '\n'), a.flagged === 'Yes' ? (a.flagNote || 'Flagged') : '', a.status]; })) }] };
+      rows: sl(list.map(function (a) { return [a.id, a.fullName, a.age, D.fmtMonthYear(a.completion), a.screening, (a.screeningNotes || '').replace(/ \| /g, '\n'), a.flagged === 'Yes' ? (a.flagNote || 'Flagged') : '', a.status]; })) }] };
   };
 
   R.rankScreen = function () {

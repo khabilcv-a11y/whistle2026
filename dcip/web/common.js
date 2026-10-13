@@ -35,6 +35,8 @@
     var h = +m[2], ap = h >= 12 ? 'pm' : 'am'; h = h % 12 || 12;
     return fmtDate(m[1]) + ', ' + h + ':' + m[3] + ' ' + ap;
   }
+  function fmtMonthYear(iso) { var m = /^(\d{4})-(\d{2})/.exec(String(iso || '')); return m ? MON[+m[2] - 1] + ' ' + m[1] : iso || ''; }
+  function lastDay(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
   function ageOn(dob, asOn) {
     var a = dob.split('-').map(Number), b = asOn.split('-').map(Number), age = b[0] - a[0];
     if (b[1] < a[1] || (b[1] === a[1] && b[2] < a[2])) age--; return age;
@@ -51,5 +53,5 @@
     setTimeout(function () { t.remove(); }, kind === 'err' ? 7000 : 3500);
   }
 
-  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, ageOn: ageOn, addDays: addDays, toast: toast };
+  w.DCIP = { call: call, getConfig: getConfig, esc: esc, isIso: isIso, fmtDate: fmtDate, fmtDateTime: fmtDateTime, fmtMonthYear: fmtMonthYear, lastDay: lastDay, ageOn: ageOn, addDays: addDays, toast: toast };
 })(window);

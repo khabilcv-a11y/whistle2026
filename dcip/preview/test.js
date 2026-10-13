@@ -331,6 +331,52 @@ test('CV autofill: AI result is validated; no key / disabled / junk -> empty; th
   delete env.store.props.GROQ_API_KEY; fetchImpl = null;
 });
 
+test('CV autofill: different CV layouts, referees and look-alike words do not fool it', () => {
+  const CV = require('../web/cv.js'), L = require('../web/lists.js'), opts = { colleges: L.colleges, localBodies: L.kozhikodeLocalBodies, today: '2026-10-13' };
+  let f = CV.extractLocal(`Curriculum Vitae
+PERSONAL INFORMATION   Fathima Hana K.P
+  House No 12, Kunnamangalam, Kozhikode, Kerala 673571
+  +91 98950 12345   hana.kp@gmail.com
+Date of birth 04/03/2002 | Nationality Indian | Gender Female
+EDUCATION AND TRAINING
+2021 – 2024   Bachelor of Science in Computer Science
+   Government Arts and Science College, Kozhikode
+2019 – 2021 Higher Secondary (Plus Two) GHSS Kunnamangalam
+REFERENCES
+Dr. Suresh Babu, HOD, Dept of CS  Phone: 9446011111  suresh.babu@college.edu
+DECLARATION: I hereby declare all details be true. Name: Fathima Hana K.P`, opts);
+  assert.equal(f.fullName, 'Fathima Hana K.P'); assert.equal(f.mobile, '9895012345'); assert.equal(f.email, 'hana.kp@gmail.com'); assert.equal(f.dob, '2002-03-04');
+  assert.equal(f.stream, 'B.Sc'); assert.equal(f.specialisation, 'Computer Science'); assert.equal(f.district, 'Kozhikode'); assert.equal(f.completionYear, '2024');
+  f = CV.extractLocal(`ARUN M NAIR
+Phone: 8606123456
+Email: arun.nair2001@gmail.com
+Address: Kuttanad House, Alappuzha, Kerala
+Education
+BCA - Amrita Vishwa Vidyapeetham, Kollam | 2020-2023
+MCA - CUSAT, Kochi | 2023 - Present
+References
+Mr. Joy Thomas 9847099999 joy@abc.com`, opts);
+  assert.equal(f.mobile, '8606123456'); assert.equal(f.email, 'arun.nair2001@gmail.com'); assert.equal(f.stream, 'BCA'); assert.equal(f.specialisation, undefined, 'the college is not a subject');
+  assert.equal(f.qual, "Bachelor's Degree (completed)", 'a master\'s still in progress does not count'); assert.equal(f.mastersInstitution, undefined);
+  f = CV.extractLocal(`Sreya Menon
+sreya@outlook.com | 9995001122
+Permanent Address: Flat 4B, Koramangala, Bengaluru, Karnataka 560034
+Education
+BBA, Christ University Bengaluru (2021-2024)`, opts);
+  assert.equal(f.district, 'Outside Kerala'); assert.equal(f.state, 'Karnataka'); assert.equal(f.specialisation, undefined);
+  f = CV.extractLocal(`Ananya Rajan
+Education
+B.A Economics – Providence Women's College Kozhikode, Expected May 2027
+email: ananya.r@gmail.com  Phone 9446000000`, opts);
+  assert.equal(f.qual, "Bachelor's Degree (final year – results pending)"); assert.equal(f.completionYM, '2027-05');
+  f = CV.extractLocal(`M A Fathima
+fathima.ma@gmail.com
+Mobile: 9446111222
+Education
+B.Tech in Electronics – NIT Calicut (2018-2022)
+Skills: should be able to lead teams; To be honest I work hard`, opts);
+  assert.equal(f.fullName, 'M A Fathima'); assert.equal(f.stream, 'B.Tech / B.E'); assert.equal(f.institution, 'NIT Calicut');
+});
 test('CV autofill: details are recognised from typical CV text (no AI needed)', () => {
   const CV = require('../web/cv.js'), L = require('../web/lists.js'), opts = { colleges: L.colleges, today: '2026-10-12' };
   let f = CV.extractLocal(`ANAGHA SAJI A
@@ -358,7 +404,7 @@ Bachelor of Science in Physics – Farook College, Kozhikode (2023 – Present)`
 Education
 M.A Political Science, University of Delhi 2024 - 2026
 B.A History, Hindu College, University of Delhi 2021 - 2024`, opts);
-  assert.equal(f.qual, "Master's Degree"); assert.equal(f.stream, 'B.A'); assert.equal(f.specialisation, 'History'); assert.equal(f.institution, 'Hindu College, University of Delhi'); assert.equal(f.completionYear, '2024');
+  assert.equal(f.qual, "Master's Degree (completed)"); assert.equal(f.mastersInstitution, 'University of Delhi'); assert.equal(f.stream, 'B.A'); assert.equal(f.specialisation, 'History'); assert.equal(f.institution, 'Hindu College, University of Delhi'); assert.equal(f.completionYear, '2024');
   assert.deepEqual(CV.extractLocal('Lorem ipsum dolor sit amet, nothing to see here at all.', opts), {});
   assert.deepEqual(CV.extractLocal('', opts), {});
   assert.equal(CV.parseDate('31/02/2002', '2026-10-12'), ''); assert.equal(CV.parseDate('12-03-2015', '2026-10-12'), '', 'too young'); assert.equal(CV.parseDate('March 5, 2001', '2026-10-12'), '2001-03-05');
@@ -387,12 +433,12 @@ test('form fields: WhatsApp, how they heard, master\'s college, legacy master\'s
   const same = call('getAdminState', login()).applications.find(x => x.email === 'asha@example.com'); assert.equal(same.whatsapp, same.mobile);
   call('updateApplications', login(), [a.id], { qual: "Master's Degree" });   // an older value is accepted and upgraded
   assert.equal(call('getAdminState', login()).applications.find(x => x.id === a.id).qual, "Master's Degree (completed)");
-  assert.match(env.store.mails[env.store.mails.length - 1].html, /WhatsApp Number/);
+  assert.match(env.store.mails[env.store.mails.length - 1].html, /WhatsApp number/);
 });
 
 test('settings: our older defaults are upgraded, UG_COMPLETE_BY is its own rule', () => {
   const rows = env.store.sheets.Settings; const set = (k, v) => { rows.find(r => r[0] === k)[1] = v; };
-  set('INTAKE_END', '2027-01-31'); set('MIN_AGE', '18'); delete env.store.props.RULES_V3; _reset();
+  set('INTAKE_END', '2027-01-31'); set('MIN_AGE', '18'); delete env.store.props.RULES_V4; _reset();
   const c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result; assert.equal(c.intakeEnd, '2027-02-28'); assert.equal(c.minAge, 20);
   set('MIN_AGE', '19'); _reset(); assert.equal(JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.minAge, 19, 'a value someone chose is never overwritten'); set('MIN_AGE', '20'); _reset();
   const tok = login(); call('saveSettings', tok, { UG_COMPLETE_BY: '2026-12-31' });
@@ -430,6 +476,19 @@ test('banners: admin saves image links, Drive links are converted, only active o
   call('deleteUser', tok, 'banner1');
 });
 
+test('banners: page links (ImgBB, GitHub, Imgur, Dropbox) become direct image links; GIFs are kept; a plain web page is refused', () => {
+  const adm = login();
+  fetchImpl = (u) => /ibb\.co\/ym4XFZDc/.test(u) ? { code: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }, body: '<html><head><meta property="og:image" content="https://i.ibb.co/abc123/banner.jpg"></head></html>' } : { code: 200, headers: { 'Content-Type': 'text/html' }, body: '<!doctype html><html><body>Not a picture</body></html>' };
+  let r = call('saveBanners', adm, [{ url: 'https://ibb.co/ym4XFZDc', active: true }, { url: 'https://example.com/anim.gif', active: true },
+    { url: 'https://github.com/o/r/blob/main/banners/one.png', active: true }, { url: 'https://imgur.com/AbCdEfG', active: true }, { url: 'https://www.dropbox.com/s/xyz/pic.jpg?dl=0', active: true }]);
+  assert.deepEqual(r.map(x => x.url), ['https://i.ibb.co/abc123/banner.jpg', 'https://example.com/anim.gif', 'https://raw.githubusercontent.com/o/r/main/banners/one.png', 'https://i.imgur.com/AbCdEfG.jpg', 'https://dl.dropboxusercontent.com/s/xyz/pic.jpg']);
+  fails('saveBanners', /web page, not a picture/, adm, [{ url: 'https://example.org/some-page' }]);
+  // a link saved earlier as a page link is converted when the form loads
+  fetchImpl = (u) => ({ code: 200, headers: { 'Content-Type': 'text/html' }, body: '<meta content="https://i.ibb.co/zzz/old.png" property="og:image">' });
+  const sh = env.store.sheets.Banners; sh[1] = [1, 'https://ibb.co/oldpage', 'Old', 'Yes']; for (let i = 2; i < sh.length; i++) sh[i] = ['', '', '', '']; CacheServiceClear();
+  const pub = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.banners; assert.equal(pub[0].url, 'https://i.ibb.co/zzz/old.png');
+  fetchImpl = null; call('saveBanners', adm, []);
+});
 test('callers: admins create caller accounts and assign calls; callers see only their own basic list and can only set status + note', () => {
   const sup = login(), adm = (call('createUser', sup, 'office1', 'Office One', 'Office@12345', 'admin'), login('office1', 'Office@12345'));
   fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'admin'); fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'super');

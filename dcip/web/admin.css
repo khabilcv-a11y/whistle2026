@@ -148,3 +148,56 @@ table.bars tr { border-bottom: 1px solid var(--line); }
 .opt[aria-checked=true] { background: var(--ink); color: #fff; border-color: var(--ink); }
 .opts.compact .opt { padding: 5px 11px; min-height: 34px; font-size: 14px; }
 .rolechip.caller { background: #e0f2fe; color: #075985; }
+
+/* ======================= refreshed look: matches the application form ======================= */
+:root { --navy-900: #0b2140; --navy-700: #12335b; --navy-500: #1d4d7a; --brand: #12335b; --accent: #f6a81c; --bg: #f1f5fb; --radius: 16px; --shadow: 0 1px 2px rgba(11,33,64,.05), 0 8px 26px rgba(11,33,64,.07); }
+body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); }
+.btn { border-radius: 12px; font-weight: 700; transition: transform .1s, box-shadow .15s, background .15s; } .btn:active { transform: scale(.97); }
+.btn.primary { background: linear-gradient(135deg, var(--navy-700), var(--navy-500)); border-color: transparent; box-shadow: 0 6px 16px rgba(18,51,91,.25); } .btn.primary:hover { background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); }
+.btn.accent { background: linear-gradient(135deg, #f6a81c, #ffc65c); border-color: transparent; box-shadow: 0 6px 16px rgba(246,168,28,.3); }
+input[type=text], input[type=email], input[type=tel], input[type=date], input[type=number], input[type=password], input[type=search], input[type=url], input[type=time], select, textarea { border-radius: 12px; border: 1.5px solid var(--line-2); background: #fbfcfe; transition: border-color .15s, box-shadow .15s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 4px rgba(42,120,214,.15); background: #fff; }
+
+/* header and tabs */
+.bar { background: linear-gradient(120deg, var(--navy-900), var(--navy-700) 60%, var(--navy-500)); padding: 10px 18px; gap: 12px; box-shadow: 0 4px 18px rgba(11,33,64,.25); }
+.bar .brand b { font-size: 15.5px; letter-spacing: .2px; } .bar .btn { border-radius: 999px; }
+.logo-sm { height: 40px; width: auto; border-radius: 6px; } .logo-lg { height: 92px; width: auto; margin-bottom: 6px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.25)); }
+.rolechip { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 9px; margin-left: 4px; background: rgba(255,255,255,.18); color: #fff; }
+.rolechip.super { background: var(--accent); color: #2a1c00; }
+.tabs { padding: 8px 14px; gap: 6px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.92); backdrop-filter: blur(8px); top: 58px; scrollbar-width: thin; }
+.tabs button { border: 0; border-radius: 999px; padding: 8px 15px; color: var(--ink-2); transition: background .15s, color .15s; }
+.tabs button:hover { background: var(--info-bg); color: var(--navy-700); }
+.tabs button[aria-selected=true] { background: var(--navy-700); color: #fff; box-shadow: 0 4px 12px rgba(18,51,91,.25); }
+.tabs .badge { background: var(--red, #d3202f); }
+.view { padding: 22px 18px 90px; animation: vin .25s ease; } @keyframes vin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.view h2 { font-size: 24px; letter-spacing: -.01em; }
+
+/* cards, tiles, tables */
+.card, .tile, .ins, .rep .r, .sc, .kv > div { border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.tile { padding: 16px 18px; } .tile .tv { font-size: 32px; background: linear-gradient(120deg, var(--navy-700), var(--navy-500)); -webkit-background-clip: text; background-clip: text; color: transparent; } .tile.warn .tv { background: none; color: var(--warn); }
+.tw { border-radius: var(--radius); box-shadow: var(--shadow); border-color: var(--line); }
+table.t th { background: #f4f7fc; color: var(--navy-700); letter-spacing: .6px; padding: 12px 12px; } table.t td { padding: 11px 12px; }
+table.t tbody tr { transition: background .12s; } table.t tbody tr:hover { background: #f5f9ff; } table.t tr.sel { background: #e9f1fd; }
+.chip { padding: 3px 11px; } .pills button, .seg { border-radius: 999px; } .seg button { padding: 8px 15px; } .seg button[aria-pressed=true], .pills button[aria-pressed=true] { background: var(--navy-700); border-color: var(--navy-700); }
+.pills button { padding: 6px 14px; transition: background .12s; } .pills button:hover { background: var(--info-bg); } .pills button[aria-pressed=true]:hover { background: var(--navy-700); }
+.empty { border-radius: var(--radius); background: rgba(255,255,255,.7); }
+.kv { gap: 12px; } .kv > div { padding: 14px 18px; background: #fff; }
+.note-box { border-radius: 14px; }
+
+/* bulk bar floats like a pill */
+.bulk { border-radius: 18px; background: linear-gradient(120deg, var(--navy-900), var(--navy-700)); padding: 12px 16px; box-shadow: 0 14px 40px rgba(11,33,64,.4); }
+
+/* drawer and dialogs */
+.drawer { border-radius: 22px 0 0 22px; box-shadow: -20px 0 60px rgba(11,33,64,.28); }
+.drawer header { background: linear-gradient(120deg, var(--navy-900), var(--navy-700)); color: #fff; } .drawer header .muted { color: #c3d3ec; } .drawer header .btn { background: rgba(255,255,255,.15); color: #fff; border-color: transparent; }
+.drawer h4 { color: var(--navy-700); letter-spacing: .5px; }
+#modal { border-radius: 22px; box-shadow: 0 30px 80px rgba(11,33,64,.4); }
+
+/* sign-in */
+.login { position: relative; overflow: hidden; background: radial-gradient(900px 420px at 88% -10%, rgba(246,168,28,.28), transparent 60%), radial-gradient(700px 380px at -5% 110%, rgba(211,32,47,.3), transparent 60%), linear-gradient(135deg, var(--navy-900), var(--navy-700) 55%, var(--navy-500)); }
+.login::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1.2px, transparent 1.2px); background-size: 22px 22px; pointer-events: none; }
+.login-card { position: relative; z-index: 2; max-width: 400px; border-radius: 24px; padding: 28px 26px 24px; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.login-card h1 { font-size: 20px; line-height: 1.25; letter-spacing: -.01em; color: var(--navy-900); margin: 0 0 4px; }
+.login-card .btn { min-height: 46px; font-size: 15px; }
+@media (max-width: 700px) { .bar { padding: 8px 12px; } .view { padding: 16px 12px 90px; } .tabs { top: 0; position: static; } .drawer { border-radius: 0; } }
+@media (prefers-reduced-motion: reduce) { .view { animation: none; } }

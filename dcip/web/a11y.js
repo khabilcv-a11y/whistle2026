@@ -15,7 +15,7 @@
   apply();
   function build() {
     var d = document.createElement('div');
-    d.innerHTML = '<button type="button" class="a11y-fab" id="a11yFab" aria-haspopup="dialog" aria-expanded="false" aria-label="Accessibility options" title="Accessibility options">Aa</button>' +
+    d.innerHTML = '<button type="button" class="a11y-fab" id="a11yFab" aria-haspopup="dialog" aria-expanded="false" aria-label="Accessibility options" title="Accessibility options"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="6.9" r="1.7" fill="currentColor"/><path d="M6.6 9.4l5.4 1 5.4-1M12 10.4v3.6M12 14l-2.7 4.4M12 14l2.7 4.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
       '<div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility options" hidden><h2>Accessibility</h2>' +
       '<div class="row"><b>Text size</b><button type="button" class="o" data-a11y="size0">Normal</button><button type="button" class="o" data-a11y="size1">Large</button><button type="button" class="o" data-a11y="size2">Extra large</button></div>' +
       '<div class="row"><b>Display</b><button type="button" class="o" data-a11y="hc">High contrast</button><button type="button" class="o" data-a11y="calm">Calm motion</button></div>' +

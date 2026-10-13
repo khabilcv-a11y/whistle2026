@@ -2,6 +2,7 @@
 (function (w) {
   'use strict';
   var A = w.A, D = w.DCIP, S = A.S, $ = A.$, esc = D.esc;
+  if (w.DCIPSkyline) w.DCIPSkyline.mount($('#login'));
   var KEY = 'dcip_admin_session', pollTimer = null, lastCount = null, failures = 0;
 
   /* ---------- session ---------- */

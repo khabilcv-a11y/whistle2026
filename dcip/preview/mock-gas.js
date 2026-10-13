@@ -210,7 +210,7 @@
       fetch: function (url, o) {
         store.fetches = store.fetches || []; store.fetches.push({ url: url, o: o });
         var r = (opts.fetch ? opts.fetch(url, o) : { code: 200, body: { choices: [{ message: { content: 'Demo AI answer.' } }] } });
-        return { getResponseCode: function () { return r.code; }, getContentText: function () { return JSON.stringify(r.body); } };
+        return { getResponseCode: function () { return r.code; }, getContentText: function () { return typeof r.body === 'string' ? r.body : JSON.stringify(r.body); }, getHeaders: function () { return r.headers || {}; } };
       }
     };
     var Logger = { log: function (s) { if (opts.log) opts.log(s); } };

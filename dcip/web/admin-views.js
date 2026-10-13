@@ -112,7 +112,7 @@
     var s = S.settings, c = S.config;
     function card(a, cls) {
       return '<div class="sc ' + cls + '"><div class="info"><b>' + esc(a.fullName) + '</b> <span class="muted">' + esc(a.id) + ' · age ' + esc(a.age) + ' · ' + esc(a.location) + '</span>' + (a.flagged === 'Yes' ? ' <span class="chip bad">⚑ ' + esc(a.flagNote || 'Flagged') + '</span>' : '') +
-        '<div class="muted" style="font-size:13px">' + esc(a.qual) + ' · UG completion ' + esc(D.fmtDate(a.completion)) + '</div>' +
+        '<div class="muted" style="font-size:13px">' + esc(a.qual) + ' · UG completion ' + esc(D.fmtMonthYear(a.completion)) + '</div>' +
         (a.screeningNotes ? '<ul>' + a.screeningNotes.split(' | ').map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') + '</div>' +
         '<div class="acts"><button class="btn small" data-open="' + esc(a.id) + '">Open</button>' + (a.cv ? '<a class="btn small" target="_blank" rel="noopener" href="' + esc(a.cv) + '">CV ↗</a>' : '') +
         '<button class="btn small" data-clear="' + esc(a.id) + '">Clear – eligible</button><button class="btn small danger" data-dq="' + esc(a.id) + '">Disqualify</button></div></div>';
