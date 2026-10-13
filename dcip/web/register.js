@@ -104,15 +104,16 @@
     var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
     var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
     if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
-    if (C.instagram && C.instagram.page) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
+    parts.push('<a href="' + esc((C.instagram && C.instagram.page) || 'https://www.instagram.com/dcipkkd/') + '" target="_blank" rel="noopener noreferrer">Instagram @' + esc((C.instagram && C.instagram.handle) || 'dcipkkd') + '</a>');
+    if (false) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
     parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
     $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
   }
 
   /** The Instagram chip and footer link always show; the preview card appears once posts have been added in the admin portal. */
   function renderInstagram() {
-    var ig = C.instagram || {}; clearInterval(timers.ig); $('#igFix').innerHTML = ''; $('#igInline').innerHTML = ''; if (!ig.page) return;
-    var chip = $('#igChip'); chip.href = ig.page; chip.hidden = false; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
+    var ig = C.instagram || {}; clearInterval(timers.ig); $('#igFix').innerHTML = ''; $('#igInline').innerHTML = ''; if (!ig.page) return;   // without a saved page the chip keeps its built-in link
+    var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
     var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
