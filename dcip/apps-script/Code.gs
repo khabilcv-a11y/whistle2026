@@ -58,7 +58,7 @@ var DEFAULT_SETTINGS = [
   ['CONTACT_PHONE', '+91 9633693211, +91 495 2370200', 'Shown in e-mails and by the chat helper.'],
   ['CONTACT_ADDRESS', 'Nammude Kozhikode, District Mission Room, Kozhikode District Collectorate, Kozhikode – 673020', 'Postal address shown in the footer of every e-mail.'],
   ['STATUS_PUBLISHED', 'Received,Shortlisted,Withdrawn', 'Which statuses applicants may SEE when they use "Check application status". Any other status shows "Under review". Add Selected, Confirmed, Waitlisted, Not Selected and Disqualified only when you are ready to announce results.'],
-  ['STATUS_MSG_RECEIVED', 'We have received your application and it is being reviewed as a whole: your responses, CV and details together. We will contact you here if you are shortlisted.', 'Message shown for status Received.'],
+  ['STATUS_MSG_RECEIVED', 'Thank you for applying to the District Collector\'s Internship Programme. Your application is with the DCIP team. If you are shortlisted, we will reach out on your registered e-mail and WhatsApp / mobile.', 'Message shown for status Received.'],
   ['STATUS_MSG_SHORTLISTED', 'Congratulations! You have been shortlisted for the interview. Please check your e-mail and WhatsApp for the schedule.', 'Message shown for status Shortlisted.'],
   ['STATUS_MSG_SELECTED', 'Congratulations! You have been selected, subject to verification of your documents. Details will follow by e-mail.', 'Message shown for status Selected.'],
   ['STATUS_MSG_CONFIRMED', 'Congratulations! Your selection is confirmed. Joining details will follow by e-mail.', 'Message shown for status Confirmed.'],
@@ -66,7 +66,7 @@ var DEFAULT_SETTINGS = [
   ['STATUS_MSG_NOT_SELECTED', 'Thank you for applying. We are unable to offer you a place in this batch. We encourage you to apply again in the future.', 'Message shown for status Not Selected.'],
   ['STATUS_MSG_DISQUALIFIED', 'Thank you for applying. Based on the eligibility criteria, we are unable to take your application forward in this batch.', 'Message shown for status Disqualified.'],
   ['STATUS_MSG_WITHDRAWN', 'Your application has been withdrawn as requested.', 'Message shown for status Withdrawn.'],
-  ['STATUS_MSG_HIDDEN', 'Your application is under review. Updates will be shared on your registered e-mail and WhatsApp / mobile.', 'Message shown for any status that is not in STATUS_PUBLISHED.'],
+  ['STATUS_MSG_HIDDEN', 'Your application is with the DCIP team. Updates will be shared on your registered e-mail and WhatsApp / mobile.', 'Message shown for any status that is not in STATUS_PUBLISHED.'],
   ['INSTAGRAM_URL', 'https://www.instagram.com/dcipkkd/', 'The DCIP Instagram page. Shown as a small link in the form header and footer, and the preview card opens it.'],
   ['LOGO_URL', '', 'Optional. Direct https link to the DCIP logo image, shown at the top of e-mails.']
 ];
@@ -1463,6 +1463,15 @@ function settingsSheet_() {
       if (olds && olds.indexOf(String(r[1]).trim()) >= 0) { sh.getRange(i + 2, 2).setValue(now); _settingsCache = null; }
     });
     props.setProperty('RULES_V4', '1');
+  }
+  if (sh.getLastRow() > 1 && props.getProperty('WORDING_V5') !== '1') {   // earlier wording of two applicant messages is replaced once; anything an official edited stays
+    var OLDMSG = { STATUS_MSG_RECEIVED: ['We have received your application and it is being reviewed as a whole: your responses, CV and details together. We will contact you here if you are shortlisted.', 'Thank you for applying to the District Collector\'s Internship Programme. Your application is with the DCIP team. If you are shortlisted, we will reach out on your registered e-mail and WhatsApp / mobile.'],
+      STATUS_MSG_HIDDEN: ['Your application is under review. Updates will be shared on your registered e-mail and WhatsApp / mobile.'] };
+    var NEWMSG = { STATUS_MSG_RECEIVED: 'Thank you for applying to the District Collector\'s Internship Programme. Your application is with the DCIP team. If you are shortlisted, we will reach out on your registered e-mail and WhatsApp / mobile.', STATUS_MSG_HIDDEN: 'Your application is with the DCIP team. Updates will be shared on your registered e-mail and WhatsApp / mobile.' };
+    sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(function (r, i) {
+      if (OLDMSG[r[0]] && OLDMSG[r[0]].indexOf(String(r[1]).trim()) >= 0) { sh.getRange(i + 2, 2).setValue(NEWMSG[r[0]]); _settingsCache = null; }
+    });
+    props.setProperty('WORDING_V5', '1');
   }
   return sh;
 }

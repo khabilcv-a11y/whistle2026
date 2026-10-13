@@ -508,7 +508,7 @@ test('applicants: duplicate e-mail check while typing, and application status by
   assert.equal(call('checkEmail', 'Status.One@Example.com').exists, true); assert.equal(call('checkEmail', 'nobody.here@example.com').exists, false); assert.equal(call('checkEmail', 'not-an-email').exists, false);
   const adm = login();
   let st = call('checkStatus', 'status.one@example.com');
-  assert.equal(st.found, true); assert.equal(st.name, 'Status'); assert.equal(st.label, 'Application received'); assert.match(st.message, /reviewed as a whole/);
+  assert.equal(st.found, true); assert.equal(st.name, 'Status'); assert.equal(st.label, 'Application received'); assert.match(st.message, /Thank you for applying/); assert.doesNotMatch(st.message, /as a whole/);
   assert.equal(call('checkStatus', '90000 13001').label, 'Application received', 'the mobile number works too');
   assert.equal(call('checkStatus', '9000013999').found, false);
   fails('checkStatus', /e-mail address or the 10-digit/, 'abc');
