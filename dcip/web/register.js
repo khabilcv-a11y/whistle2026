@@ -319,10 +319,60 @@
     }
     $('#bq').addEventListener('input', function () { $('#background').placeholder = 'Your answer to question ' + this.value + ', in your own words'; });
     wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', MAX_WORDS, 150, 200);
+    $('#email').addEventListener('change', function () { checkDuplicate(); });
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
     $('#form').addEventListener('input', function () { touched = true; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
   }
+
+  /* ---------- an e-mail address that has already applied: tell them at once, not at the end ---------- */
+  var dupEmails = {}, lastAsked = '';
+  function checkDuplicate() {
+    var e = val('email').toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) || e === lastAsked) return;
+    lastAsked = e;
+    D.call('checkEmail', e).then(function (r) {
+      if (!r || !r.exists) { delete dupEmails[e]; return; }
+      dupEmails[e] = true; setErr('email', 'This e-mail address has already applied.');
+      dialog('<div class="dlg-ic" aria-hidden="true">✉️</div><h3>You have already applied</h3><p>An application with <b>' + esc(e) + '</b> is already on record. Each e-mail address can apply only once.</p><p>Want to see where your application stands? Check it with this e-mail address or your mobile number.</p>',
+        [{ label: 'Check my application status', primary: true, run: function () { openStatus(e); } }, { label: 'Use a different e-mail address', run: function () { var el = $('#email'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); lastAsked = ''; el.focus(); } }]);
+    }, function () { lastAsked = ''; });
+  }
+  var dlgBox = null;
+  function dialog(html, buttons) {
+    closeDialog();
+    dlgBox = document.createElement('div'); dlgBox.className = 'dlg-wrap';
+    dlgBox.innerHTML = '<div class="dlg" role="alertdialog" aria-modal="true" aria-label="Notice">' + html + '<div class="dlg-acts">' + buttons.map(function (b, i) { return '<button type="button" class="btn ' + (b.primary ? 'primary' : 'ghost') + '" data-i="' + i + '">' + esc(b.label) + '</button>'; }).join('') + '</div></div>';
+    document.body.appendChild(dlgBox);
+    $$('button', dlgBox).forEach(function (b) { b.onclick = function () { var r = buttons[+b.dataset.i].run; closeDialog(); if (r) r(); }; });
+    var first = $('button', dlgBox); if (first) first.focus();
+  }
+  function closeDialog() { if (dlgBox) { dlgBox.remove(); dlgBox = null; } }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDialog(); closeStatus(); } });
+
+  /* ---------- check application status (by registered e-mail or mobile) ---------- */
+  var stBox = null;
+  function closeStatus() { if (stBox) { stBox.remove(); stBox = null; } }
+  function openStatus(pref) {
+    closeStatus(); closeDialog();
+    stBox = document.createElement('div'); stBox.className = 'dlg-wrap';
+    stBox.innerHTML = '<div class="dlg stat" role="dialog" aria-modal="true" aria-labelledby="stT"><button type="button" class="dlg-x" aria-label="Close">✕</button><h3 id="stT">Check your application status</h3><p>Enter the e-mail address <b>or</b> the mobile number you gave while applying.</p>' +
+      '<form id="stForm" novalidate><input type="text" id="stIn" inputmode="email" autocomplete="off" placeholder="E-mail address or 10-digit mobile" aria-label="E-mail address or mobile number"><button type="submit" class="btn primary" id="stGo">Check status</button></form><div id="stOut" role="status" aria-live="polite"></div></div>';
+    document.body.appendChild(stBox);
+    $('.dlg-x', stBox).onclick = closeStatus; stBox.addEventListener('mousedown', function (e) { if (e.target === stBox) closeStatus(); });
+    var inp = $('#stIn'); if (pref) inp.value = pref; inp.focus();
+    $('#stForm').onsubmit = function (ev) {
+      ev.preventDefault(); var v = inp.value.trim(), out = $('#stOut'), go = $('#stGo');
+      if (!v) { out.innerHTML = '<div class="alert bad">Please enter your e-mail address or mobile number.</div>'; return; }
+      go.disabled = true; go.textContent = 'Checking…'; out.innerHTML = '';
+      D.call('checkStatus', v).then(function (r) {
+        if (!r.found) { out.innerHTML = '<div class="stres none"><b>No application found</b><p>We could not find an application with that ' + (v.indexOf('@') >= 0 ? 'e-mail address' : 'mobile number') + '. Please check it, or try the other one (the one you gave while applying).</p></div>'; return; }
+        var iv = r.interview ? '<div class="stiv"><b>Your interview</b><div>' + esc(D.fmtDate(r.interview.date)) + ' · ' + esc(r.interview.slot) + '</div>' + (r.interview.venue ? '<div>' + esc(r.interview.venue) + '</div>' : '') + '<div>' + esc(r.interview.mode) + (r.interview.link ? ' · <a href="' + esc(r.interview.link) + '" target="_blank" rel="noopener">link</a>' : '') + '</div></div>' : '';
+        out.innerHTML = '<div class="stres ' + esc(r.tone) + '"><small>Hello ' + esc(r.name) + ' · applied on ' + esc(D.fmtDate(r.applied)) + '</small><div class="stlabel">' + esc(r.label) + '</div><p>' + esc(r.message) + '</p>' + iv + '</div>';
+      }, function (e) { out.innerHTML = '<div class="alert bad">' + esc(e.message) + '</div>'; }).then(function () { go.disabled = false; go.textContent = 'Check status'; });
+    };
+  }
+  var stBtn = $('#statusBtn'); if (stBtn) stBtn.onclick = function () { openStatus(''); };
 
   /* ---------- draft (kept in this browser only; never the CV) ---------- */
   function saveDraft() { try { var o = {}; FIELDS.forEach(function (id) { if ($('#' + id)) o[id] = $('#' + id).value; }); localStorage.setItem(draftKey, JSON.stringify(o)); } catch (e) {} }
@@ -441,6 +491,7 @@
     if (!D.isIso(val('dob'))) errs.dob = 'Please enter your date of birth.'; else if (r.ageBlock) errs.dob = r.ageBlock;
     if (!val('gender')) errs.gender = 'Please choose one.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email'))) errs.email = 'Please enter a valid e-mail address.';
+    else if (dupEmails[val('email').toLowerCase()]) errs.email = 'An application with this e-mail address has already been received. Please use a different e-mail address, or check your status.';
     if (!phoneOk(val('mobile'))) errs.mobile = 'Enter a valid 10-digit mobile number.';
     else if (!val('waSame')) errs.waSame = 'Please tell us whether this number is on WhatsApp.';
     else if (val('waSame') === WA_NO && !phoneOk(val('whatsapp'))) errs.whatsapp = 'Enter your 10-digit WhatsApp number.';
@@ -513,7 +564,7 @@
       '<p>Thank you for applying to DCIP.</p>' +
       (r.mailed ? '<p>A confirmation with the details you submitted is on its way to <b>' + esc(r.email) + '</b>. Check your spam folder if you don\'t see it.</p>'
                 : '<p>Your application is safely recorded. The confirmation e-mail could not be sent just now; we will send it shortly.</p>') +
-      '<div class="next"><b>What happens next</b><ol style="margin:0;padding-left:20px"><li>Every application is reviewed as a whole: your responses, CV and details together.</li><li>Shortlisted applicants are contacted on this e-mail address and on WhatsApp / mobile.</li><li>Interview, document verification and final selection follow.</li></ol></div></div>';
+      '<p class="muted">You can check where your application stands any time with <b>Check application status</b> at the top of the page.</p></div>';
     $('#apply').scrollIntoView({ behavior: calm() ? 'auto' : 'smooth', block: 'start' });
   }
 

@@ -503,6 +503,29 @@ test('long answers: at least 30 words and at most 500 words, for both questions'
   const adm = login(); const a = call('getAdminState', adm).applications.filter(x => x.id === r.id)[0];
   assert.match(a.background, /small shop in a village/); assert.equal(a.backgroundQ, 'A');
 });
+test('applicants: duplicate e-mail check while typing, and application status by e-mail or mobile', () => {
+  const r = call('submitApplication', base({ email: 'status.one@example.com', mobile: '9000013001', fullName: 'Status One' }));
+  assert.equal(call('checkEmail', 'Status.One@Example.com').exists, true); assert.equal(call('checkEmail', 'nobody.here@example.com').exists, false); assert.equal(call('checkEmail', 'not-an-email').exists, false);
+  const adm = login();
+  let st = call('checkStatus', 'status.one@example.com');
+  assert.equal(st.found, true); assert.equal(st.name, 'Status'); assert.equal(st.label, 'Application received'); assert.match(st.message, /reviewed as a whole/);
+  assert.equal(call('checkStatus', '90000 13001').label, 'Application received', 'the mobile number works too');
+  assert.equal(call('checkStatus', '9000013999').found, false);
+  fails('checkStatus', /e-mail address or the 10-digit/, 'abc');
+  // results stay hidden until officials publish them
+  call('updateApplications', adm, [r.id], { status: 'Selected' });
+  st = call('checkStatus', 'status.one@example.com'); assert.equal(st.label, 'Under review'); assert.doesNotMatch(JSON.stringify(st), /Selected/);
+  call('saveSettings', adm, { STATUS_PUBLISHED: 'Received,Shortlisted,Selected' });
+  st = call('checkStatus', 'status.one@example.com'); assert.equal(st.label, 'Selected'); assert.match(st.message, /Congratulations/);
+  // shortlisted candidates also see their interview session
+  call('saveSession', adm, { date: '2026-11-20', slot: 'Forenoon', venue: 'Mission Room', mode: 'In person' });
+  call('updateApplications', adm, [r.id], { status: 'Shortlisted', session: '2026-11-20 Forenoon' });
+  st = call('checkStatus', 'status.one@example.com'); assert.equal(st.label, 'Shortlisted for interview'); assert.equal(st.interview.venue, 'Mission Room'); assert.equal(st.interview.slot, 'Forenoon');
+  // a few guesses are allowed, then it slows down
+  for (let i = 0; i < 8; i++) { try { call('checkStatus', 'guess@example.com'); } catch (e) { /* limit reached */ } }
+  fails('checkStatus', /Too many attempts/, 'guess@example.com');
+  call('saveSettings', adm, { STATUS_PUBLISHED: 'Received,Shortlisted,Withdrawn' }); call('updateApplications', adm, [r.id], { status: 'Received', session: '' }); call('deleteSession', adm, '2026-11-20 Forenoon');
+});
 test('instagram: page link is public, post cards need a picture and an instagram.com link, callers cannot edit', () => {
   const adm = login();
   let c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;

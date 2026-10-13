@@ -332,13 +332,26 @@
       if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE)$/.test(k)) return '<input type="number" data-s="' + k + '" value="' + esc(v) + '">';
       return '<input type="text" data-s="' + k + '" value="' + esc(v) + '">';
     }
+    var PUB = [['Received', 'Application received'], ['Shortlisted', 'Shortlisted for interview'], ['Selected', 'Selected'], ['Confirmed', 'Selection confirmed'], ['Waitlisted', 'On the waiting list'], ['Not Selected', 'Not selected this time'], ['Disqualified', 'Not eligible this time'], ['Withdrawn', 'Withdrawn']];
+    function statusPanel() {
+      var pub = String(s.STATUS_PUBLISHED || '').split(',').map(function (x) { return x.trim(); });
+      return '<section class="card" style="margin:16px 0"><h3 style="font-size:16px;margin-bottom:4px">What applicants see in “Check application status”</h3>' +
+        '<p class="sub" style="margin:0 0 10px">Applicants look themselves up with their e-mail or mobile number. They see the status you set for them (in the Applications tab, the application drawer, or the bulk bar). <b>Tick “Show” only for statuses you are ready to announce.</b> Any status left unticked shows applicants “Under review” instead. Edit the wording of each message if you like, then press <b>Save settings</b>.</p>' +
+        '<input type="hidden" data-s="STATUS_PUBLISHED" id="s_STATUS_PUBLISHED" value="' + esc(s.STATUS_PUBLISHED || '') + '">' +
+        '<div class="tw"><table class="t"><thead><tr><th>Status you set</th><th>Show it?</th><th>Applicants see</th><th>Message shown</th></tr></thead><tbody>' + PUB.map(function (p) {
+          var key = 'STATUS_MSG_' + p[0].toUpperCase().replace(/ /g, '_');
+          return '<tr><td><b>' + esc(p[0]) + '</b></td><td><label class="chk" style="margin:0"><input type="checkbox" data-pub="' + esc(p[0]) + '"' + (pub.indexOf(p[0]) >= 0 ? ' checked' : '') + '> Show</label></td><td>' + esc(p[1]) + '</td><td style="min-width:340px"><textarea rows="2" data-s="' + key + '" aria-label="Message for ' + esc(p[0]) + '">' + esc(s[key] || '') + '</textarea></td></tr>';
+        }).join('') + '<tr><td><i>Anything not shown</i></td><td></td><td>Under review</td><td><textarea rows="2" data-s="STATUS_MSG_HIDDEN" aria-label="Message for hidden statuses">' + esc(s.STATUS_MSG_HIDDEN || '') + '</textarea></td></tr></tbody></table></div>' +
+        '<p class="hint">Shortlisted applicants who have an interview session also see its date, slot, venue and mode.</p></section>';
+    }
     var base = (location.origin + location.pathname.replace(/admin(\.html)?$/, '')).replace(/\/$/, '/');
     el.innerHTML = head('Settings', 'Registration rules and event details. Changes apply immediately to the public form.', '<button class="btn primary" id="btnSaveS">Save settings</button>') +
       '<div class="kv"><div><b>' + (S.mailQuota == null ? '—' : S.mailQuota) + '</b>e-mails left today</div><div><b>' + S.apps.length + '</b>applications</div>' +
       '<div>Public form<b style="font-size:14px"><a href="' + esc(base) + '" target="_blank" rel="noopener">' + esc(base) + '</a></b></div>' +
       (S.cvFolder ? '<div>CV folder<b style="font-size:14px"><a href="' + esc(S.cvFolder) + '" target="_blank" rel="noopener">Open in Google Drive ↗</a></b></div>' : '') + '</div>' +
-      '<div class="setgrid">' + S.meta.filter(function (m) { return m.key !== 'ADMIN_CAN_VIEW_CHATS' || (S.me && S.me.role === 'super'); }).map(function (m) { return '<label for="s_' + m.key + '">' + esc(m.key) + '</label><div>' + ctl(m.key).replace('data-s=', 'id="s_' + m.key + '" data-s=') + '<div class="d">' + esc(m.desc) + '</div></div>'; }).join('') + '</div>' +
+      statusPanel() + '<h3 style="margin:22px 0 8px;font-size:16px">All settings</h3><div class="setgrid">' + S.meta.filter(function (m) { return !/^STATUS_(PUBLISHED|MSG_)/.test(m.key) && (m.key !== 'ADMIN_CAN_VIEW_CHATS' || (S.me && S.me.role === 'super')); }).map(function (m) { return '<label for="s_' + m.key + '">' + esc(m.key) + '</label><div>' + ctl(m.key).replace('data-s=', 'id="s_' + m.key + '" data-s=') + '<div class="d">' + esc(m.desc) + '</div></div>'; }).join('') + '</div>' +
       '<div class="toolbar" style="margin-top:18px"><button class="btn" id="btnRescreen2">Re-screen all applications</button><span class="muted">After changing the age limit or intake dates, re-screen so existing applications are re-checked.</span></div>';
+    $$('[data-pub]', el).forEach(function (c) { c.onchange = function () { $('#s_STATUS_PUBLISHED', el).value = $$('[data-pub]', el).filter(function (x) { return x.checked; }).map(function (x) { return x.dataset.pub; }).join(','); }; });
     $('#btnSaveS', el).onclick = function () {
       var vals = {}; $$('[data-s]', el).forEach(function (i) { var v = i.value; if (String(v) !== String(s[i.dataset.s] == null ? '' : s[i.dataset.s])) vals[i.dataset.s] = v; });
       if (!Object.keys(vals).length) { D.toast('No changes.'); return; }

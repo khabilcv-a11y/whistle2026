@@ -57,6 +57,16 @@ var DEFAULT_SETTINGS = [
   ['CONTACT_EMAIL', 'projectcellclt@gmail.com', 'Reply-to address for all e-mails, and shown by the chat helper.'],
   ['CONTACT_PHONE', '+91 9633693211, +91 495 2370200', 'Shown in e-mails and by the chat helper.'],
   ['CONTACT_ADDRESS', 'Nammude Kozhikode, District Mission Room, Kozhikode District Collectorate, Kozhikode – 673020', 'Postal address shown in the footer of every e-mail.'],
+  ['STATUS_PUBLISHED', 'Received,Shortlisted,Withdrawn', 'Which statuses applicants may SEE when they use "Check application status". Any other status shows "Under review". Add Selected, Confirmed, Waitlisted, Not Selected and Disqualified only when you are ready to announce results.'],
+  ['STATUS_MSG_RECEIVED', 'We have received your application and it is being reviewed as a whole: your responses, CV and details together. We will contact you here if you are shortlisted.', 'Message shown for status Received.'],
+  ['STATUS_MSG_SHORTLISTED', 'Congratulations! You have been shortlisted for the interview. Please check your e-mail and WhatsApp for the schedule.', 'Message shown for status Shortlisted.'],
+  ['STATUS_MSG_SELECTED', 'Congratulations! You have been selected, subject to verification of your documents. Details will follow by e-mail.', 'Message shown for status Selected.'],
+  ['STATUS_MSG_CONFIRMED', 'Congratulations! Your selection is confirmed. Joining details will follow by e-mail.', 'Message shown for status Confirmed.'],
+  ['STATUS_MSG_WAITLISTED', 'You are on the waiting list. We will contact you if a place becomes available.', 'Message shown for status Waitlisted.'],
+  ['STATUS_MSG_NOT_SELECTED', 'Thank you for applying. We are unable to offer you a place in this batch. We encourage you to apply again in the future.', 'Message shown for status Not Selected.'],
+  ['STATUS_MSG_DISQUALIFIED', 'Thank you for applying. Based on the eligibility criteria, we are unable to take your application forward in this batch.', 'Message shown for status Disqualified.'],
+  ['STATUS_MSG_WITHDRAWN', 'Your application has been withdrawn as requested.', 'Message shown for status Withdrawn.'],
+  ['STATUS_MSG_HIDDEN', 'Your application is under review. Updates will be shared on your registered e-mail and WhatsApp / mobile.', 'Message shown for any status that is not in STATUS_PUBLISHED.'],
   ['INSTAGRAM_URL', 'https://www.instagram.com/dcipkkd/', 'The DCIP Instagram page. Shown as a small link in the form header and footer, and the preview card opens it.'],
   ['LOGO_URL', '', 'Optional. Direct https link to the DCIP logo image, shown at the top of e-mails.']
 ];
@@ -156,6 +166,8 @@ var RESCREEN_ON = ['dob', 'district', 'localBody', 'qual', 'completion', 'mobile
 
 var PUBLIC_API = {
   submitApplication: submitApplication,
+  checkEmail: checkEmail,
+  checkStatus: checkStatus,
   chatInit: chatInit,
   chatAsk: chatAsk,
   chatLog: chatLog,
@@ -318,7 +330,7 @@ function submitApplication(p) {
     var sh = sheet_(APP.SHEETS.APPS, FIELDS);
     var rows = readObjects_(sh, FIELDS);
     var dup = rows.filter(function (r) { return normEmail_(r.email) === d.email; })[0];
-    if (dup) throw new Error('An application with this e-mail address has already been received (reference ' + dup.id + '). Please write to us if you need to change something.');
+    if (dup) throw new Error('An application with this e-mail address has already been received. Use “Check application status” at the top of the page, or write to us if you need to change something.');
 
     var scr = screen_(d, rows, s);
     var blocks = scr.issues.filter(function (i) { return i.block; });
@@ -1148,6 +1160,46 @@ function getAudit(user, limit) {
 /* =========================================================================
  *  Cleaning, validation and screening
  * ========================================================================= */
+
+/* ---- applicant self-service: duplicate check while typing, and application status ---- */
+function hit_(key, max, secs) {
+  var c = CacheService.getScriptCache(), k = 'rl_' + key, n = Number(c.get(k) || 0);
+  if (n >= max) return false;
+  c.put(k, String(n + 1), secs); return true;
+}
+/** Does an application with this e-mail address already exist? (asked as the applicant types the address) */
+function checkEmail(email) {
+  var e = normEmail_(email);
+  if (!validEmail_(e)) return { exists: false };
+  if (!hit_('chk_' + Math.floor(Date.now() / 60000), 150, 120) || !hit_('chke_' + hash_(e), 20, 600)) return { exists: false, busy: true };
+  var rows = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS);
+  return { exists: rows.some(function (r) { return normEmail_(r.email) === e; }) };
+}
+var PUBLIC_STATUS = {
+  'Received': ['Application received', 'info'], 'Shortlisted': ['Shortlisted for interview', 'ok'], 'Selected': ['Selected', 'ok'], 'Confirmed': ['Selection confirmed', 'ok'],
+  'Waitlisted': ['On the waiting list', 'warn'], 'Not Selected': ['Not selected this time', 'neutral'], 'Disqualified': ['Not eligible this time', 'neutral'], 'Withdrawn': ['Withdrawn', 'neutral']
+};
+/** What an applicant may see about their own application. ident = registered e-mail address or 10-digit mobile number. */
+function checkStatus(ident) {
+  ident = clean_(ident);
+  var isMail = ident.indexOf('@') >= 0, e = isMail ? normEmail_(ident) : '', m = isMail ? '' : phone_(ident);
+  if (isMail ? !validEmail_(e) : !m) throw new Error('Please enter the e-mail address or the 10-digit mobile number you gave while applying.');
+  if (!hit_('st_' + Math.floor(Date.now() / 60000), 150, 120) || !hit_('sti_' + hash_(e || m), 8, 600)) throw new Error('Too many attempts. Please try again in a few minutes.');
+  var s = settings_(), rows = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (r) { return isMail ? normEmail_(r.email) === e : String(r.mobile) === m; });
+  if (!rows.length) return { found: false };
+  rows.sort(function (a, b) { return String(b.submittedAt).localeCompare(String(a.submittedAt)); });
+  var r = rows[0], st = r.status || 'Received';
+  var published = String(s.STATUS_PUBLISHED || '').split(',').map(function (x) { return clean_(x); });
+  var show = published.indexOf(st) >= 0 && PUBLIC_STATUS[st];
+  var out = { found: true, name: clean_(r.fullName).split(' ')[0], applied: String(r.submittedAt).slice(0, 10) };
+  if (show) { out.label = PUBLIC_STATUS[st][0]; out.tone = PUBLIC_STATUS[st][1]; out.message = s['STATUS_MSG_' + st.toUpperCase().replace(/ /g, '_')] || ''; }
+  else { out.label = 'Under review'; out.tone = 'info'; out.message = s.STATUS_MSG_HIDDEN || ''; }
+  if (show && st === 'Shortlisted' && r.session) {
+    var ss = readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS).filter(function (x) { return x.id === r.session; })[0];
+    if (ss) out.interview = { date: ss.date, slot: ss.slot, venue: ss.venue, mode: r.interviewMode || ss.mode || 'In person', link: ss.link || '' };
+  }
+  return out;
+}
 
 function cleanApplication_(p, s) {
   var d = {};

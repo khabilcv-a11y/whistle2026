@@ -145,6 +145,20 @@
   @media (max-width: 560px) { .chat-panel { right: 0; bottom: 0; width: 100vw; height: 82vh; border-radius: 22px 22px 0 0; } .chat-fab-tx { display: none; } .chat-fab { padding: 14px; } body.chat-open { overflow: hidden; } }
   @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
 
+  /* status button, notices */
+  .statbtn { position: fixed; right: 68px; top: 14px; z-index: 96; height: 46px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px 0 14px; border-radius: 999px; border: 2px solid #fff; background: #fff; color: var(--navy-900); font: 800 14px inherit; font-family: inherit; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.28); transition: transform .15s; }
+  .statbtn:hover { transform: translateY(-1px); } .statbtn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; } .statbtn svg { color: var(--red); }
+  @media (max-width: 640px) { .statbtn { width: 46px; padding: 0; justify-content: center; } .statbtn span { display: none; } }
+  .dlbar { text-align: left; padding: 7px 130px 7px 16px; }
+  .dlg-wrap { position: fixed; inset: 0; z-index: 300; background: rgba(8,20,40,.55); display: grid; place-items: center; padding: 16px; animation: fade .2s; } @keyframes fade { from { opacity: 0; } }
+  .dlg { position: relative; width: min(440px, 100%); background: #fff; border-radius: 22px; padding: 26px 24px 20px; box-shadow: 0 30px 80px rgba(8,20,40,.45); animation: slide .22s ease; max-height: 92vh; overflow-y: auto; }
+  .dlg h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -.01em; } .dlg p { margin: 0 0 10px; color: var(--ink-2); line-height: 1.55; } .dlg-ic { font-size: 38px; margin-bottom: 6px; }
+  .dlg-acts { display: grid; gap: 8px; margin-top: 14px; } .dlg-acts .btn { width: 100%; }
+  .dlg-x { position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--bg); cursor: pointer; font-size: 14px; }
+  .dlg.stat form { display: grid; gap: 10px; margin-top: 4px; } #stOut { margin-top: 14px; }
+  .stres { border-radius: 16px; padding: 14px 16px; background: var(--info-bg); border: 1px solid #c4d8f3; } .stres small { color: var(--muted); font-weight: 600; } .stres p { margin: 6px 0 0; color: var(--ink); }
+  .stres .stlabel { font-size: 20px; font-weight: 800; margin-top: 2px; } .stres.ok { background: #e8f7ef; border-color: #b5e2c9; } .stres.ok .stlabel { color: #14633a; } .stres.warn { background: var(--gold-soft); border-color: #f3d99a; } .stres.neutral, .stres.none { background: #f3f5f9; border-color: var(--line-2); }
+  .stiv { margin-top: 10px; background: rgba(255,255,255,.7); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; } .stiv b { display: block; margin-bottom: 2px; }
   .skip { position: absolute; left: 8px; top: -60px; z-index: 200; background: #fff; color: var(--navy-900); font-weight: 800; padding: 10px 16px; border-radius: 10px; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.3); } .skip:focus { top: 8px; }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .badge.gold { background: linear-gradient(135deg, #f6a81c, #ffd27a); color: #2a1c00; border-color: transparent; }
   .decade { font-size: clamp(34px, 7vw, 62px); line-height: 1.04; letter-spacing: -.025em; margin: 18px 0 10px; font-weight: 800; }
@@ -266,6 +280,7 @@
 </head>
 <body>
 <a class="skip" href="#apply">Skip to the application form</a>
+<button type="button" class="statbtn" id="statusBtn" aria-label="Check application status"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.2 15.2L20 20M8 10.6l1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Check application status</span></button>
 <div class="dlbar" id="dlbar" hidden><span>⏳ Closes in <b id="dlbarT"></b></span></div>
 <header class="hero"><div class="in">
   <div>
