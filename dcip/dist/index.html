@@ -1134,7 +1134,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
   var C = null, draftKey = 'dcip_draft_v3';
   var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
   var HEARD = ['Instagram', 'Facebook', 'LinkedIn', 'College / University', 'DCIP Alumni', 'Friend / Family', 'DCIP Website', 'Newspaper / Media', 'WhatsApp', 'Other'];
-  var WA_YES = 'Yes, it is', WA_NO = 'No, I use a different number', MAX_WORDS = 1000;
+  var WA_YES = 'Yes, it is', WA_NO = 'No, I use a different number', MAX_WORDS = 500, MIN_WORDS = 30;
   var pickers = {};
 
   /* The form shows at once from the last configuration this browser saw, then quietly checks with the server (so a repeat visit never waits). */
@@ -1295,12 +1295,12 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       f('institution', 'Name of UG institution', '<div class="acwrap"><input type="text" id="institution" autocomplete="off" maxlength="150" placeholder="Start typing your college / university"></div>', '', 'Pick from the list if you see your college; otherwise type its full name.') +
       f('completion', 'UG completion month', '<input type="hidden" id="completion">', 'full',
         '<span id="compNote">The month you completed your degree, or the <b>expected month</b> if you are in your final year. It must be on or before ' + esc(D.fmtDate(C.ugBy)) + '.</span>') +
-      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="9000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words</span></div>', 'full', null, false,
+      f('motivation', 'What made you decide to apply to DCIP this year?', '<textarea id="motivation" rows="6" maxlength="6000" spellcheck="true" placeholder="Write in your own words"></textarea><div class="wcount"><span id="pasteNote">Please type your answer yourself; pasting is switched off.</span><span><b id="mcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
         '<p>What made you apply to DCIP <b>at this point in your life</b>? Think of a <b>specific moment, experience or observation</b> from the last few months that pushed you to apply.</p><p>What about DCIP\'s way of working with the district administration appeals to you now? Write it as if you were explaining your decision to someone who knows you well.</p>') +
       f('background', 'Choose <b>one</b> question and answer it', '<input type="hidden" id="bq"><div class="opts qopts" id="opts-bq" role="radiogroup" aria-labelledby="lbl-background" data-for="bq">' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="A"><i class="qdot" aria-hidden="true"></i><span><b>A)</b> How has your personal background shaped your interest in social or governance issues?</span></button>' +
         '<button type="button" class="opt qopt" role="radio" aria-checked="false" data-v="B"><i class="qdot" aria-hidden="true"></i><span><b>B)</b> Who or what has most influenced your sense of public responsibility, and how?</span></button></div>' +
-        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> words</span></div>', 'full', null, false,
+        '<textarea id="background" rows="7" maxlength="4000" spellcheck="true" placeholder="First tick A or B above, then write your answer in your own words"></textarea><div class="wcount"><span id="bnote">Please type your answer yourself; pasting is switched off.</span><span><b id="bcount">0</b> / ' + MAX_WORDS + ' words · minimum ' + MIN_WORDS + '</span></div>', 'full', null, false,
         '<p><span class="wtarget">150–200 words</span></p><p>Briefly tell us how your life, family or a key moment inspired your interest in community work or public issues. You may describe your values, upbringing or a turning point.</p>') +
       f('heardFrom', 'How did you hear about DCIP?', choice('heardFrom', C.heardFrom || HEARD, true, 'dense') + '<input type="text" id="heardOther" class="other-in hidden" maxlength="80" placeholder="Please tell us where you heard about DCIP" aria-label="Where you heard about DCIP">', 'full', 'Select all that apply. It helps us reach more students like you.') +
       '<div class="full"><label class="declare"><input type="checkbox" id="declare"><span>I declare that the information given is true and complete. I understand that false information will lead to disqualification, and that all further communication will be through the e-mail address and mobile numbers given above.</span></label><div class="field" id="fld-declare"><div class="err">Please accept the declaration.</div></div></div>' +
@@ -1447,7 +1447,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
       ta.addEventListener('dragover', function (e) { e.preventDefault(); });
     }
     $('#bq').addEventListener('input', function () { $('#background').placeholder = 'Your answer to question ' + this.value + ', in your own words'; });
-    wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', 400, 150, 200);
+    wire('motivation', 'mcount', 'pasteNote', MAX_WORDS); wire('background', 'bcount', 'bnote', MAX_WORDS, 150, 200);
     $('#declare').addEventListener('change', function () { clearErr('declare'); });
     $('#form').addEventListener('input', function () { touched = true; });
     $('#form').addEventListener('submit', function (ev) { ev.preventDefault(); submit(); });
@@ -1584,9 +1584,10 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     ['specialisation', 'institution'].forEach(function (k) { if (!val(k)) errs[k] = 'This is required.'; });
     if (!D.isIso(val('completion'))) errs.completion = 'Please pick the completion month.'; else if (r.compBlock) errs.completion = r.compBlock;
     var wc = words(val('motivation')).length;
-    if (val('motivation').length < 30) errs.motivation = 'Please write at least 30 characters.'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
+    if (wc < MIN_WORDS) errs.motivation = 'Please write at least ' + MIN_WORDS + ' words (you have ' + wc + ').'; else if (wc > MAX_WORDS) errs.motivation = 'Please keep your answer within ' + MAX_WORDS + ' words.';
     if (!val('bq')) errs.bq = 'Please tick the question you are answering: A or B.';
-    if (val('background').length < 30) errs.background = 'Please answer this question (a few honest lines are enough, 150 to 200 words is ideal).'; else if (words(val('background')).length > 400) errs.background = 'Please keep your answer within 400 words (150 to 200 is ideal).';
+    var bwc = words(val('background')).length;
+    if (bwc < MIN_WORDS) errs.background = 'Please write at least ' + MIN_WORDS + ' words (you have ' + bwc + '); 150 to 200 is ideal.'; else if (bwc > MAX_WORDS) errs.background = 'Please keep your answer within ' + MAX_WORDS + ' words (150 to 200 is ideal).';
     if (!chosenList('heardFrom').length) errs.heardFrom = 'Please choose at least one option.';
     else if (chosenList('heardFrom').indexOf('Other') >= 0 && val('heardOther').length < 2) errs.heardOther = 'Please tell us where you heard about DCIP.';
     var file = $('#cv').files[0];

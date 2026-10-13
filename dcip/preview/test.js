@@ -27,7 +27,7 @@ const base = (o = {}) => Object.assign({
   fullName: 'Asha Menon', dob: '2002-04-10', gender: 'Female', email: 'asha@example.com', mobile: '98470 12345', altMobile: '',
   district: 'Kozhikode', localBody: 'Kozhikode Corporation', qual: "Bachelor's Degree (completed)", stream: 'B.A',
   specialisation: 'Political Science', institution: 'Devagiri College', completion: '2025-05-20',
-  motivation: 'I want to understand how district administration works on the ground.', backgroundQ: 'A', background: 'My family runs a small shop in a village, where I watched neighbours depend on public offices for everyday needs and wanted to help.', whatsappSame: true, heardFrom: ['Friend / Family'],
+  motivation: 'I want to understand how district administration works on the ground, how decisions reach people, and how young citizens can contribute to public service in a meaningful and responsible way.', backgroundQ: 'A', background: 'My family runs a small shop in a village, where I watched neighbours depend on public offices for everyday needs. Seeing their patience and their struggles taught me that good administration changes ordinary lives, and I wanted to help.', whatsappSame: true, heardFrom: ['Friend / Family'],
   cv: { name: 'cv.pdf', data: Buffer.from('%PDF-1.4 test').toString('base64') }
 }, o);
 function verifiedSubmit(over) { return call('submitApplication', base(over)); }
@@ -491,9 +491,13 @@ test('banners: page links (ImgBB, GitHub, Imgur, Dropbox) become direct image li
   fails('saveBanners', /not been given permission/, adm, [{ url: 'https://ibb.co/needsfetch1' }]);
   fetchImpl = null; call('saveBanners', adm, []);
 });
-test('background question: required, at least 30 characters, at most 400 words', () => {
-  fails('submitApplication', /background and influences/, base({ email: 'bg1@example.com', mobile: '9000012001', fullName: 'No Background', background: '' }));
-  fails('submitApplication', /too long/, base({ email: 'bg2@example.com', mobile: '9000012002', fullName: 'Too Long', background: 'word '.repeat(401) }));
+test('long answers: at least 30 words and at most 500 words, for both questions', () => {
+  fails('submitApplication', /at least 30 words/, base({ email: 'bg1@example.com', mobile: '9000012001', fullName: 'No Background', background: '' }));
+  fails('submitApplication', /at least 30 words/, base({ email: 'bg4@example.com', mobile: '9000012004', fullName: 'Short', background: 'Only a few words here.' }));
+  fails('submitApplication', /at least 30 words/, base({ email: 'bg5@example.com', mobile: '9000012005', fullName: 'Short Why', motivation: 'I like public service very much.' }));
+  fails('submitApplication', /too long/, base({ email: 'bg2@example.com', mobile: '9000012002', fullName: 'Too Long', background: 'word '.repeat(501) }));
+  fails('submitApplication', /too long/, base({ email: 'bg6@example.com', mobile: '9000012006', fullName: 'Too Long Why', motivation: 'word '.repeat(501) }));
+  call('submitApplication', base({ email: 'bg7@example.com', mobile: '9000012007', fullName: 'Exactly Five Hundred', background: 'word '.repeat(500) }));
   fails('submitApplication', /A or B/, base({ email: 'bg0@example.com', mobile: '9000012000', fullName: 'No Choice', backgroundQ: '' }));
   const r = call('submitApplication', base({ email: 'bg3@example.com', mobile: '9000012003', fullName: 'Has Background' }));
   const adm = login(); const a = call('getAdminState', adm).applications.filter(x => x.id === r.id)[0];
