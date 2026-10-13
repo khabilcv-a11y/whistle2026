@@ -487,6 +487,8 @@ test('banners: page links (ImgBB, GitHub, Imgur, Dropbox) become direct image li
   fetchImpl = (u) => ({ code: 200, headers: { 'Content-Type': 'text/html' }, body: '<meta content="https://i.ibb.co/zzz/old.png" property="og:image">' });
   const sh = env.store.sheets.Banners; sh[1] = [1, 'https://ibb.co/oldpage', 'Old', 'Yes']; for (let i = 2; i < sh.length; i++) sh[i] = ['', '', '', '']; CacheServiceClear();
   const pub = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.banners; assert.equal(pub[0].url, 'https://i.ibb.co/zzz/old.png');
+  fetchImpl = () => { throw new Error('You do not have permission to call UrlFetchApp.fetch.'); };
+  fails('saveBanners', /not been given permission/, adm, [{ url: 'https://ibb.co/needsfetch1' }]);
   fetchImpl = null; call('saveBanners', adm, []);
 });
 test('instagram: page link is public, post cards need a picture and an instagram.com link, callers cannot edit', () => {

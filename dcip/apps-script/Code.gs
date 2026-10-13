@@ -819,7 +819,10 @@ function resolveImage_(raw, n) {
     var og = /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i.exec(html) || /<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i.exec(html);
     if (og && /^https:\/\//i.test(og[1].replace(/&amp;/g, '&'))) return og[1].replace(/&amp;/g, '&').slice(0, 500);
     if (/<html|<!doctype/i.test(html)) throw new Error('Image ' + n + ': that link is a web page, not a picture. Open the picture and copy its direct image link (it usually ends in .jpg, .png or .gif).');
-  } catch (e) { if (/Image \d+:/.test(msg_(e))) throw e; }
+  } catch (e) {
+    if (/Image \d+:/.test(msg_(e))) throw e;
+    if (/permission|authori[sz]/i.test(msg_(e))) throw new Error('Image ' + n + ': Apps Script has not been given permission to open web links yet. In the Apps Script editor choose "setup" and click Run, press Allow when asked, then Deploy → Manage deployments → New version. (Or paste the direct image link instead.)');
+  }
   return u;
 }
 function bannerRows_() {
@@ -872,7 +875,7 @@ function saveSocial(user, list) {
     return socialRows_();
   });
 }
-function getBanners(user) { return bannerRows_(); }
+function getBanners(user) { return bannerRows_().map(function (b) { b.url = directUrl_(b.url); return b; }); }
 function saveBanners(user, list) {
   list = (Array.isArray(list) ? list : []).slice(0, 20);
   var rows = list.map(function (b, i) {
