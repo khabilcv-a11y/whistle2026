@@ -489,6 +489,16 @@ test('banners: page links (ImgBB, GitHub, Imgur, Dropbox) become direct image li
   const pub = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result.banners; assert.equal(pub[0].url, 'https://i.ibb.co/zzz/old.png');
   fetchImpl = null; call('saveBanners', adm, []);
 });
+test('instagram: page link is public, post cards need a picture and an instagram.com link, callers cannot edit', () => {
+  const adm = login();
+  let c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
+  assert.equal(c.instagram.page, 'https://www.instagram.com/dcipkkd/'); assert.equal(c.instagram.handle, 'dcipkkd'); assert.deepEqual(c.instagram.posts, []);
+  fails('saveSocial', /instagram\.com/, adm, [{ url: 'https://evil.example.com/p/1', thumb: 'https://example.com/a.jpg' }]);
+  call('saveSocial', adm, [{ url: 'https://www.instagram.com/reel/ABC123/', thumb: 'https://example.com/a.jpg', caption: 'A day with the team', active: true }, { url: 'https://www.instagram.com/p/XYZ/', thumb: 'https://example.com/b.jpg', active: false }, { url: 'https://www.instagram.com/p/NOPIC/', thumb: '', active: true }].slice(0, 2));
+  CacheServiceClear(); c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
+  assert.deepEqual(c.instagram.posts, [{ url: 'https://www.instagram.com/reel/ABC123/', thumb: 'https://example.com/a.jpg', caption: 'A day with the team' }]);
+  call('saveSocial', adm, []);
+});
 test('callers: admins create caller accounts and assign calls; callers see only their own basic list and can only set status + note', () => {
   const sup = login(), adm = (call('createUser', sup, 'office1', 'Office One', 'Office@12345', 'admin'), login('office1', 'Office@12345'));
   fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'admin'); fails('createUser', /Only a super admin/, adm, 'sneaky', 'Sneaky', 'Password@1', 'super');

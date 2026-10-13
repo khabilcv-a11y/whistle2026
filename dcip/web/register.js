@@ -84,15 +84,38 @@
     var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
     var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
     if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
+    if (C.instagram && C.instagram.page) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
     parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
     $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
+  }
+
+  /** The Instagram chip and footer link always show; the preview card appears once posts have been added in the admin portal. */
+  function renderInstagram() {
+    var ig = C.instagram || {}; if (!ig.page) return;
+    var chip = $('#igChip'); chip.href = ig.page; chip.hidden = false;
+    if (!ig.posts || !ig.posts.length || !C.open) return;
+    var handle = ig.handle ? '@' + ig.handle : 'Instagram';
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
+      '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + esc(p.thumb) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
+      '<div class="go"><span>See more</span><i>Open ↗</i></div></a>';
+    $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
+    var cards = $$('.igcard'), at = 0;
+    cards.forEach(function (c) { $$('img', c).forEach(function (im) { im.addEventListener('error', function () { im.remove(); }); }); });
+    function turn() {
+      var n = $$('.igcard')[0] ? $$('img', $$('.igcard')[0]).length : 0; if (n < 2 || calm()) return; at = (at + 1) % n;
+      cards.forEach(function (c) { var ims = $$('img', c); ims.forEach(function (im, i) { im.classList.toggle('on', i === at); }); var cur = ims[at]; if (cur) { c.href = cur.dataset.u; $('figcaption', c).textContent = cur.dataset.c || ''; } });
+    }
+    setInterval(function () { if (!document.hidden) turn(); }, 3200);
+    var hero = $('.hero'), fix = $('#igFix');
+    function vis() { fix.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 80 : 500) && !$('.success')); }
+    window.addEventListener('scroll', vis, { passive: true }); vis();
   }
 
   /* --------------------------------------------- the form --------------------------------------------- */
   function render() {
     $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
-    renderFooter();
+    renderFooter(); renderInstagram();
     var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
     if (!C.open) {

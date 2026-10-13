@@ -74,6 +74,36 @@
     };
   };
 
+
+  /* ============================== Instagram preview card (admins) ============================== */
+  var sdraft = null;
+  V.social = function (el) {
+    var page = (S.settings || {}).INSTAGRAM_URL || '';
+    el.innerHTML = head('Instagram preview card', 'The card beside the application form (below it on phones). Add up to 3 recent posts or reels; people who tap it land on your Instagram.',
+      '<button class="btn" id="sAdd">+ Add post</button><button class="btn primary" id="sSave">Save</button>') +
+      '<div class="note-box" style="margin-bottom:14px"><b>Instagram page:</b> ' + (page ? '<a href="' + esc(page) + '" target="_blank" rel="noopener">' + esc(page) + '</a>' : 'not set') + ' (change it under Settings → INSTAGRAM_URL).<br>' +
+      '<b>For each post:</b> paste the post or reel link, and a <b>picture link</b>. Instagram does not allow other sites to fetch its pictures, so take a screenshot or the cover of the post (4:5, portrait, about 600 × 750 px), save it on ImgBB, GitHub or Drive, and paste its link here, like banners. Short caption optional. Until a post is added, only the small “Follow on Instagram” link shows.</div>' +
+      '<div id="sList"><div class="muted">Loading…</div></div>';
+    function paint() {
+      $('#sList', el).innerHTML = sdraft.length ? sdraft.map(function (b, i) {
+        return '<div class="brow"><div class="bthumb" style="aspect-ratio:4/5;max-width:110px">' + (b.thumb ? '<img src="' + esc(b.thumb) + '" alt="" onerror="this.style.opacity=.2">' : '') + '</div><div class="bf">' +
+          '<input type="url" data-s="url" data-i="' + i + '" placeholder="https://www.instagram.com/reel/…" value="' + esc(b.url) + '" aria-label="Post link ' + (i + 1) + '">' +
+          '<input type="url" data-s="thumb" data-i="' + i + '" placeholder="Picture link (https://…)" value="' + esc(b.thumb) + '" aria-label="Picture link ' + (i + 1) + '">' +
+          '<input type="text" data-s="caption" data-i="' + i + '" placeholder="Caption (optional)" maxlength="80" value="' + esc(b.caption) + '" aria-label="Caption ' + (i + 1) + '">' +
+          '<label class="chk"><input type="checkbox" data-s="active" data-i="' + i + '"' + (b.active === 'Yes' ? ' checked' : '') + '> Show</label></div>' +
+          '<div class="bact"><button class="btn small danger" data-rm="' + i + '">Remove</button></div></div>';
+      }).join('') : '<div class="empty">No posts yet. Click <b>+ Add post</b>.</div>';
+      $$('[data-s]', el).forEach(function (x) { x.onchange = x.oninput = function () { var b = sdraft[+x.dataset.i]; b[x.dataset.s] = x.type === 'checkbox' ? (x.checked ? 'Yes' : 'No') : x.value; }; });
+      $$('[data-s="thumb"]', el).forEach(function (x) { x.onchange = function () { sdraft[+x.dataset.i].thumb = x.value.trim(); paint(); }; });
+      $$('[data-rm]', el).forEach(function (x) { x.onclick = function () { sdraft.splice(+x.dataset.rm, 1); paint(); }; });
+    }
+    if (sdraft) paint(); else A.api('getSocial').then(function (r) { sdraft = r; paint(); }, function (e) { D.toast(e.message, 'err'); });
+    $('#sAdd', el).onclick = function () { if (!sdraft) return; if (sdraft.length >= 3) { D.toast('Up to 3 posts.', 'err'); return; } sdraft.push({ url: '', thumb: '', caption: '', active: 'Yes' }); paint(); };
+    $('#sSave', el).onclick = function () {
+      A.api('saveSocial', sdraft.filter(function (b) { return b.url.trim() || b.thumb.trim(); })).then(function (r) { sdraft = r; D.toast('Saved. The card appears on the form within a few minutes.', 'ok'); paint(); }, function (e) { D.toast(e.message, 'err'); });
+    };
+  };
+
   /* ========================== My calls (caller accounts) ========================== */
   S.myF = 'todo';
   V.mycalls = function (el) {

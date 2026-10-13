@@ -288,6 +288,20 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   .dp-foot { display: flex; justify-content: space-between; margin-top: 8px; } .dp-link { border: 0; background: none; color: var(--focus); font: 700 14px inherit; font-family: inherit; cursor: pointer; padding: 6px 4px; }
   html.a11y-hc .dp-pop { border: 2px solid #000; } html.a11y-hc .dp-d.sel, html.a11y-hc .dp-mo.sel { background: #000; color: #fff; }
   .card { position: relative; }
+  /* ---------- Instagram ---------- */
+  .badge.ig { background: linear-gradient(135deg, #833ab4, #fd1d1d 60%, #fcb045); border-color: transparent; color: #fff; text-decoration: none; } .badge.ig:hover { filter: brightness(1.1); }
+  .igcard { display: block; width: 244px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 10px; box-shadow: 0 14px 40px rgba(11,33,64,.2); text-decoration: none; color: var(--ink); transition: transform .15s; } .igcard:hover { transform: translateY(-2px); }
+  .igcard .hd { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; font-size: 13px; } .igcard .hd b { display: block; line-height: 1.1; } .igcard .hd small { color: var(--muted); }
+  .igcard .av { width: 30px; height: 30px; border-radius: 50%; flex: none; background: conic-gradient(from 200deg, #fcb045, #fd1d1d, #833ab4, #fcb045); padding: 2px; } .igcard .av i { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--navy-700); border: 2px solid #fff; }
+  .igcard .th { position: relative; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: #1b2433; } .igcard .th img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .7s; } .igcard .th img.on { opacity: 1; }
+  .igcard .th em { position: absolute; z-index: 2; right: 10px; top: 10px; font-style: normal; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 4px 9px; }
+  .igcard .th figcaption { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 26px 12px 10px; color: #fff; font-weight: 700; font-size: 13px; background: linear-gradient(to top, rgba(0,0,0,.65), transparent); }
+  .igcard .go { margin: 10px 2px 2px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 13.5px; color: var(--navy-700); } .igcard .go i { white-space: nowrap; font-style: normal; background: linear-gradient(135deg, #833ab4, #fd1d1d 60%, #fcb045); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; }
+  .igfix { position: fixed; z-index: 40; top: 92px; right: max(16px, calc((100vw - 760px) / 2 - 272px)); opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .35s, transform .35s; display: none; }
+  .igfix.show { opacity: 1; transform: none; pointer-events: auto; }
+  .igin { max-width: 760px; margin: -40px auto 24px; padding: 0 16px; position: relative; z-index: 2; } .igin .igcard { width: 100%; display: grid; grid-template-columns: 112px 1fr; grid-template-areas: 'th hd' 'th go'; gap: 4px 14px; align-items: center; } .igin .igcard .th { grid-area: th; aspect-ratio: 1; } .igin .igcard .hd { grid-area: hd; padding: 0; align-self: end; } .igin .igcard .go { grid-area: go; margin: 0; align-self: start; } .igin .th figcaption, .igin .th em { display: none; }
+  @media (min-width: 1280px) { .igfix { display: block; } .igin { display: none !important; } }
+  html.a11y-hc .igcard { border: 2px solid #000; }
 </style>
 </head>
 <body>
@@ -295,7 +309,7 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
 <div class="dlbar" id="dlbar" hidden><span>⏳ Closes in <b id="dlbarT"></b></span></div>
 <header class="hero"><div class="in">
   <div>
-    <div class="badges"><span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span><span class="badge gold">11 Years of Compassion</span></div>
+    <div class="badges"><span class="badge" id="badge"><i></i><span id="badgeText">Applications open</span></span><span class="badge gold">11 Years of Compassion</span><a class="badge ig" id="igChip" href="#" target="_blank" rel="noopener" hidden>📷 Follow on Instagram</a></div>
     <h1 class="decade" aria-label="A Decade of Shaping Tomorrow, Today."><span class="w">A</span> <span class="w">Decade</span> <span class="w">of</span> <span class="w">Shaping</span> <span class="w hl">Tomorrow,</span> <span class="w hl2">Today.</span></h1>
     <p class="slogan">Quit complaining. <b>Start creating.</b></p>
     <p class="lead">Apply to the District Collector's Internship Programme, Kozhikode, and join the <b id="batchName">34th Batch</b>. Work with the District Administration on real projects for real people.</p>
@@ -310,6 +324,8 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
 <section class="banners" id="banners" hidden aria-roledescription="carousel" aria-label="DCIP highlights"></section>
 
 <main id="apply" tabindex="-1"><div class="card" id="main" style="color:var(--muted)">Loading…</div></main>
+<div class="igin" id="igInline" hidden></div>
+<aside class="igfix" id="igFix" hidden aria-label="DCIP on Instagram"></aside>
 <footer class="foot" id="foot"><div class="foot-in"><b>Need help? We are happy to talk.</b><div id="contact">Reply to the e-mail you receive from us, or visit <a href="https://www.dcip.co.in">www.dcip.co.in</a>.</div></div></footer>
 
 <script type="text/plain" id="lib-pdfjs">/**
@@ -1206,15 +1222,38 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     var phones = String(C.contactPhone || '').split(/[,;\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
     var parts = phones.map(function (p) { return '<a href="tel:' + esc(p.replace(/[^+\d]/g, '')) + '">' + esc(p) + '</a>'; });
     if (C.contactEmail) parts.push('<a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + '</a>');
+    if (C.instagram && C.instagram.page) parts.push('<a href="' + esc(C.instagram.page) + '" target="_blank" rel="noopener">Instagram' + (C.instagram.handle ? ' @' + esc(C.instagram.handle) : '') + '</a>');
     parts.push('<a href="https://www.dcip.co.in" target="_blank" rel="noopener">www.dcip.co.in</a>');
     $('#contact').innerHTML = parts.join('<span class="sep" aria-hidden="true">|</span>');
+  }
+
+  /** The Instagram chip and footer link always show; the preview card appears once posts have been added in the admin portal. */
+  function renderInstagram() {
+    var ig = C.instagram || {}; if (!ig.page) return;
+    var chip = $('#igChip'); chip.href = ig.page; chip.hidden = false;
+    if (!ig.posts || !ig.posts.length || !C.open) return;
+    var handle = ig.handle ? '@' + ig.handle : 'Instagram';
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="Open DCIP on Instagram"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>See our other activities</small></span></div>' +
+      '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + esc(p.thumb) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
+      '<div class="go"><span>See more</span><i>Open ↗</i></div></a>';
+    $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
+    var cards = $$('.igcard'), at = 0;
+    cards.forEach(function (c) { $$('img', c).forEach(function (im) { im.addEventListener('error', function () { im.remove(); }); }); });
+    function turn() {
+      var n = $$('.igcard')[0] ? $$('img', $$('.igcard')[0]).length : 0; if (n < 2 || calm()) return; at = (at + 1) % n;
+      cards.forEach(function (c) { var ims = $$('img', c); ims.forEach(function (im, i) { im.classList.toggle('on', i === at); }); var cur = ims[at]; if (cur) { c.href = cur.dataset.u; $('figcaption', c).textContent = cur.dataset.c || ''; } });
+    }
+    setInterval(function () { if (!document.hidden) turn(); }, 3200);
+    var hero = $('.hero'), fix = $('#igFix');
+    function vis() { fix.classList.toggle('show', window.scrollY > (hero ? hero.offsetHeight - 80 : 500) && !$('.success')); }
+    window.addEventListener('scroll', vis, { passive: true }); vis();
   }
 
   /* --------------------------------------------- the form --------------------------------------------- */
   function render() {
     $('#batchName').textContent = C.batch;
     document.title = 'DCIP ' + C.batch + ' Registration';
-    renderFooter();
+    renderFooter(); renderInstagram();
     var facts = [['Internship', C.period], ['Age', ageText()], ['Degree', 'Graduation, completed by ' + D.fmtDate(C.ugBy)]];
     $('#facts').innerHTML = facts.map(function (x) { return '<div class="fact"><span>' + esc(x[0]) + '</span>' + esc(x[1]) + '</div>'; }).join('');
     if (!C.open) {

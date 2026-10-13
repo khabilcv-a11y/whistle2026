@@ -8,7 +8,7 @@
 
   A.TABS = [
     ['overview', 'Overview'], ['applications', 'Applications'], ['screening', 'Screening'], ['shortlist', 'Shortlist'],
-    ['interviews', 'Interviews'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['settings', 'Settings'],
+    ['interviews', 'Interviews'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['social', 'Instagram'], ['settings', 'Settings'],
     ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls']
   ];
   function dl(rep, label) { return '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>'; }

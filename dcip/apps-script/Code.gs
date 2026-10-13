@@ -20,7 +20,7 @@
 var APP = {
   TIMEZONE: 'Asia/Kolkata',
   ID_PREFIX: 'DCIP34-',
-  SHEETS: { BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log' },
+  SHEETS: { SOCIAL: 'Social', BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log' },
   CV_MAX_BYTES: 3 * 1024 * 1024,
   CV_EXT: ['pdf', 'doc', 'docx'],
   ADMIN_TTL_S: 12 * 3600,    // admin session length
@@ -57,6 +57,7 @@ var DEFAULT_SETTINGS = [
   ['CONTACT_EMAIL', 'projectcellclt@gmail.com', 'Reply-to address for all e-mails, and shown by the chat helper.'],
   ['CONTACT_PHONE', '+91 9633693211, +91 495 2370200', 'Shown in e-mails and by the chat helper.'],
   ['CONTACT_ADDRESS', 'Nammude Kozhikode, District Mission Room, Kozhikode District Collectorate, Kozhikode – 673020', 'Postal address shown in the footer of every e-mail.'],
+  ['INSTAGRAM_URL', 'https://www.instagram.com/dcipkkd/', 'The DCIP Instagram page. Shown as a small link in the form header and footer, and the preview card opens it.'],
   ['LOGO_URL', '', 'Optional. Direct https link to the DCIP logo image, shown at the top of e-mails.']
 ];
 
@@ -117,6 +118,7 @@ var SESSION_FIELDS = [
   { k: 'venue', h: 'Venue' }, { k: 'interviewer', h: 'Interviewer' }, { k: 'capacity', h: 'Capacity' }, { k: 'notes', h: 'Notes' },
   { k: 'mode', h: 'Mode' }, { k: 'link', h: 'Meeting Link' }
 ];
+var SOCIAL_FIELDS = [{ k: 'order', h: 'Order' }, { k: 'url', h: 'Post Link' }, { k: 'thumb', h: 'Picture Link' }, { k: 'caption', h: 'Caption' }, { k: 'active', h: 'Active' }];
 var BANNER_FIELDS = [{ k: 'order', h: 'Order' }, { k: 'url', h: 'Image URL' }, { k: 'caption', h: 'Caption' }, { k: 'active', h: 'Active' }];
 var AUDIT_HEADERS = ['Timestamp', 'User', 'Action', 'App ID', 'Details'];
 var FAQ_FIELDS = [{ k: 'id', h: 'ID' }, { k: 'topic', h: 'Topic' }, { k: 'question', h: 'Question' }, { k: 'answer', h: 'Answer' }, { k: 'keywords', h: 'Keywords' }, { k: 'related', h: 'Related IDs' }];
@@ -184,6 +186,8 @@ var ADMIN_API = {   // first argument is always the session token
   resendConfirmations: resendConfirmations,
   getBanners: getBanners,
   saveBanners: saveBanners,
+  getSocial: getSocial,
+  saveSocial: saveSocial,
   getMyCalls: getMyCalls,
   updateMyCall: updateMyCall
 };
@@ -256,6 +260,7 @@ function setup() {
   step('Chat log tab', function () { sheet_(APP.SHEETS.CHATLOG, CHATLOG_HEADERS); });
   step('FAQ tab', function () { faqSheet_(); });
   step('Banners tab', function () { sheet_(APP.SHEETS.BANNERS, BANNER_FIELDS); });
+  step('Social tab', function () { sheet_(APP.SHEETS.SOCIAL, SOCIAL_FIELDS); });
   step('CV folder in Google Drive', function () { return cvFolder_().getUrl(); });
   step('Super admin account', function () {
     if (users_().length) return 'accounts already exist – login unchanged (to reset the super admin password run resetSuperAdminPassword)';
@@ -285,7 +290,7 @@ function publicConfig_() {
     batch: s.BATCH_LABEL, programme: s.PROGRAMME,
     open: regOpen_(s), deadline: s.REG_DEADLINE || '',
     intakeStart: s.INTAKE_START, intakeEnd: s.INTAKE_END, ugBy: ugBy_(s), period: fmtPeriod_(s),
-    banners: activeBanners_(), heardFrom: HEARD_FROM,
+    banners: activeBanners_(), instagram: activeSocial_(), heardFrom: HEARD_FROM,
     maxAge: num_(s.MAX_AGE, 30), minAge: num_(s.MIN_AGE, 0), ageAsOn: ageAsOn_(s),
     enforceAge: s.ENFORCE_AGE === 'FLAG' ? 'FLAG' : 'BLOCK',
     enforceCompletion: s.ENFORCE_COMPLETION === 'FLAG' ? 'FLAG' : 'BLOCK',
@@ -832,6 +837,40 @@ function directUrl_(u) {
 }
 function activeBanners_() {
   try { return bannerRows_().filter(function (b) { return b.active === 'Yes' && b.url; }).map(function (b) { return { url: directUrl_(b.url), caption: b.caption }; }); } catch (e) { return []; }
+}
+function igUrl_(u, post) {
+  u = clean_(u); if (!u) return '';
+  if (!/^https:\/\/(www\.)?(instagram\.com|instagr\.am)\//i.test(u)) throw new Error('Instagram links must start with https://www.instagram.com/');
+  return u.split('#')[0].slice(0, 300);
+}
+function socialRows_() {
+  return readObjects_(sheet_(APP.SHEETS.SOCIAL, SOCIAL_FIELDS), SOCIAL_FIELDS).map(function (r) {
+    return { order: Number(r.order) || 0, url: clean_(r.url), thumb: clean_(r.thumb), caption: clean_(r.caption), active: truthy_(r.active) ? 'Yes' : 'No' };
+  }).sort(function (a, b) { return a.order - b.order; });
+}
+function activeSocial_() {
+  try {
+    var s = settings_(), page = clean_(s.INSTAGRAM_URL);
+    var posts = socialRows_().filter(function (p) { return p.active === 'Yes' && p.url && p.thumb; }).slice(0, 3).map(function (p) { return { url: p.url, thumb: directUrl_(p.thumb), caption: p.caption }; });
+    return { page: page, handle: (/instagram\.com\/([^\/?#]+)/i.exec(page) || [])[1] || '', posts: posts };
+  } catch (e) { return { page: '', handle: '', posts: [] }; }
+}
+function getSocial(user) { return socialRows_(); }
+function saveSocial(user, list) {
+  list = (Array.isArray(list) ? list : []).slice(0, 3);
+  var rows = list.map(function (b, i) {
+    var url = igUrl_(b && b.url), thumb = resolveImage_(b && b.thumb, i + 1);
+    if (!url) throw new Error('Post ' + (i + 1) + ': paste the Instagram post or reel link.');
+    return [i + 1, url, thumb, clean_(b.caption).slice(0, 80), truthy_(b.active) ? 'Yes' : 'No'];
+  });
+  return withLock_(function () {
+    var sh = sheet_(APP.SHEETS.SOCIAL, SOCIAL_FIELDS), last = sh.getLastRow();
+    if (last > 1) { var blank = []; for (var i = 0; i < last - 1; i++) blank.push(['', '', '', '', '']); sh.getRange(2, 1, last - 1, 5).setValues(blank); }
+    if (rows.length) sh.getRange(2, 1, rows.length, 5).setValues(rows);
+    audit_(user, 'SOCIAL', '', rows.length + ' post(s)');
+    touch_();
+    return socialRows_();
+  });
 }
 function getBanners(user) { return bannerRows_(); }
 function saveBanners(user, list) {
