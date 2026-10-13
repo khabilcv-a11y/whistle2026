@@ -82,12 +82,12 @@
     var root = document.createElement('div');
     root.innerHTML =
       '<button id="chatFab" class="chat-fab" type="button" aria-haspopup="dialog" aria-expanded="false"><span class="chat-fab-ic" aria-hidden="true">💬</span><span class="chat-fab-tx">Have a question?</span></button>' +
-      '<section id="chatPanel" class="chat-panel" role="dialog" aria-label="DCIP helper" hidden>' +
-        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div><b>DCIP Helper</b><small>Ask me anything about DCIP</small></div>' +
+      '<section id="chatPanel" class="chat-panel" role="dialog" aria-label="Ask DCIP" hidden>' +
+        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div class="chat-ttl"><b>Ask DCIP 👋</b><small><i class="chat-dot"></i>Online · happy to help with your questions</small></div>' +
         '<button type="button" class="chat-x" id="chatClose" aria-label="Close chat">✕</button></header>' +
         '<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>' +
         '<div class="chat-chips" id="chatChips"></div>' +
-        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question in your own words…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
+        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question here…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
         '<div class="chat-note">Chats are saved to improve our answers. Please don\'t share personal details.</div>' +
       '</section>';
     document.body.appendChild(root);
@@ -128,7 +128,7 @@
     chips(topicChips());
   }
   function greet() {
-    say('bot', 'Hi there! 👋 I\'m the DCIP helper, happy to help you with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>"I am in my final year, can I apply?"</i> or <i>"is there a stipend?"</i>');
+    say('bot', 'Hi there! 👋 I\'m your DCIP guide, happy to help with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>"I am in my final year, can I apply?"</i> or <i>"is there a stipend?"</i>');
     chips(topicChips());
   }
   function showTopic(t) {

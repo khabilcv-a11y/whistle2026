@@ -180,7 +180,8 @@ input:disabled, select:disabled { background: var(--soft); color: var(--muted); 
   .chat-panel { position: fixed; right: 16px; bottom: 16px; z-index: 70; width: min(380px, calc(100vw - 24px)); height: min(600px, calc(100vh - 32px)); display: flex; flex-direction: column; background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 24px 70px rgba(11,33,64,.4); border: 1px solid var(--line); }
   .chat-panel[hidden] { display: none; }
   .chat-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #fff; background: linear-gradient(135deg, var(--navy-900), var(--navy-500)); }
-  .chat-head b { display: block; font-size: 16px; } .chat-head small { opacity: .8; font-size: 12px; } .chat-logo { height: 40px; width: auto; }
+  .chat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 6px; box-shadow: 0 0 0 3px rgba(74,222,128,.25); vertical-align: 0; }
+  .chat-head b { display: block; font-size: 17px; letter-spacing: -.01em; } .chat-head small { opacity: .8; font-size: 12px; } .chat-logo { height: 40px; width: auto; }
   .chat-x { margin-left: auto; border: 0; background: rgba(255,255,255,.15); color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 15px; }
   .chat-log { flex: 1; overflow-y: auto; padding: 14px; background: #f5f8fd; display: flex; flex-direction: column; gap: 10px; }
   .msg { max-width: 88%; padding: 10px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; animation: slide .25s ease; overflow-wrap: anywhere; }
@@ -1750,12 +1751,12 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     var root = document.createElement('div');
     root.innerHTML =
       '<button id="chatFab" class="chat-fab" type="button" aria-haspopup="dialog" aria-expanded="false"><span class="chat-fab-ic" aria-hidden="true">💬</span><span class="chat-fab-tx">Have a question?</span></button>' +
-      '<section id="chatPanel" class="chat-panel" role="dialog" aria-label="DCIP helper" hidden>' +
-        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div><b>DCIP Helper</b><small>Ask me anything about DCIP</small></div>' +
+      '<section id="chatPanel" class="chat-panel" role="dialog" aria-label="Ask DCIP" hidden>' +
+        '<header class="chat-head">' + (logo ? '<img src="' + logo + '" alt="" class="chat-logo">' : '') + '<div class="chat-ttl"><b>Ask DCIP 👋</b><small><i class="chat-dot"></i>Online · happy to help with your questions</small></div>' +
         '<button type="button" class="chat-x" id="chatClose" aria-label="Close chat">✕</button></header>' +
         '<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>' +
         '<div class="chat-chips" id="chatChips"></div>' +
-        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question in your own words…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
+        '<form class="chat-form" id="chatForm" autocomplete="off"><input type="text" id="chatIn" maxlength="200" placeholder="Type your question here…" aria-label="Type your question"><button type="submit" class="chat-send" aria-label="Send">➤</button></form>' +
         '<div class="chat-note">Chats are saved to improve our answers. Please don\'t share personal details.</div>' +
       '</section>';
     document.body.appendChild(root);
@@ -1796,7 +1797,7 @@ window.DCIP_CONFIG = { apiUrl: 'https://script.google.com/macros/s/AKfycbxh1P6Xe
     chips(topicChips());
   }
   function greet() {
-    say('bot', 'Hi there! 👋 I\'m the DCIP helper, happy to help you with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>"I am in my final year, can I apply?"</i> or <i>"is there a stipend?"</i>');
+    say('bot', 'Hi there! 👋 I\'m your DCIP guide, happy to help with the internship and your application.<br><br>You can <b>tap a topic</b> below, or just <b>write your question in your own words</b>, for example <i>"I am in my final year, can I apply?"</i> or <i>"is there a stipend?"</i>');
     chips(topicChips());
   }
   function showTopic(t) {
