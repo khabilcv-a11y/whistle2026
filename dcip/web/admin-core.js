@@ -14,6 +14,7 @@
     var args = Array.prototype.slice.call(arguments, 1);
     return D.call.apply(null, [fn, A.S.token].concat(args)).catch(function (e) {
       if (e.message === 'SESSION_EXPIRED') A.logout('Your session expired. Please sign in again.');
+      if (/Unknown API function/.test(e.message)) throw new Error('The server (Apps Script) is an older version than this page. Paste the latest Code.gs, run setup once, then Deploy → Manage deployments → New version.');
       throw e;
     });
   };
