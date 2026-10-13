@@ -373,6 +373,7 @@
     };
   }
   var stBtn = $('#statusBtn'); if (stBtn) stBtn.onclick = function () { openStatus(''); };
+  if (stBtn) { var solid = function () { stBtn.classList.toggle('solid', window.scrollY > 24); }; window.addEventListener('scroll', solid, { passive: true }); solid(); }
 
   /* ---------- draft (kept in this browser only; never the CV) ---------- */
   function saveDraft() { try { var o = {}; FIELDS.forEach(function (id) { if ($('#' + id)) o[id] = $('#' + id).value; }); localStorage.setItem(draftKey, JSON.stringify(o)); } catch (e) {} }

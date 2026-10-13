@@ -146,10 +146,13 @@
   @media (prefers-reduced-motion: reduce) { .chat-fab.nudge, .msg, .msg.typing span { animation: none; } }
 
   /* status button, notices */
-  .statbtn { position: fixed; right: 68px; top: 14px; z-index: 96; height: 46px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px 0 14px; border-radius: 999px; border: 2px solid #fff; background: #fff; color: var(--navy-900); font: 800 14px inherit; font-family: inherit; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.28); transition: transform .15s; }
-  .statbtn:hover { transform: translateY(-1px); } .statbtn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; } .statbtn svg { color: var(--red); }
-  @media (max-width: 640px) { .statbtn { width: 46px; padding: 0; justify-content: center; } .statbtn span { display: none; } }
-  .dlbar { text-align: left; padding: 7px 130px 7px 16px; }
+  .statbtn { position: fixed; right: 64px; top: 12px; z-index: 96; height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px 0 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #fff; font: 700 14px inherit; font-family: inherit; letter-spacing: .1px; cursor: pointer; transition: transform .15s, background .2s, border-color .2s, box-shadow .2s; }
+  .statbtn svg { color: var(--gold); flex: none; } .statbtn:hover { transform: translateY(-1px); background: rgba(255,255,255,.24); }
+  .statbtn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px var(--navy-700); }
+  .statbtn.solid { background: var(--navy-700); border-color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.28); } .statbtn.solid:hover { background: var(--navy-900); }
+  @media (max-width: 640px) { .statbtn { width: 42px; padding: 0; justify-content: center; } .statbtn span { display: none; } }
+  html.a11y-hc .statbtn { background: #000; border-color: #fff; }
+  .dlbar { text-align: left; padding: 8px 150px 8px 16px; }
   .dlg-wrap { position: fixed; inset: 0; z-index: 300; background: rgba(8,20,40,.55); display: grid; place-items: center; padding: 16px; animation: fade .2s; } @keyframes fade { from { opacity: 0; } }
   .dlg { position: relative; width: min(440px, 100%); background: #fff; border-radius: 22px; padding: 26px 24px 20px; box-shadow: 0 30px 80px rgba(8,20,40,.45); animation: slide .22s ease; max-height: 92vh; overflow-y: auto; }
   .dlg h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: -.01em; } .dlg p { margin: 0 0 10px; color: var(--ink-2); line-height: 1.55; } .dlg-ic { font-size: 38px; margin-bottom: 6px; }
@@ -197,8 +200,8 @@
   .foot { background: var(--navy-900); color: #d6e2f5; padding: 28px 16px 90px; margin-top: 10px; text-align: center; } .foot-in { max-width: 760px; margin: 0 auto; display: grid; gap: 8px; } .foot b { color: #fff; font-size: 17px; }
   .foot a { color: var(--gold); font-weight: 700; text-decoration: none; } .foot a:hover { text-decoration: underline; } .foot .sep { opacity: .4; margin: 0 8px; }
   /* accessibility options */
-  .a11y-fab { position: fixed; right: 14px; top: 14px; z-index: 96; width: 46px; height: 46px; border-radius: 50%; border: 2px solid #fff; background: #1d5fb8; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .15s; } .a11y-fab:hover { transform: scale(1.06); } .a11y-fab:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px #1d5fb8; }
-  .a11y-panel { position: fixed; right: 14px; top: 68px; z-index: 97; width: min(300px, calc(100vw - 28px)); background: #fff; color: var(--ink); border: 1px solid var(--line-2); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(11,33,64,.35); } .a11y-panel[hidden] { display: none; }
+  .a11y-fab { position: fixed; right: 12px; top: 12px; z-index: 96; width: 42px; height: 42px; border-radius: 50%; border: 2px solid #fff; background: #1d5fb8; color: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .15s; } .a11y-fab:hover { transform: scale(1.06); } .a11y-fab:focus-visible { outline: 3px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 6px #1d5fb8; }
+  .a11y-panel { position: fixed; right: 12px; top: 62px; z-index: 97; width: min(300px, calc(100vw - 28px)); background: #fff; color: var(--ink); border: 1px solid var(--line-2); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(11,33,64,.35); } .a11y-panel[hidden] { display: none; }
   @media (max-width: 560px) { .hero { padding-top: 66px; } }
   .a11y-panel h2 { font-size: 16px; margin: 0 0 10px; } .a11y-panel .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; } .a11y-panel .row > b { width: 100%; font-size: 13px; }
   .a11y-panel button.o { border: 1.5px solid var(--line-2); background: #fff; border-radius: 10px; padding: 8px 12px; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; } .a11y-panel button.o[aria-pressed=true] { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
@@ -280,7 +283,7 @@
 </head>
 <body>
 <a class="skip" href="#apply">Skip to the application form</a>
-<button type="button" class="statbtn" id="statusBtn" aria-label="Check application status"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.2 15.2L20 20M8 10.6l1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Check application status</span></button>
+<button type="button" class="statbtn" id="statusBtn" aria-label="Check application status"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.2 15.2L20 20M8 10.6l1.8 1.8 3.2-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Check status</span></button>
 <div class="dlbar" id="dlbar" hidden><span>⏳ Closes in <b id="dlbarT"></b></span></div>
 <header class="hero"><div class="in">
   <div>
