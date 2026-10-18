@@ -114,7 +114,7 @@
     var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
-    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See our other activities') + '</small></span></div>' +
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See what our interns and alumni say') + '</small></span></div>' +
       '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + (p.thumb ? esc(p.thumb) : igTile(i)) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
       '<div class="go"><span>' + T('See more') + '</span><i>' + T('Open') + ' ↗</i></div></a>';
     $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
