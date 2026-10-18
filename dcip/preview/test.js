@@ -526,7 +526,7 @@ test('applicants: duplicate e-mail check while typing, and application status by
   fails('checkStatus', /Too many attempts/, 'guess@example.com');
   call('saveSettings', adm, { STATUS_PUBLISHED: 'Received,Shortlisted,Withdrawn' }); call('updateApplications', adm, [r.id], { status: 'Received', session: '' }); call('deleteSession', adm, '2026-11-20 Forenoon');
 });
-test('instagram: page link is public, post cards need a picture and an instagram.com link, callers cannot edit', () => {
+test('instagram: page link is public, post cards need an instagram.com link (the picture is optional), callers cannot edit', () => {
   const adm = login();
   let c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
   assert.equal(c.instagram.page, 'https://www.instagram.com/dcipkkd/'); assert.equal(c.instagram.handle, 'dcipkkd'); assert.deepEqual(c.instagram.posts, []);
@@ -534,6 +534,9 @@ test('instagram: page link is public, post cards need a picture and an instagram
   call('saveSocial', adm, [{ url: 'https://www.instagram.com/reel/ABC123/', thumb: 'https://example.com/a.jpg', caption: 'A day with the team', active: true }, { url: 'https://www.instagram.com/p/XYZ/', thumb: 'https://example.com/b.jpg', active: false }, { url: 'https://www.instagram.com/p/NOPIC/', thumb: '', active: true }].slice(0, 2));
   CacheServiceClear(); c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
   assert.deepEqual(c.instagram.posts, [{ url: 'https://www.instagram.com/reel/ABC123/', thumb: 'https://example.com/a.jpg', caption: 'A day with the team' }]);
+  call('saveSocial', adm, [{ url: 'https://www.instagram.com/p/NOPIC1/', caption: 'No picture given', active: true }]);   // the picture is optional: it is fetched, or the form shows a designed tile
+  CacheServiceClear(); c = JSON.parse(ctx.doGet({ parameter: { api: 'config' } }).getContent()).result;
+  assert.equal(c.instagram.posts.length, 1); assert.equal(c.instagram.posts[0].url, 'https://www.instagram.com/p/NOPIC1/'); assert.equal(c.instagram.posts[0].thumb, '');
   call('saveSocial', adm, []);
 });
 test('callers: admins create caller accounts and assign calls; callers see only their own basic list and can only set status + note', () => {
@@ -594,4 +597,46 @@ test('delete applications: super admin only, removes the row, frees the e-mail, 
   assert.equal(call('checkEmail', p.email).exists, false);
   assert.ok(call('getAudit', sup).some(r => r.action === 'APPLICATION_DELETE' && String(r.target) === id || /APPLICATION_DELETE/.test(JSON.stringify(r))));
   call('submitApplication', p);   // the same person can apply again
+});
+
+test('interviewers: own login, mark every item, average becomes the interview score, officials see each interviewer\'s marks', () => {
+  const sup = login();
+  call('createUser', sup, 'panel1', 'Dr. Panel One', 'Panel@12345', 'interviewer'); call('createUser', sup, 'panel2', 'Ms. Panel Two', 'Panel@12345', 'interviewer');
+  const adm0 = (() => { call('createUser', sup, 'deskadmin', 'Desk Admin', 'Desk@12345', 'admin'); return login('deskadmin', 'Desk@12345'); })();
+  call('createUser', adm0, 'panel3', 'Panel Three', 'Panel@12345', 'interviewer');   // an admin may add interviewers
+  const p1 = login('panel1', 'Panel@12345'), p2 = login('panel2', 'Panel@12345');
+  const p = base({ email: 'score' + Date.now() + '@example.com', mobile: '9' + String(100000000 + Math.floor(Math.random() * 899999999)), fullName: 'Scored Candidate' }); call('submitApplication', p);
+  const find = () => call('getAdminState', sup).applications.filter(x => x.email === p.email)[0];
+  const id = find().id;
+  const mine = call('getMyInterviews', p1); assert.equal(mine.criteria.length, 5); assert.equal(mine.max, 50);
+  assert.ok(!mine.candidates.some(c => c.id === id), 'not shortlisted yet');
+  fails('saveInterviewScore', /shortlisted/, p1, id, [8, 8, 8, 8, 8], '');
+  call('updateApplications', sup, [id], { status: 'Shortlisted' });
+  const cand = call('getMyInterviews', p1).candidates.find(c => c.id === id); assert.ok(cand); assert.equal(cand.myTotal, null);
+  assert.ok(!('screenScore' in cand) && !('email' in cand) && !('mobile' in cand), 'interviewers do not see screening scores or contact details');
+  fails('saveInterviewScore', /every item/, p1, id, [8, 8], '');
+  fails('saveInterviewScore', /between 0 and 10/, p1, id, [8, 8, 8, 8, 11], '');
+  assert.equal(call('saveInterviewScore', p1, id, [8, 7, 9, 8, 8], 'Clear and confident').total, 40);
+  assert.equal(find().interviewScore, 40);
+  const r2 = call('saveInterviewScore', p2, id, [6, 6, 7, 7, 7], ''); assert.equal(r2.total, 33); assert.equal(r2.count, 2); assert.equal(r2.average, 36.5);
+  assert.equal(find().interviewScore, 36.5);
+  call('saveInterviewScore', p1, id, [10, 7, 9, 8, 8], 'Revised'); assert.equal(call('getMyInterviews', p1).candidates.find(c => c.id === id).myTotal, 42); assert.equal(find().interviewScore, 37.5);
+  const st = call('getAdminState', sup); const mineRows = st.scores.filter(x => x.appId === id); assert.equal(mineRows.length, 2); assert.equal(st.interviewers.length, 3); assert.equal(st.scoring.max, 50);
+  assert.deepEqual(mineRows.find(x => x.interviewer === 'panel1').marks, [10, 7, 9, 8, 8]);
+  assert.equal(call('getMyInterviews', p2).candidates.find(c => c.id === id).myTotal, 33, 'each interviewer sees only their own marks');
+  ['getAdminState', 'updateApplications', 'getMyCalls'].forEach(fn => fails(fn, /only use the interview scoring page/, p1));
+  fails('saveInterviewScore', /only for interviewer/, sup, id, [8, 8, 8, 8, 8], '');
+  assert.equal(call('deleteInterviewScore', adm0, id, 'panel2').count, 1); assert.equal(find().interviewScore, 42);
+  call('deleteApplications', sup, [id]); assert.equal(call('getAdminState', sup).scores.filter(x => x.appId === id).length, 0);
+});
+
+test('e-mail preview shows each applicant\'s own version before sending; settings for the panel are validated', () => {
+  const sup = login(); const st = call('getAdminState', sup); const ids = st.applications.slice(0, 3).map(a => a.id);
+  const before = (env.store.mails || []).length;
+  const pv = call('previewEmail', sup, ids, 'Hello {{name}}', 'Dear {{name}}, your id is {{id}} and the batch is {{batch}}.', 1);
+  assert.equal(pv.total, 3); assert.equal(pv.index, 1); assert.match(pv.subject, new RegExp('Hello ' + pv.people[1].name.split(' ')[0])); assert.match(pv.html, new RegExp(pv.people[1].id)); assert.equal(pv.vars.id, pv.people[1].id);
+  assert.equal((env.store.mails || []).length, before, 'a preview sends nothing');
+  fails('previewEmail', /required/, sup, ids, '', 'x', 0);
+  const pc = call('previewConfirmation', sup, ids[0]); assert.match(pc.subject, /Application received/); assert.ok(pc.html.length > 500);
+  fails('saveSettings', /2 to 10 items/, sup, { INTERVIEW_CRITERIA: 'Only one' }); fails('saveSettings', /between 1 and 100/, sup, { INTERVIEW_MAX_MARK: '500' });
 });

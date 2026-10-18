@@ -97,7 +97,7 @@
 
   /* ---------- modal ---------- */
   A.modal = function (html) { $('#modal').innerHTML = html; $('#modalWrap').classList.remove('hidden'); var f = $('#modal input, #modal textarea, #modal select'); if (f) f.focus(); return $('#modal'); };
-  A.closeModal = function () { $('#modalWrap').classList.add('hidden'); $('#modal').innerHTML = ''; };
+  A.closeModal = function () { $('#modalWrap').classList.add('hidden'); $('#modal').classList.remove('wide'); $('#modal').innerHTML = ''; };
   A.confirm = function (title, html, okLabel, danger) {
     return new Promise(function (res) {
       var m = A.modal('<h3>' + esc(title) + '</h3><div>' + html + '</div><div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn ' + (danger ? 'danger' : 'primary') + '" id="cYes">' + esc(okLabel || 'OK') + '</button></div>');
@@ -143,6 +143,7 @@
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
       (a.background ? '<label class="f" style="margin-top:10px">Background and influences' + (a.backgroundQ ? ' · answered question <b>' + esc(a.backgroundQ) + '</b>' : '') + '</label><div class="note-box">' + esc(a.background) + '</div>' : '') +
+      (A.panelBlock ? A.panelBlock(a) : '') +
       '<h4>Evaluation</h4><div class="fgrid">' +
       '<div><label class="f">Status</label><select data-f="status">' + A.opts(S.statuses, a.status || 'Received') + '</select></div>' +
       '<div><label class="f">Screening result</label><select data-f="screening">' + A.opts(['Eligible', 'Review', 'Suggest Disqualify', 'Cleared'], a.screening) + '</select></div>' +
@@ -168,6 +169,7 @@
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
     d.classList.remove('hidden'); $('#drawerBg').classList.remove('hidden');
     $('#dClose').onclick = A.closeDrawer;
+    A.$$('[data-rmscore]', d).forEach(function (b) { b.onclick = function () { A.confirm('Remove these marks?', 'The marks given by this interviewer for ' + esc(a.fullName) + ' are deleted and the average is recalculated.', 'Remove', true).then(function (ok) { if (ok) A.api('deleteInterviewScore', a.id, b.dataset.rmscore).then(function () { D.toast('Marks removed', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); }); }); }; });
     if ($('#dDelete')) $('#dDelete').onclick = function () { A.deleteApps(a.id); };
     A.$$('[data-quick]', d).forEach(function (b) { b.onclick = function () { A.save(a.id, { status: b.dataset.quick }, 'Quick action').then(function () { D.toast(a.fullName + ' → ' + b.dataset.quick, 'ok'); }); }; });
     $('#dSave').onclick = function () {
@@ -181,9 +183,8 @@
     };
     $('#dMail').onclick = function () { A.compose([a.id]); };
     $('#dResend').onclick = function () {
-      A.confirm('Resend confirmation?', 'The original confirmation e-mail will be sent again to <b>' + esc(a.email) + '</b>.', 'Send').then(function (ok) {
-        if (ok) A.api('resendConfirmation', a.id).then(function () { D.toast('Confirmation sent', 'ok'); }, function (e) { D.toast(e.message, 'err'); });
-      });
+      A.mailPreview({ total: 1, sendLabel: 'Confirm and send', fetch: function () { return A.api('previewConfirmation', a.id); },
+        onSend: function () { return A.api('resendConfirmation', a.id).then(function () { D.toast('Confirmation sent', 'ok'); }); } });
     };
   };
 
@@ -236,7 +237,37 @@
       body: 'Dear Candidate,\n\nThank you for your interest in the {{programme}} – {{batch}}. We regret that we are unable to offer you a place in this batch. We encourage you to apply again in the future.' + SIGN },
     custom: { name: 'Write my own', subject: '', body: '' }
   };
-  A.compose = function (ids, tplKey) {
+  /**
+   * "Look before you send": shows the e-mail and waits for a confirmation.
+   * cfg: { fetch(index) → Promise<{subject, html, to, from, replyTo, total?, people?, vars?}>, template?: {subject, body} (bulk: also shows the placeholders),
+   *        total, sendLabel, onSend() → Promise, onBack() }
+   */
+  A.mailPreview = function (cfg) {
+    var idx = 0, tab = cfg.template && cfg.total > 1 ? 'ph' : 'real', data = null;
+    function hl(t) { return esc(t).replace(/\{\{(\w+)\}\}/g, '<mark class="ph">{{$1}}</mark>'); }
+    function draw() {
+      var multi = (data.total || 1) > 1, used = {};
+      if (cfg.template) (cfg.template.subject + ' ' + cfg.template.body).replace(/\{\{(\w+)\}\}/g, function (m, k) { used[k] = 1; });
+      var phTab = cfg.template ? '<div class="pvph"><div class="pvl">Subject</div><div class="pvbox">' + hl(cfg.template.subject) + '</div><div class="pvl">Message (placeholders are highlighted and filled in separately for each person)</div><div class="pvbox" style="white-space:pre-wrap">' + hl(cfg.template.body) + '</div>' +
+        (Object.keys(used).length ? '<div class="pvl">For <b>' + esc((data.people && data.people[idx] || {}).name || '') + '</b> they become</div><table class="t"><tbody>' + Object.keys(used).map(function (k) { var v = (data.vars || {})[k]; return '<tr><td><mark class="ph">{{' + esc(k) + '}}</mark></td><td>' + (v === '' || v == null ? '<span class="muted">(empty)</span>' : esc(v)) + '</td></tr>'; }).join('') + '</tbody></table>' : '') + '</div>' : '';
+      var real = '<div class="pvl">Subject</div><div class="pvbox"><b>' + esc(data.subject) + '</b></div><iframe class="pvframe" sandbox="" title="E-mail preview" srcdoc="' + esc(data.html) + '"></iframe>';
+      m.innerHTML = '<h3>Preview before sending</h3>' +
+        '<div class="pvmeta">From <b>' + esc(data.from || 'DCIP') + '</b>' + (data.replyTo ? ' · replies go to <b>' + esc(data.replyTo) + '</b>' : '') + '</div>' +
+        '<div class="pvto">To ' + (multi ? '<select id="pvWho" aria-label="Show the e-mail for">' + data.people.map(function (p, i) { return '<option value="' + i + '"' + (i === idx ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.email) + '</option>'; }).join('') + '</select> <span class="muted">(' + data.total + ' recipients – every one gets their own version)</span>' : '<b>' + esc(data.to) + '</b>') + '</div>' +
+        (data.skipped ? '<div class="pvwarn">' + data.skipped + ' selected applicant' + (data.skipped === 1 ? ' has' : 's have') + ' no valid e-mail address and will be skipped.</div>' : '') +
+        (cfg.template ? '<div class="seg" role="group" style="margin:10px 0"><button data-pv="ph" aria-pressed="' + (tab === 'ph') + '">With placeholders</button><button data-pv="real" aria-pressed="' + (tab === 'real') + '">As ' + (multi ? esc((data.people[idx] || {}).name || 'the applicant') : 'the applicant') + ' will see it</button></div>' : '') +
+        (tab === 'ph' ? phTab : real) +
+        '<div class="acts"><button class="btn" id="pvBack">' + (cfg.onBack ? '← Back to edit' : 'Cancel') + '</button><button class="btn primary" id="pvSend">' + esc(cfg.sendLabel || 'Confirm and send') + '</button></div>';
+      var who = m.querySelector('#pvWho'); if (who) who.onchange = function () { idx = +this.value; load(); };
+      Array.prototype.forEach.call(m.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { tab = b.dataset.pv; draw(); }; });
+      m.querySelector('#pvBack').onclick = function () { A.closeModal(); if (cfg.onBack) cfg.onBack(); };
+      m.querySelector('#pvSend').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Sending…'; cfg.onSend().then(function () { A.closeModal(); }, function (e) { b.disabled = false; b.textContent = cfg.sendLabel || 'Confirm and send'; D.toast(e.message, 'err'); }); };
+    }
+    function load() { return cfg.fetch(idx).then(function (d) { data = d; if (d.index != null) idx = d.index; draw(); }, function (e) { A.closeModal(); D.toast(e.message, 'err'); if (cfg.onBack) cfg.onBack(); }); }
+    var m = A.modal('<h3>Preparing preview…</h3><p class="muted">Putting the e-mail together exactly as it will be sent.</p>'); m.classList.add('wide');
+    load();
+  };
+  A.compose = function (ids, tplKey, keep) {
     var apps = ids.map(A.byId).filter(Boolean), good = apps.filter(function (a) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email); });
     var q = A.S.mailQuota;
     var m = A.modal('<h3>E-mail ' + good.length + ' applicant' + (good.length === 1 ? '' : 's') + '</h3>' +
@@ -244,23 +275,23 @@
       '<div id="mWarn"></div><div class="field"><label class="f">Template</label><select id="mTpl">' + Object.keys(A.TEMPLATES).map(function (k) { return '<option value="' + k + '"' + (k === (tplKey || 'custom') ? ' selected' : '') + '>' + esc(A.TEMPLATES[k].name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label class="f">Subject</label><input type="text" id="mSub"></div>' +
       '<div class="field"><label class="f">Message</label><textarea id="mBody" rows="10"></textarea><div class="hint">Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} {{dateLong}} {{mode}} {{link}} {{phone}} {{contactEmail}} – filled in separately for every applicant. Review the wording before sending.</div></div>' +
-      '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's') + '</button></div>');
+      '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Preview ' + (good.length === 1 ? 'e-mail' : good.length + ' e-mails') + ' →</button></div>');
     var noSess = good.filter(function (x) { return !x.session; }).length;
     function fillTpl() {
       var t = A.TEMPLATES[$('#mTpl', m).value]; $('#mSub', m).value = t.subject; $('#mBody', m).value = t.body;
       $('#mWarn', m).innerHTML = noSess && /\{\{(dateLong|slot|session|venue|date)\}\}/.test(t.body) ? '<div class="alert warn" style="margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-weight:600">' + noSess + ' of ' + good.length + ' have no interview session yet, so their date, session and venue will read “(to be informed)”.</div>' : '';
     }
     $('#mTpl', m).onchange = fillTpl; fillTpl();
+    if (keep) { $('#mTpl', m).value = keep.tpl; $('#mSub', m).value = keep.sub; $('#mBody', m).value = keep.body; }
     $('#mNo', m).onclick = A.closeModal;
     $('#mSend', m).onclick = function () {
       var sub = $('#mSub', m).value, body = $('#mBody', m).value;
       if (!sub.trim() || !body.trim()) { D.toast('Subject and message are required.', 'err'); return; }
-      var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
-      A.api('sendEmails', good.map(function (a) { return a.id; }), sub, body).then(function (r) {
-        A.closeModal();
-        D.toast(r.sent + ' e-mail(s) sent' + (r.failed.length ? ', ' + r.failed.length + ' failed' : ''), r.failed.length ? 'err' : 'ok');
-        if (q != null) A.S.mailQuota = Math.max(0, q - r.sent);
-      }, function (e) { btn.disabled = false; btn.textContent = 'Send'; D.toast(e.message, 'err'); });
+      var tpl = $('#mTpl', m).value, gid = good.map(function (a) { return a.id; });
+      A.mailPreview({ total: good.length, template: { subject: sub, body: body }, sendLabel: 'Confirm and send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's'),
+        fetch: function (i) { return A.api('previewEmail', gid, sub, body, i); },
+        onBack: function () { A.compose(ids, tplKey, { tpl: tpl, sub: sub, body: body }); },
+        onSend: function () { return A.api('sendEmails', gid, sub, body).then(function (r) { D.toast(r.sent + ' e-mail(s) sent' + (r.failed.length ? ', ' + r.failed.length + ' failed' : ''), r.failed.length ? 'err' : 'ok'); if (q != null) A.S.mailQuota = Math.max(0, q - r.sent); }); } });
     };
   };
 

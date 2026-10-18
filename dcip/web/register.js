@@ -100,13 +100,22 @@
   }
 
   /** The Instagram chip and footer link always show; the preview card appears once posts have been added in the admin portal. */
+  /** A designed picture for a post whose own thumbnail Instagram would not hand over: Instagram colours, the DCIP name and a play mark. */
+  function igTile(i) {
+    var g = [['#833ab4', '#fd1d1d', '#fcb045'], ['#405de6', '#c13584', '#fd1d1d'], ['#12335b', '#833ab4', '#fd1d1d']][i % 3];
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="' + g[2] + '"/><stop offset=".5" stop-color="' + g[1] + '"/><stop offset="1" stop-color="' + g[0] + '"/></linearGradient></defs>' +
+      '<rect width="400" height="500" fill="url(#g)"/><circle cx="330" cy="70" r="150" fill="#fff" opacity=".07"/><circle cx="60" cy="470" r="190" fill="#fff" opacity=".07"/>' +
+      '<g fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"><rect x="130" y="150" width="140" height="140" rx="40"/><circle cx="200" cy="220" r="32"/></g><circle cx="249" cy="171" r="9" fill="#fff"/>' +
+      '<text x="200" y="360" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="800" fill="#fff">DCIP</text><text x="200" y="400" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" fill="#fff" opacity=".9">on Instagram</text></svg>';
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
   function renderInstagram() {
     var ig = C.instagram || {}; clearInterval(timers.ig); $('#igFix').innerHTML = ''; $('#igInline').innerHTML = ''; if (!ig.page) return;   // without a saved page the chip keeps its built-in link
     var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
     var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See our other activities') + '</small></span></div>' +
-      '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + esc(p.thumb) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
+      '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + (p.thumb ? esc(p.thumb) : igTile(i)) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
       '<div class="go"><span>' + T('See more') + '</span><i>' + T('Open') + ' ↗</i></div></a>';
     $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
     var cards = $$('.igcard'), at = 0;

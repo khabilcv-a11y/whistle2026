@@ -59,6 +59,19 @@
       rows: list.map(function (a, i) { return [i + 1, a.fullName, a.age, A.ugText(a), A.num(a.screenScore), A.num(a.interviewScore), a.status]; }) }] };
   };
 
+  /** Every interviewer's total per candidate, the average, and (second sheet) the marks for each item. */
+  R.panelScores = function () {
+    var P = A.panelRows(), cr = P.criteria, rows = P.rows.filter(function (r) { return r.n; });
+    var sheet1 = { name: 'Panel scores', title: 'Interview panel scores (out of ' + P.max + ')', rowHeight: 24,
+      columns: [{ h: 'Rank', w: 6, align: 'center' }, { h: 'Name', w: 24 }, { h: 'Session', w: 18 }].concat(P.users.map(function (u) { return { h: P.names[u], w: 11, align: 'center' }; })).concat([{ h: 'Marked by', w: 8, align: 'center' }, { h: 'Average', w: 9, align: 'center' }, { h: 'Status', w: 12 }]),
+      rows: rows.map(function (r, i) { var s = sess(r.a.session); return [i + 1, r.a.fullName, s ? A.sessionLabel(s) : ''].concat(P.users.map(function (u) { return r.by[u] ? r.by[u].total : ''; })).concat([r.n, r.avg, r.a.status]); }) };
+    var det = [];
+    rows.forEach(function (r) { P.users.forEach(function (u) { var x = r.by[u]; if (x) det.push([r.a.fullName, P.names[u]].concat(cr.map(function (c, i) { return x.marks[i] == null ? '' : x.marks[i]; })).concat([x.total, x.remark])); }); });
+    var sheet2 = { name: 'Marks by item', title: 'Marks given by each interviewer, item by item', rowHeight: 24,
+      columns: [{ h: 'Candidate', w: 22 }, { h: 'Interviewer', w: 18 }].concat(cr.map(function (c) { return { h: c, w: 10, align: 'center' }; })).concat([{ h: 'Total', w: 8, align: 'center' }, { h: 'Remark', w: 30 }]), rows: det };
+    return { filename: 'DCIP_Panel_Scores', orientation: 'landscape', sheets: [sheet1, sheet2] };
+  };
+
   R.interns = function (statuses, title, file) {
     var list = A.S.apps.filter(function (a) { return statuses.indexOf(a.status) >= 0; }).sort(A.nameCmp);
     return { filename: file, orientation: 'landscape', sheets: [{ name: title, title: title, rowHeight: 26,
@@ -116,6 +129,7 @@
       { group: 'Interview day', title: 'Interview sessions', desc: 'Sessions with venue, interviewer, assigned and present counts.', n: A.S.sessions.length, make: R.sessions },
       { group: 'Interview day', title: 'Call chart – all shortlisted', desc: 'Calling list with blank columns for the caller to fill. Per-session charts are on the Interviews tab.', n: c(function (a) { return a.shortlisted === 'Yes'; }), make: function () { return R.callChart('__all'); } },
       { group: 'Interview day', title: 'Score sheet – all shortlisted', desc: 'Blank score sheet for every shortlisted candidate. Per-session sheets are on the Interviews tab.', n: c(function (a) { return a.shortlisted === 'Yes'; }), make: function () { return R.scoreSheet('__all'); } },
+      { group: 'Selection', title: 'Panel scores (every interviewer)', desc: 'Each interviewer\'s total for each candidate, the average, and a second sheet with the marks item by item.', n: (A.S.scores || []).length, make: R.panelScores },
       { group: 'Selection', title: 'Interview rank list', desc: 'Shortlisted candidates ranked by interview score.', n: c(function (a) { return a.shortlisted === 'Yes' && A.num(a.interviewScore) != null; }), make: R.interviewRank },
       { group: 'Selection', title: 'Selected & confirmed interns', desc: 'Candidates with status Selected or Confirmed.', n: c(function (a) { return a.status === 'Selected' || a.status === 'Confirmed'; }), make: function () { return R.interns(['Selected', 'Confirmed'], 'Selected and confirmed interns', 'DCIP_Selected_Interns'); } },
       { group: 'Selection', title: 'Confirmed interns', desc: 'Candidates whose documents have been verified.', n: c(function (a) { return a.status === 'Confirmed'; }), make: function () { return R.interns(['Confirmed'], 'Confirmed interns list', 'DCIP_Confirmed_Interns'); } },

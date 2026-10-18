@@ -20,7 +20,7 @@
 var APP = {
   TIMEZONE: 'Asia/Kolkata',
   ID_PREFIX: 'DCIP34-',
-  SHEETS: { SOCIAL: 'Social', BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log' },
+  SHEETS: { SOCIAL: 'Social', BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log', SCORES: 'Interview_Scores' },
   CV_MAX_BYTES: 3 * 1024 * 1024,
   CV_EXT: ['pdf', 'doc', 'docx'],
   ADMIN_TTL_S: 12 * 3600,    // admin session length
@@ -50,6 +50,8 @@ var DEFAULT_SETTINGS = [
   ['ENFORCE_COMPLETION', 'BLOCK', 'BLOCK = the form refuses a UG completion date after UG_COMPLETE_BY.  FLAG = accept, mark "Suggest Disqualify".'],
   ['SHORTLIST_SIZE', '30', 'Number of top-scoring applicants shortlisted for interview.'],
   ['SELECTION_SIZE', '25', 'Target number of interns in the batch.'],
+  ['INTERVIEW_CRITERIA', 'Communication, Motivation and public-service attitude, Knowledge of governance and social issues, Teamwork and leadership, Overall impression', 'What each interviewer marks, separated by commas (2 to 10 items). Change it before interviews begin.'],
+  ['INTERVIEW_MAX_MARK', '10', 'Highest mark an interviewer can give for each item above.'],
   ['CV_REQUIRED', 'TRUE', 'TRUE / FALSE – is the CV upload compulsory?'],
   ['CV_AUTOFILL_AI', 'TRUE', 'TRUE / FALSE – use the AI service to read an uploaded CV and pre-fill the form (CV text is sent to Groq; needs GROQ_API_KEY). The form still pre-fills the basics without it.'],
   ['ADMIN_CAN_VIEW_CHATS', 'FALSE', 'TRUE / FALSE – may normal admins read the chat helper conversations? (Super admins always can.)'],
@@ -138,7 +140,10 @@ var CHATLOG_HEADERS = ['Time', 'Session', 'Role', 'Text', 'Source'];
 var USER_FIELDS = [{ k: 'username', h: 'Username', text: true }, { k: 'name', h: 'Name' }, { k: 'role', h: 'Role' }, { k: 'salt', h: 'Salt', text: true }, { k: 'hash', h: 'Password Hash', text: true },
   { k: 'active', h: 'Active' }, { k: 'created', h: 'Created' }, { k: 'createdBy', h: 'Created By' }, { k: 'lastLogin', h: 'Last Login' }];
 var LOGIN_HEADERS = ['Time', 'Username', 'Result', 'Role', 'Note'];
-var ROLES = ['admin', 'super', 'caller'];
+var ROLES = ['admin', 'super', 'caller', 'interviewer'];
+/** One row per interviewer per candidate: the marks for each criterion, the total and a short remark. */
+var SCORE_FIELDS = [{ k: 'appId', h: 'Application ID', text: true }, { k: 'interviewer', h: 'Interviewer (username)', text: true }, { k: 'interviewerName', h: 'Interviewer' },
+  { k: 'scores', h: 'Marks per criterion', text: true }, { k: 'total', h: 'Total' }, { k: 'max', h: 'Out of' }, { k: 'remark', h: 'Remark' }, { k: 'updatedAt', h: 'Updated' }];
 var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
 
 var GENDERS = ['Female', 'Male', 'Other'];
@@ -186,6 +191,8 @@ var ADMIN_API = {   // first argument is always the session token
   rescreenAll: rescreenAll,
   saveSettings: saveSettings,
   sendEmails: sendEmails,
+  previewEmail: previewEmail,
+  previewConfirmation: previewConfirmation,
   resendConfirmation: resendConfirmation,
   getAudit: getAudit,
   changeMyPassword: changeMyPassword,
@@ -204,11 +211,17 @@ var ADMIN_API = {   // first argument is always the session token
   getSocial: getSocial,
   saveSocial: saveSocial,
   getMyCalls: getMyCalls,
-  updateMyCall: updateMyCall
+  updateMyCall: updateMyCall,
+  getMyInterviews: getMyInterviews,
+  saveInterviewScore: saveInterviewScore,
+  deleteInterviewScore: deleteInterviewScore
 };
 /** What a caller account may use: only its own call list (and its password). */
 var CALLER_FNS = { ping: 1, getMyCalls: 1, updateMyCall: 1, changeMyPassword: 1 };
 var CALLER_ONLY = { getMyCalls: 1, updateMyCall: 1 };
+/** What an interviewer account may use: only the scoring page (and its own password). */
+var INTERVIEWER_FNS = { ping: 1, getMyInterviews: 1, saveInterviewScore: 1, changeMyPassword: 1 };
+var INTERVIEWER_ONLY = { getMyInterviews: 1, saveInterviewScore: 1 };
 /** Functions only a super admin may call (chat viewing is checked separately against the ADMIN_CAN_VIEW_CHATS setting). */
 var SUPER_ONLY = { getAudit: 1, getLoginLog: 1, deleteApplications: 1 };
 var _actor = null;   // { user, role } of the signed-in official for the current request
@@ -232,8 +245,11 @@ function doPost(e) {
       fn = ADMIN_API[body.fn];
       _actor = adminFromToken_(args[0]);
       var isCaller = _actor.role === 'caller';
+      var isInterviewer = _actor.role === 'interviewer';
       if (isCaller && !CALLER_FNS[body.fn]) throw new Error('This account can only use the call list.');
+      if (isInterviewer && !INTERVIEWER_FNS[body.fn]) throw new Error('This account can only use the interview scoring page.');
       if (!isCaller && CALLER_ONLY[body.fn]) throw new Error('This is only for caller accounts.');
+      if (!isInterviewer && INTERVIEWER_ONLY[body.fn]) throw new Error('This is only for interviewer accounts.');
       if (SUPER_ONLY[body.fn] && _actor.role !== 'super') throw new Error('Only a super admin can do this.');
       args[0] = _actor.user;                       // replaces the token with the signed-in official's username
     }
@@ -710,11 +726,11 @@ function changeMyPassword(user, oldPw, newPw) {
 function mayManage_(targetRole) {
   if (!_actor) throw new Error('Not allowed.');
   if (_actor.role === 'super') return;
-  if (_actor.role === 'admin' && targetRole === 'caller') return;
-  throw new Error('Only a super admin can manage admin accounts. You can manage caller accounts.');
+  if (_actor.role === 'admin' && (targetRole === 'caller' || targetRole === 'interviewer')) return;
+  throw new Error('Only a super admin can manage admin accounts. You can manage caller and interviewer accounts.');
 }
 function listUsers(user) {
-  return users_().filter(function (u) { return _actor && (_actor.role === 'super' || u.role === 'caller'); }).map(function (u) { return { username: normUser_(u.username), name: u.name, role: u.role, active: u.active, created: u.created, createdBy: u.createdBy, lastLogin: u.lastLogin }; });
+  return users_().filter(function (u) { return _actor && (_actor.role === 'super' || u.role === 'caller' || u.role === 'interviewer'); }).map(function (u) { return { username: normUser_(u.username), name: u.name, role: u.role, active: u.active, created: u.created, createdBy: u.createdBy, lastLogin: u.lastLogin }; });
 }
 function activeSupers_(except) { return users_().filter(function (u) { return u.role === 'super' && u.active === 'Yes' && normUser_(u.username) !== except; }).length; }
 
@@ -771,6 +787,9 @@ function deleteUser(user, username) {
     audit_(user, 'USER_DELETE', '', uname);
     return { deleted: uname };
   });
+}
+function listInterviewers(user) {
+  return users_().filter(function (u) { return u.role === 'interviewer'; }).map(function (u) { return { username: normUser_(u.username), name: u.name, active: u.active, lastLogin: u.lastLogin }; });
 }
 function listCallers(user) {
   return users_().filter(function (u) { return u.role === 'caller'; }).map(function (u) { return { username: normUser_(u.username), name: u.name, active: u.active, lastLogin: u.lastLogin }; });
@@ -858,6 +877,34 @@ function directUrl_(u) {
 function activeBanners_() {
   try { return bannerRows_().filter(function (b) { return b.active === 'Yes' && b.url; }).map(function (b) { return { url: directUrl_(b.url), caption: b.caption }; }); } catch (e) { return []; }
 }
+/** Folder for pictures that must be viewable by anyone (the Instagram cards on the public form). */
+function publicFolder_() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('PUBLIC_FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) { /* recreate below */ } }
+  var f = DriveApp.createFolder('DCIP public pictures'); props.setProperty('PUBLIC_FOLDER_ID', f.getId());
+  return f;
+}
+/**
+ * The official picture of an Instagram post: the page's own preview image (what Instagram shows when a link is shared) is fetched once and kept in Drive,
+ * because Instagram's own picture links expire. Returns '' when Instagram does not hand it over; the form then shows a designed tile instead.
+ */
+function igThumb_(postUrl) {
+  try {
+    var r = UrlFetchApp.fetch(postUrl, { muteHttpExceptions: true, followRedirects: true, headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' } });
+    if (r.getResponseCode() !== 200) return '';
+    var html = String(r.getContentText() || '').slice(0, 400000);
+    var og = /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i.exec(html) || /<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i.exec(html);
+    var img = og ? og[1].replace(/&amp;/g, '&') : '';
+    if (!/^https:\/\//i.test(img)) return '';
+    var ir = UrlFetchApp.fetch(img, { muteHttpExceptions: true, followRedirects: true });
+    if (ir.getResponseCode() !== 200) return '';
+    var blob = ir.getBlob(), type = String(blob.getContentType() || '');
+    if (!/^image\//i.test(type) || blob.getBytes().length > 4 * 1024 * 1024) return '';
+    var f = publicFolder_().createFile(blob.setName('instagram-' + hash_(postUrl).slice(0, 10) + (/png/i.test(type) ? '.png' : '.jpg')));
+    f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return 'https://lh3.googleusercontent.com/d/' + f.getId();
+  } catch (e) { return ''; }
+}
 function igUrl_(u, post) {
   u = clean_(u); if (!u) return '';
   if (!/^https:\/\/(www\.)?(instagram\.com|instagr\.am)\//i.test(u)) throw new Error('Instagram links must start with https://www.instagram.com/');
@@ -871,7 +918,7 @@ function socialRows_() {
 function activeSocial_() {
   try {
     var s = settings_(), page = clean_(s.INSTAGRAM_URL);
-    var posts = socialRows_().filter(function (p) { return p.active === 'Yes' && p.url && p.thumb; }).slice(0, 3).map(function (p) { return { url: p.url, thumb: directUrl_(p.thumb), caption: p.caption }; });
+    var posts = socialRows_().filter(function (p) { return p.active === 'Yes' && p.url; }).slice(0, 3).map(function (p) { return { url: p.url, thumb: p.thumb ? directUrl_(p.thumb) : '', caption: p.caption }; });
     return { page: page, handle: (/instagram\.com\/([^\/?#]+)/i.exec(page) || [])[1] || '', posts: posts };
   } catch (e) { return { page: '', handle: '', posts: [] }; }
 }
@@ -879,8 +926,9 @@ function getSocial(user) { return socialRows_(); }
 function saveSocial(user, list) {
   list = (Array.isArray(list) ? list : []).slice(0, 3);
   var rows = list.map(function (b, i) {
-    var url = igUrl_(b && b.url), thumb = resolveImage_(b && b.thumb, i + 1);
+    var url = igUrl_(b && b.url);
     if (!url) throw new Error('Post ' + (i + 1) + ': paste the Instagram post or reel link.');
+    var thumb = clean_(b && b.thumb) ? resolveImage_(b.thumb, i + 1) : igThumb_(url);   // no picture given: take the official one from Instagram
     return [i + 1, url, thumb, clean_(b.caption).slice(0, 80), truthy_(b.active) ? 'Yes' : 'No'];
   });
   return withLock_(function () {
@@ -922,6 +970,78 @@ function ping(user) {
   return { stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0' };
 }
 
+/* ---------- interview scoring ---------- */
+function scoring_(s) {
+  var items = String(s.INTERVIEW_CRITERIA || '').split(/[,\n]/).map(clean_).filter(Boolean).slice(0, 10);
+  if (items.length < 2) items = ['Communication', 'Motivation and public-service attitude', 'Knowledge of governance and social issues', 'Teamwork and leadership', 'Overall impression'];
+  var mx = Math.min(100, Math.max(1, num_(s.INTERVIEW_MAX_MARK, 10)));
+  return { criteria: items, maxMark: mx, max: items.length * mx };
+}
+function parseMarks_(str) { return String(str == null ? '' : str).split(',').map(function (x) { var n = Number(x); return x.trim() === '' || isNaN(n) ? null : n; }); }
+function allScores_() {
+  return readObjects_(sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), SCORE_FIELDS).map(function (r) {
+    return { appId: String(r.appId), interviewer: String(r.interviewer), interviewerName: r.interviewerName, marks: parseMarks_(r.scores), total: Number(r.total), max: Number(r.max), remark: r.remark, updatedAt: r.updatedAt };
+  });
+}
+/** The interviewers see the shortlisted candidates (profile and answers only) and their own marks, never other interviewers' marks or the screening scores. */
+function getMyInterviews(user) {
+  var s = settings_(), sc = scoring_(s), u = findUser_(user), sessions = {}, mine = {};
+  readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS).forEach(function (x) { sessions[x.id] = x; });
+  allScores_().forEach(function (r) { if (r.interviewer === user) mine[r.appId] = r; });
+  var cands = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (a) {
+    return a.shortlisted === 'Yes' && ['Disqualified', 'Withdrawn'].indexOf(a.status) < 0;
+  }).map(function (a) {
+    var ss = sessions[a.session] || {}, m = mine[String(a.id)];
+    return { id: a.id, fullName: a.fullName, age: a.age, gender: a.gender, location: a.location, qual: a.qual, mastersInstitution: a.mastersInstitution,
+      ug: [a.stream, a.specialisation].filter(Boolean).join(' ') + (a.institution ? ', ' + a.institution : ''), completion: a.completion,
+      cv: a.cv, motivation: a.motivation, backgroundQ: a.backgroundQ, background: a.background,
+      session: a.session, sessionDate: ss.date || '', sessionSlot: ss.slot || '', venue: ss.venue || '', mode: a.interviewMode || ss.mode || 'In person',
+      attendance: a.attendance, myMarks: m ? m.marks : null, myTotal: m ? m.total : null, myRemark: m ? m.remark : '', scoredAt: m ? m.updatedAt : '' };
+  }).sort(function (a, b) { return String(a.sessionDate || '9999').localeCompare(String(b.sessionDate || '9999')) || String(a.sessionSlot).localeCompare(String(b.sessionSlot)) || String(a.fullName).localeCompare(String(b.fullName)); });
+  return { name: u ? u.name : user, criteria: sc.criteria, maxMark: sc.maxMark, max: sc.max, candidates: cands, stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0' };
+}
+/** The candidate's Interview Score is always the average of all the interviewers' totals. */
+function syncInterviewScore_(appId, user) {
+  var rows = readObjects_(sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), SCORE_FIELDS).filter(function (r) { return String(r.appId) === String(appId); });
+  var avg = rows.length ? Math.round(rows.reduce(function (t, r) { return t + Number(r.total || 0); }, 0) / rows.length * 10) / 10 : '';
+  var ash = sheet_(APP.SHEETS.APPS, FIELDS), row = readObjects_(ash, FIELDS).filter(function (r) { return String(r.id) === String(appId); })[0];
+  if (row && String(row.interviewScore) !== String(avg)) { row.interviewScore = avg; row.updatedAt = nowIso_(); row.updatedBy = user; writeRow_(ash, FIELDS, row); }
+  return { average: avg, count: rows.length };
+}
+function saveInterviewScore(user, id, marks, remark) {
+  var sc = scoring_(settings_());
+  marks = [].concat(marks == null ? [] : marks);
+  if (marks.length !== sc.criteria.length) throw new Error('Please give a mark for every item.');
+  var nums = marks.map(function (m, i) {
+    var n = Number(m);
+    if (m === '' || m == null || isNaN(n) || n < 0 || n > sc.maxMark) throw new Error('The mark for "' + sc.criteria[i] + '" must be between 0 and ' + sc.maxMark + '.');
+    return Math.round(n * 2) / 2;
+  });
+  var total = nums.reduce(function (t, n) { return t + n; }, 0);
+  return withLock_(function () {
+    var cand = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (r) { return String(r.id) === String(id); })[0];
+    if (!cand) throw new Error('Candidate not found.');
+    if (cand.shortlisted !== 'Yes' || ['Disqualified', 'Withdrawn'].indexOf(cand.status) >= 0) throw new Error('Only shortlisted candidates can be scored.');
+    var sh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), mine = readObjects_(sh, SCORE_FIELDS).filter(function (r) { return String(r.appId) === String(id) && String(r.interviewer) === user; })[0];
+    var rec = { appId: String(id), interviewer: user, interviewerName: (findUser_(user) || {}).name || user, scores: nums.join(', '), total: total, max: sc.max, remark: clean_(remark).slice(0, 500), updatedAt: nowIso_() };
+    if (mine) { rec._row = mine._row; writeRow_(sh, SCORE_FIELDS, rec); } else appendRow_(sh, SCORE_FIELDS, rec);
+    var r = syncInterviewScore_(id, user);
+    audit_(user, 'INTERVIEW_SCORE', id, total + ' / ' + sc.max + (mine ? ' (revised)' : ''));
+    touch_();
+    return { total: total, max: sc.max, average: r.average, count: r.count };
+  });
+}
+/** Officials can remove one interviewer's marks for a candidate (for example if they were entered by mistake). */
+function deleteInterviewScore(user, id, interviewer) {
+  return withLock_(function () {
+    var sh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), r = readObjects_(sh, SCORE_FIELDS).filter(function (x) { return String(x.appId) === String(id) && String(x.interviewer) === String(interviewer); })[0];
+    if (!r) throw new Error('Those marks were not found.');
+    sh.deleteRow(r._row); var res = syncInterviewScore_(id, user);
+    audit_(user, 'INTERVIEW_SCORE_DELETE', id, interviewer + ' · ' + r.total + ' / ' + r.max); touch_();
+    return { average: res.average, count: res.count };
+  });
+}
+
 function getAdminState(user) {
   var s = settings_();
   var quota = null;
@@ -929,7 +1049,7 @@ function getAdminState(user) {
   return {
     user: user, me: { user: user, name: (findUser_(user) || {}).name || user, role: _actor ? _actor.role : 'admin' }, canChats: !!_actor && (_actor.role === 'super' || truthy_(settings_().ADMIN_CAN_VIEW_CHATS)),
     stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0',
-    callers: listCallers(user), settings: s, settingsMeta: DEFAULT_SETTINGS.map(function (d) { return { key: d[0], desc: d[2] }; }), config: publicConfig_(), statuses: STATUSES,
+    callers: listCallers(user), interviewers: listInterviewers(user), scoring: scoring_(s), scores: allScores_(), settings: s, settingsMeta: DEFAULT_SETTINGS.map(function (d) { return { key: d[0], desc: d[2] }; }), config: publicConfig_(), statuses: STATUSES,
     applications: readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).map(publicApp_),
     sessions: readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS),
     mailQuota: quota, cvFolder: safe_(function () { return cvFolder_().getUrl(); })
@@ -1068,6 +1188,8 @@ function deleteApplications(user, ids) {
       audit_(user, 'APPLICATION_DELETE', r.id, r.fullName + ' · ' + r.email + ' · status ' + (r.status || 'Received'));
       gone.push(r.id);
     });
+    var ssh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS);
+    readObjects_(ssh, SCORE_FIELDS).filter(function (r) { return gone.indexOf(String(r.appId)) >= 0; }).sort(function (a, b) { return b._row - a._row; }).forEach(function (r) { ssh.deleteRow(r._row); });
     touch_();
     return { deleted: gone.length, ids: gone };
   });
@@ -1103,7 +1225,9 @@ function saveSettings(user, values) {
       if (i < 0) throw new Error('Unknown setting: ' + k);
       if (k === 'ADMIN_CAN_VIEW_CHATS' && (!_actor || _actor.role !== 'super')) throw new Error('Only a super admin can change who may read the chats.');
       var v = String(values[k] == null ? '' : values[k]).trim();
-      if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE)$/.test(k) && v !== '' && isNaN(Number(v))) throw new Error(k + ' must be a number.');
+      if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE|INTERVIEW_MAX_MARK)$/.test(k) && v !== '' && isNaN(Number(v))) throw new Error(k + ' must be a number.');
+      if (k === 'INTERVIEW_MAX_MARK' && (Number(v) < 1 || Number(v) > 100)) throw new Error('INTERVIEW_MAX_MARK must be between 1 and 100.');
+      if (k === 'INTERVIEW_CRITERIA') { var nc = String(v).split(/[,\n]/).map(clean_).filter(Boolean).length; if (nc < 2 || nc > 10) throw new Error('INTERVIEW_CRITERIA needs 2 to 10 items separated by commas.'); }
       if (/^(INTAKE_START|INTAKE_END|UG_COMPLETE_BY|AGE_AS_ON)$/.test(k) && v !== '' && !isIso_(v)) throw new Error(k + ' must be a date (yyyy-mm-dd).');
       if (/^ENFORCE_/.test(k) && ['BLOCK', 'FLAG'].indexOf(v) < 0) throw new Error(k + ' must be BLOCK or FLAG.');
       if (/^(REG_OPEN|CV_REQUIRED|CV_AUTOFILL_AI|ADMIN_CAN_VIEW_CHATS)$/.test(k)) v = truthy_(v) ? 'TRUE' : 'FALSE';
@@ -1116,6 +1240,29 @@ function saveSettings(user, values) {
 }
 
 /** Bulk e-mail. Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} {{dateLong}} {{mode}} {{link}} {{phone}} {{contactEmail}} */
+/** The e-mail exactly as one applicant will receive it (used for sending and for the preview). */
+function renderCustomMail_(r, sessions, s, subject, body) {
+  var sess = sessions.filter(function (x) { return x.id === r.session; })[0] || {};
+  var TBI = '(to be informed)';
+  var vars = { name: r.fullName, id: r.id, session: r.session || TBI, date: sess.date || TBI, slot: sess.slot || TBI, venue: sess.venue || TBI,
+    status: r.status, batch: s.BATCH_LABEL, programme: s.PROGRAMME, mode: r.interviewMode || sess.mode || 'In person', link: sess.link || '',
+    dateLong: !sess.date ? TBI : safe_(function () { return Utilities.formatDate(new Date(sess.date + 'T12:00:00+05:30'), 'Asia/Kolkata', 'EEEE, d MMMM yyyy'); }) || sess.date,
+    phone: String(s.CONTACT_PHONE || '').replace(/\s*,\s*/g, ' / '), contactEmail: s.CONTACT_EMAIL || '' };
+  var text = fill_(String(body), vars), subj = fill_(clean_(subject), vars);
+  return { to: r.email, subject: subj, html: emailShell_(s, subj, textToHtml_(text)), text: text + '\n\n' + footerText_(s), vars: vars };
+}
+/** Shows one applicant's version of an e-mail before anything is sent. index picks which of the selected applicants to show. */
+function previewEmail(user, ids, subject, body, index) {
+  ids = [].concat(ids || []); subject = clean_(subject);
+  if (!ids.length) throw new Error('No recipients selected.');
+  if (!subject || !String(body || '').trim()) throw new Error('Subject and message are required.');
+  var s = settings_(), rows = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS), sessions = readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS);
+  var targets = ids.map(function (id) { return rows.filter(function (r) { return r.id === id; })[0]; }).filter(function (r) { return r && validEmail_(r.email); });
+  if (!targets.length) throw new Error('None of the selected applicants has a valid e-mail address.');
+  var i = Math.min(targets.length - 1, Math.max(0, Math.floor(Number(index) || 0))), m = renderCustomMail_(targets[i], sessions, s, subject, body);
+  return { total: targets.length, skipped: ids.length - targets.length, index: i, people: targets.map(function (r) { return { id: r.id, name: r.fullName, email: r.email }; }),
+    to: m.to, subject: m.subject, html: m.html, vars: m.vars, from: s.SENDER_NAME || 'DCIP', replyTo: s.CONTACT_EMAIL || '' };
+}
 function sendEmails(user, ids, subject, body) {
   ids = [].concat(ids || []);
   subject = clean_(subject);
@@ -1129,15 +1276,9 @@ function sendEmails(user, ids, subject, body) {
   if (quota != null && quota < targets.length) throw new Error('Daily e-mail quota is ' + quota + ' but ' + targets.length + ' e-mails were requested. Send in smaller batches tomorrow.');
   var sent = 0, failed = [];
   targets.forEach(function (r) {
-    var sess = sessions.filter(function (x) { return x.id === r.session; })[0] || {};
-    var TBI = '(to be informed)';
-    var vars = { name: r.fullName, id: r.id, session: r.session || TBI, date: sess.date || TBI, slot: sess.slot || TBI, venue: sess.venue || TBI,
-      status: r.status, batch: s.BATCH_LABEL, programme: s.PROGRAMME, mode: r.interviewMode || sess.mode || 'In person', link: sess.link || '',
-      dateLong: !sess.date ? TBI : safe_(function () { return Utilities.formatDate(new Date(sess.date + 'T12:00:00+05:30'), 'Asia/Kolkata', 'EEEE, d MMMM yyyy'); }) || sess.date,
-      phone: String(s.CONTACT_PHONE || '').replace(/\s*,\s*/g, ' / '), contactEmail: s.CONTACT_EMAIL || '' };
-    var text = fill_(String(body), vars);
+    var m = renderCustomMail_(r, sessions, s, subject, body);
     try {
-      sendMail_(s, r.email, fill_(subject, vars), emailShell_(s, fill_(subject, vars), textToHtml_(text)), text + '\n\n' + footerText_(s));
+      sendMail_(s, r.email, m.subject, m.html, m.text);
       sent++;
     } catch (err) { failed.push(r.id + ': ' + msg_(err)); }
   });
@@ -1366,6 +1507,16 @@ function checkCv_(cv) {
  * ========================================================================= */
 
 function sendConfirmation_(d, s) {
+  var m = buildConfirmation_(d, s);
+  sendMail_(s, d.email, m.subject, m.html, m.text);
+}
+function previewConfirmation(user, id) {
+  var row = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (r) { return r.id === id; })[0];
+  if (!row) throw new Error('Application not found.');
+  var s = settings_(), m = buildConfirmation_(row, s);
+  return { to: row.email, subject: m.subject, html: m.html, from: s.SENDER_NAME || 'DCIP', replyTo: s.CONTACT_EMAIL || '', name: row.fullName };
+}
+function buildConfirmation_(d, s) {
   var rows = [['Name', d.fullName], ['Primary contact number', d.mobile], ['WhatsApp number', d.whatsapp || d.mobile], ['Alternate contact number', d.altMobile || '—']];
   var inner =
     '<p style="margin:0 0 14px">Dear <b>' + esc_(d.fullName) + '</b>,</p>' +
@@ -1378,7 +1529,7 @@ function sendConfirmation_(d, s) {
   var text = 'Dear ' + d.fullName + ',\n\nGreetings from the District Collector’s Internship Programme (DCIP) – Kozhikode!\n\nWe have successfully received your application for the ' + s.BATCH_LABEL + ' of DCIP. Thank you for your interest in contributing to citizen-centric governance and compassionate leadership.\n\n' +
     'Your submitted details:\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') +
     '\n\nPlease be alert to communications from our side in the coming days. If additional information or clarifications are requested, kindly respond responsibly and promptly.\n\nWe look forward to moving ahead with your application.\n\nWarm regards,\nDCIP Kozhikode Team\n\n' + footerText_(s);
-  sendMail_(s, d.email, 'DCIP ' + s.BATCH_LABEL + ' – Application received', emailShell_(s, 'Application received', inner, 'Thank you for applying'), text);
+  return { subject: 'DCIP ' + s.BATCH_LABEL + ' – Application received', html: emailShell_(s, 'Application received', inner, 'Thank you for applying'), text: text };
 }
 
 /** A highlighted box of "label: value" rows. rows = [[label, value]] (values are escaped here). */

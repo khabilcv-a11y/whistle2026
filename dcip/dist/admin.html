@@ -270,6 +270,20 @@ table.t tbody tr { transition: background .12s; } table.t tbody tr:hover { backg
 @media (max-width: 700px) { .bar { padding: 8px 12px; } .view { padding: 16px 12px 90px; } .tabs { top: 0; position: static; } .drawer { border-radius: 0; } }
 @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
 
+/* e-mail preview */
+#modal.wide { width: min(760px, 96vw); max-width: 96vw; }
+.pvmeta, .pvto { font-size: 13.5px; color: var(--ink-2); margin: 2px 0 6px; } .pvto select { max-width: 100%; display: inline-block; width: auto; }
+.pvl { font-size: 11.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; }
+.pvbox { background: #f6f9fe; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; line-height: 1.55; }
+.pvframe { width: 100%; height: min(430px, 52vh); border: 1px solid var(--line-2); border-radius: 12px; background: #fff; margin-top: 8px; }
+mark.ph { background: #fff0b8; color: #6b4300; border-radius: 4px; padding: 0 4px; font-weight: 700; }
+.pvwarn { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 13.5px; }
+.marks { margin: 10px 0 4px; } .mrow { display: grid; gap: 4px; margin: 8px 0; } .mlab { font-weight: 700; font-size: 14px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 5px; } .mkb { min-width: 38px; height: 38px; border: 1.5px solid var(--line-2); background: #fff; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+.mkb[aria-pressed=true] { background: var(--ink); color: #fff; border-color: var(--ink); } .mnum { max-width: 110px; }
+.mtot { font-size: 15px; margin-right: 8px; white-space: nowrap; } .icard .info details summary { color: var(--navy-700, #12335b); }
+.icard { display: block; } .icard .info { margin-bottom: 6px; } .icard .callform { margin-top: 10px; align-items: center; }
+
 </style>
 </head>
 <body>
@@ -1265,7 +1279,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 
   /* ---------- modal ---------- */
   A.modal = function (html) { $('#modal').innerHTML = html; $('#modalWrap').classList.remove('hidden'); var f = $('#modal input, #modal textarea, #modal select'); if (f) f.focus(); return $('#modal'); };
-  A.closeModal = function () { $('#modalWrap').classList.add('hidden'); $('#modal').innerHTML = ''; };
+  A.closeModal = function () { $('#modalWrap').classList.add('hidden'); $('#modal').classList.remove('wide'); $('#modal').innerHTML = ''; };
   A.confirm = function (title, html, okLabel, danger) {
     return new Promise(function (res) {
       var m = A.modal('<h3>' + esc(title) + '</h3><div>' + html + '</div><div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn ' + (danger ? 'danger' : 'primary') + '" id="cYes">' + esc(okLabel || 'OK') + '</button></div>');
@@ -1311,6 +1325,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       '<dt>CV</dt><dd>' + (a.cv ? '<a href="' + esc(a.cv) + '" target="_blank" rel="noopener">Open CV ↗</a>' : '<span class="muted">Not uploaded</span>') + '</dd></dl>' +
       '<label class="f">Why DCIP?</label><div class="note-box">' + esc(a.motivation) + '</div>' +
       (a.background ? '<label class="f" style="margin-top:10px">Background and influences' + (a.backgroundQ ? ' · answered question <b>' + esc(a.backgroundQ) + '</b>' : '') + '</label><div class="note-box">' + esc(a.background) + '</div>' : '') +
+      (A.panelBlock ? A.panelBlock(a) : '') +
       '<h4>Evaluation</h4><div class="fgrid">' +
       '<div><label class="f">Status</label><select data-f="status">' + A.opts(S.statuses, a.status || 'Received') + '</select></div>' +
       '<div><label class="f">Screening result</label><select data-f="screening">' + A.opts(['Eligible', 'Review', 'Suggest Disqualify', 'Cleared'], a.screening) + '</select></div>' +
@@ -1336,6 +1351,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
     d.classList.remove('hidden'); $('#drawerBg').classList.remove('hidden');
     $('#dClose').onclick = A.closeDrawer;
+    A.$$('[data-rmscore]', d).forEach(function (b) { b.onclick = function () { A.confirm('Remove these marks?', 'The marks given by this interviewer for ' + esc(a.fullName) + ' are deleted and the average is recalculated.', 'Remove', true).then(function (ok) { if (ok) A.api('deleteInterviewScore', a.id, b.dataset.rmscore).then(function () { D.toast('Marks removed', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); }); }); }; });
     if ($('#dDelete')) $('#dDelete').onclick = function () { A.deleteApps(a.id); };
     A.$$('[data-quick]', d).forEach(function (b) { b.onclick = function () { A.save(a.id, { status: b.dataset.quick }, 'Quick action').then(function () { D.toast(a.fullName + ' → ' + b.dataset.quick, 'ok'); }); }; });
     $('#dSave').onclick = function () {
@@ -1349,9 +1365,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     };
     $('#dMail').onclick = function () { A.compose([a.id]); };
     $('#dResend').onclick = function () {
-      A.confirm('Resend confirmation?', 'The original confirmation e-mail will be sent again to <b>' + esc(a.email) + '</b>.', 'Send').then(function (ok) {
-        if (ok) A.api('resendConfirmation', a.id).then(function () { D.toast('Confirmation sent', 'ok'); }, function (e) { D.toast(e.message, 'err'); });
-      });
+      A.mailPreview({ total: 1, sendLabel: 'Confirm and send', fetch: function () { return A.api('previewConfirmation', a.id); },
+        onSend: function () { return A.api('resendConfirmation', a.id).then(function () { D.toast('Confirmation sent', 'ok'); }); } });
     };
   };
 
@@ -1404,7 +1419,37 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       body: 'Dear Candidate,\n\nThank you for your interest in the {{programme}} – {{batch}}. We regret that we are unable to offer you a place in this batch. We encourage you to apply again in the future.' + SIGN },
     custom: { name: 'Write my own', subject: '', body: '' }
   };
-  A.compose = function (ids, tplKey) {
+  /**
+   * "Look before you send": shows the e-mail and waits for a confirmation.
+   * cfg: { fetch(index) → Promise<{subject, html, to, from, replyTo, total?, people?, vars?}>, template?: {subject, body} (bulk: also shows the placeholders),
+   *        total, sendLabel, onSend() → Promise, onBack() }
+   */
+  A.mailPreview = function (cfg) {
+    var idx = 0, tab = cfg.template && cfg.total > 1 ? 'ph' : 'real', data = null;
+    function hl(t) { return esc(t).replace(/\{\{(\w+)\}\}/g, '<mark class="ph">{{$1}}</mark>'); }
+    function draw() {
+      var multi = (data.total || 1) > 1, used = {};
+      if (cfg.template) (cfg.template.subject + ' ' + cfg.template.body).replace(/\{\{(\w+)\}\}/g, function (m, k) { used[k] = 1; });
+      var phTab = cfg.template ? '<div class="pvph"><div class="pvl">Subject</div><div class="pvbox">' + hl(cfg.template.subject) + '</div><div class="pvl">Message (placeholders are highlighted and filled in separately for each person)</div><div class="pvbox" style="white-space:pre-wrap">' + hl(cfg.template.body) + '</div>' +
+        (Object.keys(used).length ? '<div class="pvl">For <b>' + esc((data.people && data.people[idx] || {}).name || '') + '</b> they become</div><table class="t"><tbody>' + Object.keys(used).map(function (k) { var v = (data.vars || {})[k]; return '<tr><td><mark class="ph">{{' + esc(k) + '}}</mark></td><td>' + (v === '' || v == null ? '<span class="muted">(empty)</span>' : esc(v)) + '</td></tr>'; }).join('') + '</tbody></table>' : '') + '</div>' : '';
+      var real = '<div class="pvl">Subject</div><div class="pvbox"><b>' + esc(data.subject) + '</b></div><iframe class="pvframe" sandbox="" title="E-mail preview" srcdoc="' + esc(data.html) + '"></iframe>';
+      m.innerHTML = '<h3>Preview before sending</h3>' +
+        '<div class="pvmeta">From <b>' + esc(data.from || 'DCIP') + '</b>' + (data.replyTo ? ' · replies go to <b>' + esc(data.replyTo) + '</b>' : '') + '</div>' +
+        '<div class="pvto">To ' + (multi ? '<select id="pvWho" aria-label="Show the e-mail for">' + data.people.map(function (p, i) { return '<option value="' + i + '"' + (i === idx ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.email) + '</option>'; }).join('') + '</select> <span class="muted">(' + data.total + ' recipients – every one gets their own version)</span>' : '<b>' + esc(data.to) + '</b>') + '</div>' +
+        (data.skipped ? '<div class="pvwarn">' + data.skipped + ' selected applicant' + (data.skipped === 1 ? ' has' : 's have') + ' no valid e-mail address and will be skipped.</div>' : '') +
+        (cfg.template ? '<div class="seg" role="group" style="margin:10px 0"><button data-pv="ph" aria-pressed="' + (tab === 'ph') + '">With placeholders</button><button data-pv="real" aria-pressed="' + (tab === 'real') + '">As ' + (multi ? esc((data.people[idx] || {}).name || 'the applicant') : 'the applicant') + ' will see it</button></div>' : '') +
+        (tab === 'ph' ? phTab : real) +
+        '<div class="acts"><button class="btn" id="pvBack">' + (cfg.onBack ? '← Back to edit' : 'Cancel') + '</button><button class="btn primary" id="pvSend">' + esc(cfg.sendLabel || 'Confirm and send') + '</button></div>';
+      var who = m.querySelector('#pvWho'); if (who) who.onchange = function () { idx = +this.value; load(); };
+      Array.prototype.forEach.call(m.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { tab = b.dataset.pv; draw(); }; });
+      m.querySelector('#pvBack').onclick = function () { A.closeModal(); if (cfg.onBack) cfg.onBack(); };
+      m.querySelector('#pvSend').onclick = function () { var b = this; b.disabled = true; b.textContent = 'Sending…'; cfg.onSend().then(function () { A.closeModal(); }, function (e) { b.disabled = false; b.textContent = cfg.sendLabel || 'Confirm and send'; D.toast(e.message, 'err'); }); };
+    }
+    function load() { return cfg.fetch(idx).then(function (d) { data = d; if (d.index != null) idx = d.index; draw(); }, function (e) { A.closeModal(); D.toast(e.message, 'err'); if (cfg.onBack) cfg.onBack(); }); }
+    var m = A.modal('<h3>Preparing preview…</h3><p class="muted">Putting the e-mail together exactly as it will be sent.</p>'); m.classList.add('wide');
+    load();
+  };
+  A.compose = function (ids, tplKey, keep) {
     var apps = ids.map(A.byId).filter(Boolean), good = apps.filter(function (a) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email); });
     var q = A.S.mailQuota;
     var m = A.modal('<h3>E-mail ' + good.length + ' applicant' + (good.length === 1 ? '' : 's') + '</h3>' +
@@ -1412,23 +1457,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       '<div id="mWarn"></div><div class="field"><label class="f">Template</label><select id="mTpl">' + Object.keys(A.TEMPLATES).map(function (k) { return '<option value="' + k + '"' + (k === (tplKey || 'custom') ? ' selected' : '') + '>' + esc(A.TEMPLATES[k].name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label class="f">Subject</label><input type="text" id="mSub"></div>' +
       '<div class="field"><label class="f">Message</label><textarea id="mBody" rows="10"></textarea><div class="hint">Placeholders: {{name}} {{id}} {{session}} {{date}} {{slot}} {{venue}} {{status}} {{batch}} {{programme}} {{dateLong}} {{mode}} {{link}} {{phone}} {{contactEmail}} – filled in separately for every applicant. Review the wording before sending.</div></div>' +
-      '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's') + '</button></div>');
+      '<div class="acts"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mSend">Preview ' + (good.length === 1 ? 'e-mail' : good.length + ' e-mails') + ' →</button></div>');
     var noSess = good.filter(function (x) { return !x.session; }).length;
     function fillTpl() {
       var t = A.TEMPLATES[$('#mTpl', m).value]; $('#mSub', m).value = t.subject; $('#mBody', m).value = t.body;
       $('#mWarn', m).innerHTML = noSess && /\{\{(dateLong|slot|session|venue|date)\}\}/.test(t.body) ? '<div class="alert warn" style="margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-weight:600">' + noSess + ' of ' + good.length + ' have no interview session yet, so their date, session and venue will read “(to be informed)”.</div>' : '';
     }
     $('#mTpl', m).onchange = fillTpl; fillTpl();
+    if (keep) { $('#mTpl', m).value = keep.tpl; $('#mSub', m).value = keep.sub; $('#mBody', m).value = keep.body; }
     $('#mNo', m).onclick = A.closeModal;
     $('#mSend', m).onclick = function () {
       var sub = $('#mSub', m).value, body = $('#mBody', m).value;
       if (!sub.trim() || !body.trim()) { D.toast('Subject and message are required.', 'err'); return; }
-      var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
-      A.api('sendEmails', good.map(function (a) { return a.id; }), sub, body).then(function (r) {
-        A.closeModal();
-        D.toast(r.sent + ' e-mail(s) sent' + (r.failed.length ? ', ' + r.failed.length + ' failed' : ''), r.failed.length ? 'err' : 'ok');
-        if (q != null) A.S.mailQuota = Math.max(0, q - r.sent);
-      }, function (e) { btn.disabled = false; btn.textContent = 'Send'; D.toast(e.message, 'err'); });
+      var tpl = $('#mTpl', m).value, gid = good.map(function (a) { return a.id; });
+      A.mailPreview({ total: good.length, template: { subject: sub, body: body }, sendLabel: 'Confirm and send ' + good.length + ' e-mail' + (good.length === 1 ? '' : 's'),
+        fetch: function (i) { return A.api('previewEmail', gid, sub, body, i); },
+        onBack: function () { A.compose(ids, tplKey, { tpl: tpl, sub: sub, body: body }); },
+        onSend: function () { return A.api('sendEmails', gid, sub, body).then(function (r) { D.toast(r.sent + ' e-mail(s) sent' + (r.failed.length ? ', ' + r.failed.length + ' failed' : ''), r.failed.length ? 'err' : 'ok'); if (q != null) A.S.mailQuota = Math.max(0, q - r.sent); }); } });
     };
   };
 
@@ -1513,6 +1558,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       rows: list.map(function (a, i) { return [i + 1, a.fullName, a.age, A.ugText(a), A.num(a.screenScore), A.num(a.interviewScore), a.status]; }) }] };
   };
 
+  /** Every interviewer's total per candidate, the average, and (second sheet) the marks for each item. */
+  R.panelScores = function () {
+    var P = A.panelRows(), cr = P.criteria, rows = P.rows.filter(function (r) { return r.n; });
+    var sheet1 = { name: 'Panel scores', title: 'Interview panel scores (out of ' + P.max + ')', rowHeight: 24,
+      columns: [{ h: 'Rank', w: 6, align: 'center' }, { h: 'Name', w: 24 }, { h: 'Session', w: 18 }].concat(P.users.map(function (u) { return { h: P.names[u], w: 11, align: 'center' }; })).concat([{ h: 'Marked by', w: 8, align: 'center' }, { h: 'Average', w: 9, align: 'center' }, { h: 'Status', w: 12 }]),
+      rows: rows.map(function (r, i) { var s = sess(r.a.session); return [i + 1, r.a.fullName, s ? A.sessionLabel(s) : ''].concat(P.users.map(function (u) { return r.by[u] ? r.by[u].total : ''; })).concat([r.n, r.avg, r.a.status]); }) };
+    var det = [];
+    rows.forEach(function (r) { P.users.forEach(function (u) { var x = r.by[u]; if (x) det.push([r.a.fullName, P.names[u]].concat(cr.map(function (c, i) { return x.marks[i] == null ? '' : x.marks[i]; })).concat([x.total, x.remark])); }); });
+    var sheet2 = { name: 'Marks by item', title: 'Marks given by each interviewer, item by item', rowHeight: 24,
+      columns: [{ h: 'Candidate', w: 22 }, { h: 'Interviewer', w: 18 }].concat(cr.map(function (c) { return { h: c, w: 10, align: 'center' }; })).concat([{ h: 'Total', w: 8, align: 'center' }, { h: 'Remark', w: 30 }]), rows: det };
+    return { filename: 'DCIP_Panel_Scores', orientation: 'landscape', sheets: [sheet1, sheet2] };
+  };
+
   R.interns = function (statuses, title, file) {
     var list = A.S.apps.filter(function (a) { return statuses.indexOf(a.status) >= 0; }).sort(A.nameCmp);
     return { filename: file, orientation: 'landscape', sheets: [{ name: title, title: title, rowHeight: 26,
@@ -1570,6 +1628,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       { group: 'Interview day', title: 'Interview sessions', desc: 'Sessions with venue, interviewer, assigned and present counts.', n: A.S.sessions.length, make: R.sessions },
       { group: 'Interview day', title: 'Call chart – all shortlisted', desc: 'Calling list with blank columns for the caller to fill. Per-session charts are on the Interviews tab.', n: c(function (a) { return a.shortlisted === 'Yes'; }), make: function () { return R.callChart('__all'); } },
       { group: 'Interview day', title: 'Score sheet – all shortlisted', desc: 'Blank score sheet for every shortlisted candidate. Per-session sheets are on the Interviews tab.', n: c(function (a) { return a.shortlisted === 'Yes'; }), make: function () { return R.scoreSheet('__all'); } },
+      { group: 'Selection', title: 'Panel scores (every interviewer)', desc: 'Each interviewer\'s total for each candidate, the average, and a second sheet with the marks item by item.', n: (A.S.scores || []).length, make: R.panelScores },
       { group: 'Selection', title: 'Interview rank list', desc: 'Shortlisted candidates ranked by interview score.', n: c(function (a) { return a.shortlisted === 'Yes' && A.num(a.interviewScore) != null; }), make: R.interviewRank },
       { group: 'Selection', title: 'Selected & confirmed interns', desc: 'Candidates with status Selected or Confirmed.', n: c(function (a) { return a.status === 'Selected' || a.status === 'Confirmed'; }), make: function () { return R.interns(['Selected', 'Confirmed'], 'Selected and confirmed interns', 'DCIP_Selected_Interns'); } },
       { group: 'Selection', title: 'Confirmed interns', desc: 'Candidates whose documents have been verified.', n: c(function (a) { return a.status === 'Confirmed'; }), make: function () { return R.interns(['Confirmed'], 'Confirmed interns list', 'DCIP_Confirmed_Interns'); } },
@@ -1587,12 +1646,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   var A = w.A, D = w.DCIP, esc = D.esc, $ = A.$, $$ = A.$$, V = A.views;
   var S = A.S;
   S.scope = 'all'; S.f = { q: '', pill: '', district: '', session: '', sort: 'submittedAt', dir: -1, limit: 60 };
-  S.sel = {}; S.onlyConf = true; S.isSess = ''; S.isTab = 'score'; S.shLimit = 80;
+  S.sel = {}; S.callSel = {}; S.onlyConf = true; S.isSess = ''; S.isTab = 'score'; S.shLimit = 80;
 
   A.TABS = [
     ['overview', 'Overview'], ['applications', 'Applications'], ['screening', 'Screening'], ['shortlist', 'Shortlist'],
-    ['interviews', 'Interviews'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['social', 'Instagram'], ['settings', 'Settings'],
-    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls']
+    ['interviews', 'Interviews'], ['panel', 'Panel scores'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['social', 'Instagram'], ['settings', 'Settings'],
+    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls'], ['myinterviews', 'My interviews']
   ];
   function dl(rep, label) { return '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>'; }
   function bindDl(root, makeRep) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(makeRep(), b.dataset.dl); }; }); }
@@ -1725,15 +1784,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
 
   /* ============================== Shortlist ============================== */
   V.shortlist = function (el) {
-    var n = Number(S.settings.SHORTLIST_SIZE) || 30;
+    var n = Math.min(5000, Math.max(1, Math.floor(Number(S.shN || S.settings.SHORTLIST_SIZE) || 30)));   // the officials can type how many to shortlist this time
     var pool = S.apps.filter(function (a) { return A.eligible(a) && ['Received', 'Shortlisted'].indexOf(a.status || 'Received') >= 0 || a.shortlisted === 'Yes' && A.eligible(a); });
     var scored = pool.filter(function (a) { return A.num(a.screenScore) != null; }).sort(function (a, b) { return A.num(b.screenScore) - A.num(a.screenScore) || String(a.submittedAt).localeCompare(b.submittedAt); });
     var unscored = pool.filter(function (a) { return A.num(a.screenScore) == null; }).sort(function (a, b) { return String(a.id).localeCompare(b.id); });
     var tie = scored.length > n && A.num(scored[n].screenScore) === A.num(scored[n - 1].screenScore);
     var shortlisted = S.apps.filter(function (a) { return a.shortlisted === 'Yes'; }).length;
     var rows = scored.concat(unscored), shown = rows.slice(0, S.shLimit);
-    el.innerHTML = head('Shortlist – top ' + n, '<b>Screen score</b> = the marks <i>you</i> give each candidate after reading their answers and CV (nothing is scored automatically; use any scale you like, e.g. out of 10). The top ' + n + ' by score are shortlisted for interview.',
-      '<button class="btn small" data-dl="xlsx">Excel rank list</button><button class="btn small" data-dl="pdf">PDF</button><button class="btn accent" id="btnShort">Shortlist top ' + n + '</button>') +
+    el.innerHTML = head('Shortlist – top ' + n, '<b>Screen score</b> = the marks <i>you</i> give each candidate after reading their answers and CV (nothing is scored automatically; use any scale you like, e.g. out of 10). The top <b>' + n + '</b> by score are shortlisted for interview (change the number below any time).',
+      '<button class="btn small" data-dl="xlsx">Excel rank list</button><button class="btn small" data-dl="pdf">PDF</button><label class="inl" style="display:inline-flex;align-items:center;gap:6px;font-weight:700">How many to shortlist <input type="number" id="nShort" min="1" max="5000" value="' + n + '" style="width:84px;display:inline-block"></label><button class="btn accent" id="btnShort">Shortlist top ' + n + '</button>') +
       '<div class="kv"><div><b>' + shortlisted + ' / ' + n + '</b>shortlisted</div><div><b>' + scored.length + '</b>scored</div><div><b>' + unscored.length + '</b>awaiting score</div></div>' +
       (tie ? '<div class="alert warn" style="margin:0 0 12px;padding:10px 14px;background:var(--warn-bg);color:var(--warn);border-radius:8px;font-weight:600">Tie at the cut-off: ranks ' + n + ' and ' + (n + 1) + ' both have a score of ' + esc(scored[n - 1].screenScore) + '. Only the earlier application will be shortlisted – decide the tie manually (change a score) before shortlisting.</div>' : '') +
       '<div class="tw"><table class="t"><thead><tr><th class="num">Rank</th><th>ID</th><th>Name</th><th class="num">Age</th><th>UG</th><th>Screen score</th><th>Status</th><th></th></tr></thead><tbody>' +
@@ -1747,6 +1806,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     bindInline(el); bindDl(el, A.reports.rankScreen);
     $$('[data-open]', el).forEach(function (b) { b.onclick = function () { A.openDrawer(b.dataset.open); }; });
     if ($('#btnMore', el)) $('#btnMore', el).onclick = function () { S.shLimit += 100; A.render(); };
+    $('#nShort', el).onchange = function () { var v = Math.floor(Number(this.value)); if (v >= 1) { S.shN = v; A.render(); } else { this.value = n; D.toast('Enter how many applicants to shortlist.', 'err'); } };
     $('#btnShort', el).onclick = function () {
       if (!scored.length) { D.toast('Enter some screen scores first.', 'err'); return; }
       A.confirm('Shortlist the top ' + n + '?', 'The ' + Math.min(n, scored.length) + ' highest-scoring eligible applications (cut-off score <b>' + esc(scored[Math.min(n, scored.length) - 1].screenScore) + '</b>) will be marked <b>Shortlisted</b>.' +
@@ -1840,8 +1900,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
         '<td><select data-id="' + esc(a.id) + '" data-k="attendance"><option value="">—</option>' + A.opts(['Present', 'Absent'], a.attendance) + '</select></td><td><input type="time" data-id="' + esc(a.id) + '" data-k="reportingTime" value="' + esc(a.reportingTime) + '"></td>' +
         '<td><button class="btn small" data-now="' + esc(a.id) + '">Mark present now</button></td></tr>'; });
     } else if (tab === 'call') {
-      thead = '<th class="num">#</th><th>Name</th><th>Contact</th><th>Session</th><th>Mode</th><th>Caller</th><th>Call status</th><th>Note</th>';
-      rows = list.map(function (a, i) { return '<tr><td class="num">' + (i + 1) + '</td><td><b>' + esc(a.fullName) + '</b><small>' + esc(a.location) + '</small></td><td class="nowrap">' + [a.mobile, a.altMobile].filter(Boolean).map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') + (a.whatsapp && a.whatsapp !== a.mobile ? '<small>WhatsApp ' + esc(a.whatsapp) + '</small>' : '') + '</td>' +
+      thead = '<th><input type="checkbox" id="callAll" aria-label="Select all"></th><th class="num">#</th><th>Name</th><th>Contact</th><th>Session</th><th>Mode</th><th>Caller</th><th>Call status</th><th>Note</th>';
+      rows = list.map(function (a, i) { return '<tr><td><input type="checkbox" data-cc="' + esc(a.id) + '"' + (S.callSel[a.id] ? ' checked' : '') + ' aria-label="Select ' + esc(a.fullName) + '"></td><td class="num">' + (i + 1) + '</td><td><b>' + esc(a.fullName) + '</b><small>' + esc(a.location) + '</small></td><td class="nowrap">' + [a.mobile, a.altMobile].filter(Boolean).map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') + (a.whatsapp && a.whatsapp !== a.mobile ? '<small>WhatsApp ' + esc(a.whatsapp) + '</small>' : '') + '</td>' +
         '<td><select data-id="' + esc(a.id) + '" data-k="session" title="Move to another session">' + A.sessionOpts(a.session) + '</select></td>' +
         '<td><select data-id="' + esc(a.id) + '" data-k="interviewMode" title="Change to online / in person">' + A.opts(['In person', 'Online'], a.interviewMode, '(' + esc((sel && sel.mode) || 'per session') + ')') + '</select></td>' +
         '<td><select data-id="' + esc(a.id) + '" data-k="caller">' + A.callerOpts(a.caller, '— none —') + '</select></td>' +
@@ -1851,8 +1911,28 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       rows = list.map(function (a, i) { return '<tr><td class="num">' + (i + 1) + '</td><td><b>' + esc(a.fullName) + '</b><small>' + esc(A.phones(a)) + '</small></td><td>' + esc(A.ugText(a)) + '</td>' +
         '<td><select data-id="' + esc(a.id) + '" data-k="docCert"><option value="">—</option>' + A.opts(A.DOC_CERT.slice(1), a.docCert) + '</select></td><td><input type="text" data-id="' + esc(a.id) + '" data-k="docOther" value="' + esc(a.docOther) + '"></td><td><input type="text" data-id="' + esc(a.id) + '" data-k="docRemarks" value="' + esc(a.docRemarks) + '"></td></tr>'; });
     }
-    body.innerHTML = hdr + (list.length ? '<div class="tw"><table class="t"><thead><tr>' + thead + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' : '<div class="empty">No candidates in this view. Shortlist candidates and assign them to a session.</div>');
+    body.innerHTML = hdr + (tab === 'call' && list.length ? '<div class="bulk" id="callBar"></div>' : '') + (list.length ? '<div class="tw"><table class="t"><thead><tr>' + thead + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' : '<div class="empty">No candidates in this view. Shortlist candidates and assign them to a session.</div>');
     bindInline(body);
+    if (tab === 'call' && list.length) {
+      var chosen = function () { return list.filter(function (a) { return S.callSel[a.id]; }).map(function (a) { return a.id; }); };
+      var bar = function () {
+        var ids = chosen(), act = (S.callers || []).filter(function (c) { return c.active === 'Yes'; });
+        $('#callBar', body).innerHTML = '<b>' + ids.length + ' selected</b><select id="ccWho" aria-label="Caller">' + A.callerOpts('', 'Choose caller…') + '</select><button class="btn small primary" id="ccGo"' + (ids.length ? '' : ' disabled') + '>Assign to caller</button>' +
+          '<button class="btn small" id="ccSpread"' + (ids.length && act.length > 1 ? '' : ' disabled') + ' title="Share the selected candidates equally among all active callers">Spread evenly among ' + act.length + ' callers</button><button class="btn small" id="ccNone"' + (ids.length ? '' : ' disabled') + ' title="Remove the caller from the selected candidates">Unassign</button>' +
+          '<span class="grow"></span><button class="btn small" id="ccUnset" title="Select every candidate who has no caller yet">Select unassigned</button>';
+        $('#ccGo', body).onclick = function () { var who = $('#ccWho', body).value; if (!who) { D.toast('Choose a caller first.', 'err'); return; } A.save(ids, { caller: who }, 'Call chart').then(function (r) { D.toast(r.changed + ' assigned', 'ok'); S.callSel = {}; A.render(); }); };
+        $('#ccNone', body).onclick = function () { A.save(ids, { caller: '' }, 'Call chart').then(function (r) { D.toast(r.changed + ' unassigned', 'ok'); S.callSel = {}; A.render(); }); };
+        $('#ccSpread', body).onclick = function () {
+          var groups = {}; act.forEach(function (c) { groups[c.username] = []; }); ids.forEach(function (id, i) { groups[act[i % act.length].username].push(id); });
+          Promise.all(Object.keys(groups).filter(function (u) { return groups[u].length; }).map(function (u) { return A.save(groups[u], { caller: u }, 'Call chart – spread'); })).then(function () { D.toast(ids.length + ' shared among ' + act.length + ' callers', 'ok'); S.callSel = {}; A.render(); });
+        };
+        $('#ccUnset', body).onclick = function () { list.forEach(function (a) { if (!a.caller) S.callSel[a.id] = true; }); A.render(); };
+      };
+      $$('[data-cc]', body).forEach(function (c) { c.onchange = function () { S.callSel[c.dataset.cc] = c.checked; bar(); $('#callAll', body).checked = chosen().length === list.length; }; });
+      $('#callAll', body).checked = chosen().length === list.length;
+      $('#callAll', body).onchange = function () { var on = this.checked; list.forEach(function (a) { S.callSel[a.id] = on; }); A.render(); };
+      bar();
+    }
     $$('[data-now]', body).forEach(function (b) { b.onclick = function () { var d = new Date(), t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); A.save(b.dataset.now, { attendance: 'Present', reportingTime: t }, 'Attendance').then(function () { D.toast('Marked present at ' + t, 'ok'); }); }; });
   };
 
@@ -1913,7 +1993,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       if (sel[k]) return '<select data-s="' + k + '">' + A.opts(sel[k], String(v).toUpperCase()) + '</select>';
       if (/^(INTAKE_START|INTAKE_END|UG_COMPLETE_BY|AGE_AS_ON)$/.test(k)) return '<input type="date" data-s="' + k + '" value="' + esc(v) + '">';
       if (k === 'REG_DEADLINE') return '<input type="datetime-local" data-s="' + k + '" value="' + esc(v) + '">';
-      if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE)$/.test(k)) return '<input type="number" data-s="' + k + '" value="' + esc(v) + '">';
+      if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE|INTERVIEW_MAX_MARK)$/.test(k)) return '<input type="number" data-s="' + k + '" value="' + esc(v) + '">';
       return '<input type="text" data-s="' + k + '" value="' + esc(v) + '">';
     }
     var PUB = [['Received', 'Application received'], ['Shortlisted', 'Shortlisted for interview'], ['Selected', 'Selected'], ['Confirmed', 'Selection confirmed'], ['Waitlisted', 'On the waiting list'], ['Not Selected', 'Not selected this time'], ['Disqualified', 'Not eligible this time'], ['Withdrawn', 'Withdrawn']];
@@ -1950,40 +2030,45 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     for (var i = 0; i < 12; i++) out += chars.charAt(buf[i] % chars.length);
     return out;
   }
-  function copy(text) { try { navigator.clipboard.writeText(text).then(function () { D.toast('Copied', 'ok'); }); } catch (e) { D.toast('Press Ctrl+C to copy', ''); } }
+  function copy(text) {
+    function old() { try { var t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select(); var ok = document.execCommand('copy'); t.remove(); D.toast(ok ? 'Copied' : 'Press the Copy button to copy', ok ? 'ok' : ''); } catch (e) { D.toast('Press the Copy button to copy', ''); } }
+    try { navigator.clipboard.writeText(text).then(function () { D.toast('Copied', 'ok'); }, old); } catch (e) { old(); }
+  }
   function loginUrl() { return location.origin + location.pathname; }
   function shareText(name, username, password, role) {
-    return 'Hello' + (name ? ' ' + name : '') + ',\n\nYour ' + (role === 'caller' ? 'caller' : role === 'super' ? 'super admin' : 'admin') + ' login for DCIP Application Processing & Management:\n\nLink: ' + loginUrl() + '\nUsername: ' + username + '\nPassword: ' + password +
+    return 'Hello' + (name ? ' ' + name : '') + ',\n\nYour ' + (role === 'caller' ? 'caller' : role === 'interviewer' ? 'interviewer' : role === 'super' ? 'super admin' : 'admin') + ' login for DCIP Application Processing & Management:\n\nLink: ' + loginUrl() + '\nUsername: ' + username + '\nPassword: ' + password +
       '\n\nPlease sign in and change your password under "My account".\n\nTeam DCIP';
   }
   function credentialsDialog(title, username, password, name, role) {
     var txt = shareText(name, username, password, role);
-    var m = A.modal('<h3>' + esc(title) + '</h3><p>Copy this message and send it to the person. They can change the password under <b>My account</b>.</p>' +
+    var m = A.modal('<h3>' + esc(title) + '</h3><p>The message is already copied. Paste it into WhatsApp or an e-mail. They can change the password under <b>My account</b>.</p>' +
       '<div class="note-box" style="white-space:pre-wrap;font-size:14px">' + esc(txt) + '</div>' +
-      '<p class="hint">The password cannot be shown again after you close this window.</p>' +
-      '<div class="acts"><button class="btn" id="cCopy">Copy message</button><button class="btn primary" id="cYes">Done</button></div>');
+      '<p class="hint">Keep this window open until you have sent it. The password cannot be shown again afterwards; use <b>Copy login</b> on the Users list to issue a fresh one.</p>' +
+      '<div class="acts"><button class="btn" id="cCopyPw">Copy password only</button><button class="btn" id="cCopy">Copy message again</button><button class="btn primary" id="cYes">Done</button></div>');
+    copy(txt);
     $('#cCopy', m).onclick = function () { copy(txt); };
+    $('#cCopyPw', m).onclick = function () { copy(password); };
     $('#cYes', m).onclick = A.closeModal;
   }
   function userDialog() {
     var m = A.modal('<h3>Add a user</h3><div class="fgrid">' +
       '<div><label class="f">Username</label><input type="text" id="nuUser" autocapitalize="none" spellcheck="false" placeholder="e.g. meera.k"><div class="hint">Letters, numbers, dot, dash, underscore</div></div>' +
       '<div><label class="f">Full name</label><input type="text" id="nuName"></div>' +
-      '<div><label class="f">Role</label><select id="nuRole" ' + '>' + ((S.me || {}).role === 'super' ? '<option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option>' : '') + '<option value="caller">Caller – sees only the call list given to them</option></select></div>' +
+      '<div><label class="f">Role</label><select id="nuRole" ' + '>' + ((S.me || {}).role === 'super' ? '<option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option>' : '') + '<option value="caller">Caller – sees only the call list given to them</option><option value="interviewer">Interviewer – scores the shortlisted candidates</option></select></div>' +
       '<div><label class="f">Password</label><div style="display:flex;gap:6px"><input type="text" id="nuPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="nuGen">Generate</button></div><div class="hint">At least 8 characters</div></div></div>' +
       '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Create user</button></div>');
     $('#nuPass', m).value = genPassword();
     $('#nuGen', m).onclick = function () { $('#nuPass', m).value = genPassword(); };
     $('#cNo', m).onclick = A.closeModal;
     $('#cYes', m).onclick = function () {
-      var u = $('#nuUser', m).value, pw = $('#nuPass', m).value;
-      A.api('createUser', u, $('#nuName', m).value, pw, $('#nuRole', m).value).then(function () { A.closeModal(); credentialsDialog('User created', u.trim().toLowerCase(), pw, $('#nuName', m).value.trim(), $('#nuRole', m).value); V.users($('#view')); }, function (e) { D.toast(e.message, 'err'); });
+      var u = $('#nuUser', m).value, pw = $('#nuPass', m).value, nm = $('#nuName', m).value, role = $('#nuRole', m).value;   // read before the window is closed
+      A.api('createUser', u, nm, pw, role).then(function () { A.closeModal(); credentialsDialog('User created', u.trim().toLowerCase(), pw, nm.trim(), role); V.users($('#view')); }, function (e) { D.toast(e.message, 'err'); });
     };
   }
   V.users = function (el) {
-    el.innerHTML = head('Users', 'Create accounts for admins and callers. People sign in with their own username and password.' + ((S.me || {}).role === 'super' ? '' : ' You can manage caller accounts.'), '<button class="btn primary" id="uAdd">+ Add user</button>') +
+    el.innerHTML = head('Users', 'Create accounts for admins, callers and interviewers. People sign in with their own username and password.' + ((S.me || {}).role === 'super' ? '' : ' You can manage caller and interviewer accounts.'), '<button class="btn primary" id="uAdd">+ Add user</button>') +
       '<div class="tw"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Created</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>' +
-      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs. <b>Caller</b>: sees only the candidates assigned to them (name, basic profile and contact details) and marks call status and remarks.</p>';
+      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs. <b>Caller</b>: sees only the candidates assigned to them (name, basic profile and contact details) and marks call status and remarks. <b>Interviewer</b>: sees only the shortlisted candidates (profile, answers and CV, no scores or contact details) and enters their own marks; you see every interviewer\'s marks under <b>Panel scores</b>.</p><p class="hint">Passwords are stored scrambled, so nobody (including you) can look one up later. If someone forgets theirs, or you need the login message again, use <b>Copy login</b>: it sets a fresh password and copies a ready-to-send message.</p>';
     $('#uAdd', el).onclick = userDialog;
     var rowsByUser = {};
     A.api('listUsers').then(function (rows) {
@@ -1991,15 +2076,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       var b = $('#uBody', el); if (!b) return;
       b.innerHTML = rows.map(function (u) {
         var me = S.me && S.me.user === u.username;
-        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : u.role === 'caller' ? 'Caller' : 'Admin') + '</span></td>' +
+        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : u.role === 'caller' ? 'Caller' : u.role === 'interviewer' ? 'Interviewer' : 'Admin') + '</span></td>' +
           '<td>' + (u.active === 'Yes' ? '<span class="chip ok">Active</span>' : '<span class="chip bad">Disabled</span>') + '</td><td class="nowrap">' + esc(u.lastLogin ? D.fmtDateTime(u.lastLogin) : '—') + '</td><td class="nowrap"><small style="display:inline">' + esc(D.fmtDate(String(u.created).slice(0, 10))) + ' · ' + esc(u.createdBy) + '</small></td>' +
-          '<td class="nowrap"><button class="btn small" data-reset="' + esc(u.username) + '">Reset password</button> ' + (me ? '' : '<button class="btn small" data-tog="' + esc(u.username) + '" data-on="' + (u.active === 'Yes' ? '0' : '1') + '">' + (u.active === 'Yes' ? 'Disable' : 'Enable') + '</button> <button class="btn small danger" data-del="' + esc(u.username) + '">Delete</button>') + '</td></tr>';
+          '<td class="nowrap"><button class="btn small primary" data-copylogin="' + esc(u.username) + '" title="Sets a fresh password and copies the login message">Copy login</button> <button class="btn small" data-reset="' + esc(u.username) + '">Reset password</button> ' + (me ? '' : '<button class="btn small" data-tog="' + esc(u.username) + '" data-on="' + (u.active === 'Yes' ? '0' : '1') + '">' + (u.active === 'Yes' ? 'Disable' : 'Enable') + '</button> <button class="btn small danger" data-del="' + esc(u.username) + '">Delete</button>') + '</td></tr>';
       }).join('');
       $$('[data-reset]', b).forEach(function (x) { x.onclick = function () {
         var u = x.dataset.reset, pw = genPassword();
         var m = A.modal('<h3>Reset password for ' + esc(u) + '</h3><div class="field"><label class="f">New password</label><div style="display:flex;gap:6px"><input type="text" id="rpPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="rpGen">Generate</button></div><div class="hint">At least 8 characters</div></div><div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Reset</button></div>');
         $('#rpPass', m).value = pw; $('#rpGen', m).onclick = function () { $('#rpPass', m).value = genPassword(); }; $('#cNo', m).onclick = A.closeModal;
         $('#cYes', m).onclick = function () { var np = $('#rpPass', m).value; A.api('setUserPassword', u, np).then(function () { A.closeModal(); credentialsDialog('Password reset', u, np, (rowsByUser[u] || {}).name, (rowsByUser[u] || {}).role); }, function (e) { D.toast(e.message, 'err'); }); };
+      }; });
+      $$('[data-copylogin]', b).forEach(function (x) { x.onclick = function () {
+        var u = x.dataset.copylogin, row = rowsByUser[u] || {};
+        A.confirm('Copy login for ' + u + '?', 'Passwords are stored scrambled and cannot be looked up, so this sets a <b>new password</b> for <b>' + esc(row.name || u) + '</b> (the old one stops working) and copies a ready-to-send message.', 'Set new password and copy').then(function (ok) {
+          if (!ok) return; var np = genPassword();
+          A.api('setUserPassword', u, np).then(function () { credentialsDialog('Login details', u, np, row.name, row.role); }, function (e) { D.toast(e.message, 'err'); });
+        });
       }; });
       $$('[data-tog]', b).forEach(function (x) { x.onclick = function () { A.api('setUserActive', x.dataset.tog, x.dataset.on === '1').then(function () { D.toast('Updated', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }; });
       $$('[data-del]', b).forEach(function (x) { x.onclick = function () { A.confirm('Delete ' + x.dataset.del + '?', 'The account is removed for good. (Consider <b>Disable</b> instead, which keeps it on record.) Their past actions stay in the logs.', 'Delete', true).then(function (ok) { if (ok) A.api('deleteUser', x.dataset.del).then(function () { D.toast('Deleted', 'ok'); V.users(el); }, function (e) { D.toast(e.message, 'err'); }); }); }; });
@@ -2155,13 +2247,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
     el.innerHTML = head('Instagram preview card', 'The card beside the application form (below it on phones). Add up to 3 recent posts or reels; people who tap it land on your Instagram.',
       '<button class="btn" id="sAdd">+ Add post</button><button class="btn primary" id="sSave">Save</button>') +
       '<div class="note-box" style="margin-bottom:14px"><b>Instagram page:</b> ' + (page ? '<a href="' + esc(page) + '" target="_blank" rel="noopener">' + esc(page) + '</a>' : 'not set') + ' (change it under Settings → INSTAGRAM_URL).<br>' +
-      '<b>For each post:</b> paste the post or reel link, and a <b>picture link</b>. Instagram does not allow other sites to fetch its pictures, so take a screenshot or the cover of the post (4:5, portrait, about 600 × 750 px), save it on ImgBB, GitHub or Drive, and paste its link here, like banners. Short caption optional. Until a post is added, only the small “Follow on Instagram” link shows.</div>' +
+      '<b>For each post:</b> just paste the post or reel link. When you save, the system fetches the post\'s <b>official Instagram picture</b> by itself. If Instagram does not hand it over, the card shows a designed DCIP tile instead; you can also paste your own <b>picture link</b> (ImgBB, GitHub or Drive) at any time, and it is always used first. Short caption optional. Until a post is added, only the small “Follow on Instagram” link shows.</div>' +
       '<div id="sList"><div class="muted">Loading…</div></div>';
     function paint() {
       $('#sList', el).innerHTML = sdraft.length ? sdraft.map(function (b, i) {
         return '<div class="brow"><div class="bthumb" style="aspect-ratio:4/5;max-width:110px">' + (b.thumb ? '<img src="' + esc(b.thumb) + '" alt="" onerror="this.style.opacity=.2">' : '') + '</div><div class="bf">' +
           '<input type="url" data-s="url" data-i="' + i + '" placeholder="https://www.instagram.com/reel/…" value="' + esc(b.url) + '" aria-label="Post link ' + (i + 1) + '">' +
-          '<input type="url" data-s="thumb" data-i="' + i + '" placeholder="Picture link (https://…)" value="' + esc(b.thumb) + '" aria-label="Picture link ' + (i + 1) + '">' +
+          '<input type="url" data-s="thumb" data-i="' + i + '" placeholder="Picture link (optional – the official picture is fetched when left empty)" value="' + esc(b.thumb) + '" aria-label="Picture link ' + (i + 1) + '">' +
           '<input type="text" data-s="caption" data-i="' + i + '" placeholder="Caption (optional)" maxlength="80" value="' + esc(b.caption) + '" aria-label="Caption ' + (i + 1) + '">' +
           '<label class="chk"><input type="checkbox" data-s="active" data-i="' + i + '"' + (b.active === 'Yes' ? ' checked' : '') + '> Show</label></div>' +
           '<div class="bact"><button class="btn small danger" data-rm="' + i + '">Remove</button></div></div>';
@@ -2206,6 +2298,107 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       };
     });
   };
+
+  /* ============================ Interviewers: marks per candidate ============================ */
+  function mk(n) { return Math.round(n * 2) / 2; }
+  function sessLabel(c) { return c.sessionDate ? D.fmtDate(c.sessionDate) + ' · ' + c.sessionSlot : 'Session not set'; }
+  S.iF = 'todo'; S.iSess = ''; S.iDraft = {};
+  V.myinterviews = function (el) {
+    var my = S.myI; if (!my) { el.innerHTML = '<div class="muted">Loading…</div>'; return; }
+    var crit = my.criteria, mx = my.maxMark, cands = my.candidates, done = cands.filter(function (c) { return c.myMarks; }).length;
+    var sess = []; cands.forEach(function (c) { var k = c.session || ''; if (!sess.some(function (x) { return x.k === k; })) sess.push({ k: k, t: sessLabel(c) }); });
+    if (S.iSess && !sess.some(function (x) { return x.k === S.iSess; })) S.iSess = '';
+    var list = cands.filter(function (c) { return (!S.iSess || (c.session || '') === S.iSess) && (S.iF === 'all' || (S.iF === 'todo' ? !c.myMarks : !!c.myMarks)); });
+    function draft(c) { var d = S.iDraft[c.id]; if (!d) d = S.iDraft[c.id] = { marks: c.myMarks ? c.myMarks.slice() : crit.map(function () { return null; }), remark: c.myRemark || '' }; return d; }
+    function total(d) { return d.marks.reduce(function (t, n) { return t + (n == null ? 0 : n); }, 0); }
+    el.innerHTML = head('My interviews', 'Welcome, <b>' + esc(my.name) + '</b>. Give each candidate a mark for every item (0 to ' + mx + '), then save. Only you can see your marks; the office combines everyone\'s marks.',
+      '<div class="seg" role="group">' + [['todo', 'To score (' + (cands.length - done) + ')'], ['done', 'Scored (' + done + ')'], ['all', 'All (' + cands.length + ')']].map(function (t) { return '<button aria-pressed="' + (S.iF === t[0]) + '" data-f="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>') +
+      (sess.length > 1 ? '<div class="toolbar"><select id="iSess" aria-label="Interview session" style="max-width:340px"><option value="">All sessions</option>' + sess.map(function (x) { return '<option value="' + esc(x.k) + '"' + (S.iSess === x.k ? ' selected' : '') + '>' + esc(x.t) + '</option>'; }).join('') + '</select></div>' : '') +
+      '<div class="kv"><div><b>' + cands.length + '</b>shortlisted candidates</div><div><b>' + done + '</b>scored by me</div><div><b>' + (cands.length - done) + '</b>still to score</div></div>' +
+      (list.length ? '<div class="cards">' + list.map(function (c) {
+        var d = draft(c);
+        return '<div class="sc icard" data-id="' + esc(c.id) + '"><div class="info"><b>' + esc(c.fullName) + '</b> <span class="muted">' + esc(c.age) + ' yrs · ' + esc(c.gender) + ' · ' + esc(c.location) + '</span>' + (c.myMarks ? ' <span class="chip ok">Scored ' + esc(c.myTotal) + ' / ' + esc(my.max) + '</span>' : '') +
+          '<div class="muted" style="font-size:13px">' + esc(c.qual) + (c.mastersInstitution ? ' · ' + esc(c.mastersInstitution) : '') + '<br>' + esc(c.ug) + (c.completion ? ' · ' + esc(D.fmtMonthYear(c.completion)) : '') + '</div>' +
+          '<div style="margin-top:4px"><b>' + esc(sessLabel(c)) + '</b> · ' + esc(c.mode) + (c.venue ? ' · ' + esc(c.venue) : '') + (c.attendance ? ' · <span class="chip ' + (c.attendance === 'Present' ? 'ok' : 'bad') + '">' + esc(c.attendance) + '</span>' : '') + '</div>' +
+          '<details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">Read their answers' + (c.cv ? ' and CV' : '') + '</summary>' +
+          (c.cv ? '<p><a class="btn small" href="' + esc(c.cv) + '" target="_blank" rel="noopener">Open CV ↗</a></p>' : '') +
+          '<label class="f">Why DCIP?</label><div class="note-box">' + esc(c.motivation) + '</div>' + (c.background ? '<label class="f" style="margin-top:8px">Background and influences' + (c.backgroundQ ? ' · question <b>' + esc(c.backgroundQ) + '</b>' : '') + '</label><div class="note-box">' + esc(c.background) + '</div>' : '') + '</details></div>' +
+          '<div class="marks">' + crit.map(function (name, i) {
+            var chips = ''; for (var n = 0; n <= mx && mx <= 10; n++) chips += '<button type="button" class="mkb" data-i="' + i + '" data-v="' + n + '" aria-pressed="' + (d.marks[i] === n) + '">' + n + '</button>';
+            return '<div class="mrow"><div class="mlab">' + esc(name) + '</div>' + (mx <= 10 ? '<div class="mchips" role="group" aria-label="' + esc(name) + '">' + chips + '</div>' : '<input type="number" class="mnum" data-i="' + i + '" min="0" max="' + mx + '" step="0.5" value="' + (d.marks[i] == null ? '' : d.marks[i]) + '" aria-label="' + esc(name) + '">') + '</div>';
+          }).join('') + '</div>' +
+          '<div class="acts callform"><span class="mtot"><b class="tv">' + total(d) + '</b> / ' + my.max + '</span><input type="text" class="cnote" maxlength="500" placeholder="Remarks (optional)" value="' + esc(d.remark) + '" aria-label="Remarks for ' + esc(c.fullName) + '"><button class="btn small primary csave">' + (c.myMarks ? 'Update marks' : 'Save marks') + '</button></div></div>';
+      }).join('') + '</div>' : '<div class="empty">' + (cands.length ? 'Nothing in this list.' : 'No candidates have been shortlisted yet.') + '</div>');
+    $$('[data-f]', el).forEach(function (b) { b.onclick = function () { S.iF = b.dataset.f; A.render(); }; });
+    if ($('#iSess', el)) $('#iSess', el).onchange = function () { S.iSess = this.value; A.render(); };
+    $$('.icard', el).forEach(function (card) {
+      var id = card.dataset.id, c = cands.filter(function (x) { return x.id === id; })[0], d = draft(c);
+      function sum() { $('.tv', card).textContent = total(d); }
+      $$('.mkb', card).forEach(function (b) { b.onclick = function () { var i = +b.dataset.i, v = +b.dataset.v; d.marks[i] = v; $$('.mkb[data-i="' + i + '"]', card).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); sum(); }; });
+      $$('.mnum', card).forEach(function (inp) { inp.oninput = function () { d.marks[+inp.dataset.i] = inp.value === '' ? null : mk(Number(inp.value)); sum(); }; });
+      $('.cnote', card).oninput = function () { d.remark = this.value; };
+      $('.csave', card).onclick = function () {
+        var missing = crit.filter(function (n, i) { return d.marks[i] == null || isNaN(d.marks[i]); });
+        if (missing.length) { D.toast('Give a mark for: ' + missing.join(', '), 'err'); return; }
+        var btn = this; btn.disabled = true;
+        A.api('saveInterviewScore', id, d.marks, d.remark).then(function (r) { c.myMarks = d.marks.slice(); c.myTotal = r.total; c.myRemark = d.remark; delete S.iDraft[id]; D.toast(c.fullName + ': saved ' + r.total + ' / ' + r.max, 'ok'); A.renderSoft(); },
+          function (e) { D.toast(e.message, 'err'); }).then(function () { btn.disabled = false; });
+      };
+    });
+  };
+
+  /* ============================ Panel scores (officials) ============================ */
+  function scoresOf(id) { return (S.scores || []).filter(function (r) { return r.appId === String(id); }); }
+  function names() {
+    var m = {}; (S.interviewers || []).forEach(function (u) { m[u.username] = u.name; });
+    (S.scores || []).forEach(function (r) { if (!m[r.interviewer]) m[r.interviewer] = r.interviewerName || r.interviewer; });
+    return m;
+  }
+  A.panelRows = function () {
+    var nm = names(), users = Object.keys(nm).sort(function (a, b) { return String(nm[a]).localeCompare(String(nm[b])); });
+    var pool = S.apps.filter(function (a) { return (a.shortlisted === 'Yes' && ['Disqualified', 'Withdrawn'].indexOf(a.status) < 0) || scoresOf(a.id).length; });
+    var rows = pool.map(function (a) {
+      var sc = scoresOf(a.id), by = {}; sc.forEach(function (r) { by[r.interviewer] = r; });
+      var avg = sc.length ? Math.round(sc.reduce(function (t, r) { return t + r.total; }, 0) / sc.length * 10) / 10 : null;
+      return { a: a, by: by, n: sc.length, avg: avg };
+    }).sort(function (x, y) { return (y.avg == null ? -1e9 : y.avg) - (x.avg == null ? -1e9 : x.avg) || A.nameCmp(x.a, y.a); });
+    return { users: users, names: nm, rows: rows, max: (S.scoring || {}).max || 0, criteria: (S.scoring || {}).criteria || [] };
+  };
+  /** The marks section shown inside a candidate's drawer. */
+  A.panelBlock = function (a) {
+    var sc = scoresOf(a.id), cr = (S.scoring || {}).criteria || [], max = (S.scoring || {}).max;
+    if (!a.shortlisted && !sc.length) return '';
+    if (!sc.length) return '<h4>Interview panel</h4><p class="muted" style="margin:0">No interviewer has entered marks yet.</p>';
+    var avg = Math.round(sc.reduce(function (t, r) { return t + r.total; }, 0) / sc.length * 10) / 10;
+    return '<h4>Interview panel · average ' + esc(avg) + ' / ' + esc(max) + '</h4><div class="tw"><table class="t"><thead><tr><th>Interviewer</th>' + cr.map(function (c) { return '<th class="num" title="' + esc(c) + '">' + esc(c.length > 14 ? c.slice(0, 13) + '…' : c) + '</th>'; }).join('') + '<th class="num">Total</th><th></th></tr></thead><tbody>' +
+      sc.map(function (r) { return '<tr><td><b>' + esc(r.interviewerName || r.interviewer) + '</b>' + (r.remark ? '<small>' + esc(r.remark) + '</small>' : '') + '</td>' + cr.map(function (c, i) { return '<td class="num">' + esc(r.marks[i] == null ? '' : r.marks[i]) + '</td>'; }).join('') + '<td class="num"><b>' + esc(r.total) + '</b></td><td><button class="btn small danger" data-rmscore="' + esc(r.interviewer) + '" title="Remove these marks">✕</button></td></tr>'; }).join('') +
+      '</tbody></table></div><p class="hint" style="margin:6px 0 0">The Interview score above is the average of all interviewers\' totals and updates by itself.</p>';
+  };
+  V.panel = function (el) {
+    var P = A.panelRows(), sessions = A.sortSessions(S.sessions);
+    var f = S.pF || (S.pF = { sess: '', only: false });
+    var rows = P.rows.filter(function (r) { return (!f.sess || (f.sess === '__none' ? !r.a.session : r.a.session === f.sess)) && (!f.only || r.n); });
+    var scored = P.rows.filter(function (r) { return r.n; }).length;
+    el.innerHTML = head('Panel scores', 'Every interviewer\'s total for each shortlisted candidate. The <b>Interview score</b> used for ranking and selection is the average of these totals. Marks are out of <b>' + esc(P.max) + '</b> (' + esc(P.criteria.length) + ' items, up to ' + esc((S.scoring || {}).maxMark) + ' each; change the items under <b>Settings</b>).',
+      '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
+      '<div class="kv"><div><b>' + (S.interviewers || []).length + '</b>interviewers</div><div><b>' + scored + ' / ' + P.rows.length + '</b>candidates with marks</div><div><b>' + P.rows.filter(function (r) { return r.n && r.n >= Math.max(1, (S.interviewers || []).filter(function (u) { return u.active === 'Yes'; }).length); }).length + '</b>marked by every interviewer</div></div>' +
+      '<div class="toolbar"><select id="pSess" aria-label="Session" style="max-width:320px"><option value="">All sessions</option>' + sessions.map(function (s) { return '<option value="' + esc(s.id) + '"' + (f.sess === s.id ? ' selected' : '') + '>' + esc(A.sessionLabel(s)) + '</option>'; }).join('') + '<option value="__none"' + (f.sess === '__none' ? ' selected' : '') + '>Not yet assigned</option></select>' +
+      '<label class="chk" style="margin:0"><input type="checkbox" id="pOnly"' + (f.only ? ' checked' : '') + '> Only candidates with marks</label></div>' +
+      (!(S.interviewers || []).length ? '<div class="alert warn" style="padding:10px 14px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-weight:600;margin-bottom:12px">No interviewers yet. Add them under <b>Users</b> (role: Interviewer); each gets their own login.</div>' : '') +
+      (rows.length ? '<div class="tw"><table class="t"><thead><tr><th class="num">Rank</th><th>Candidate</th><th>Session</th>' + P.users.map(function (u) { return '<th class="num">' + esc(P.names[u]) + '</th>'; }).join('') + '<th class="num">Marked by</th><th class="num">Average</th></tr></thead><tbody>' +
+        rows.map(function (r, i) {
+          var rk = r.avg == null ? '–' : P.rows.indexOf(r) + 1, s = S.sessions.filter(function (x) { return x.id === r.a.session; })[0];
+          return '<tr><td class="num">' + rk + '</td><td><a href="#" data-open="' + esc(r.a.id) + '"><b>' + esc(r.a.fullName) + '</b></a><small>' + esc(r.a.id) + ' · ' + esc(r.a.status) + '</small></td><td>' + esc(s ? A.sessionLabel(s) : '—') + '</td>' +
+            P.users.map(function (u) { var x = r.by[u]; return '<td class="num">' + (x ? '<span title="' + esc((x.remark || '') + ' · marks ' + x.marks.join(', ')) + '">' + esc(x.total) + '</span>' : '<span class="muted">–</span>') + '</td>'; }).join('') +
+            '<td class="num">' + r.n + '</td><td class="num"><b>' + (r.avg == null ? '–' : esc(r.avg)) + '</b></td></tr>';
+        }).join('') + '</tbody></table></div>' : '<div class="empty">No candidates in this view.</div>');
+    bindDlLocal(el, function () { return A.reports.panelScores(); });
+    $('#pSess', el).onchange = function () { f.sess = this.value; A.render(); };
+    $('#pOnly', el).onchange = function () { f.only = this.checked; A.render(); };
+    $$('[data-open]', el).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); A.openDrawer(b.dataset.open); }; });
+  };
+  function bindDlLocal(root, make) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(make(), b.dataset.dl); }; }); }
+
 })(window);
 
 </script>
@@ -2228,7 +2421,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   $('#loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var btn = $('#lbtn'); btn.disabled = true; btn.textContent = 'Signing in…'; $('#lerr').textContent = '';
-    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; S.tab = r.role === 'caller' ? 'mycalls' : 'overview'; saveSession(); start(); },
+    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; S.tab = r.role === 'caller' ? 'mycalls' : r.role === 'interviewer' ? 'myinterviews' : 'overview'; saveSession(); start(); },
       function (err) { $('#lerr').textContent = err.message; }).then(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
   });
   $('#btnLogout').onclick = function () { A.logout(); };
@@ -2237,7 +2430,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   A.tabAllowed = function (id) {
     var role = (S.me || {}).role;
     if (role === 'caller') return id === 'mycalls';
-    if (id === 'mycalls') return false;
+    if (role === 'interviewer') return id === 'myinterviews';
+    if (id === 'mycalls' || id === 'myinterviews') return false;
     if (id === 'logs') return role === 'super';
     if (id === 'chats') return role === 'super' || !!S.canChats;
     return true;
@@ -2250,10 +2444,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
       $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = 'Caller · ' + (r.name || S.user);
       A.renderSoft(); if (manual) D.toast('Refreshed', 'ok');
     }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
+    if ((S.me || {}).role === 'interviewer') return A.api('getMyInterviews').then(function (r) {
+      S.myI = r; S.stamp = r.stamp; failures = 0; live(true);
+      $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = 'Interviewer · ' + (r.name || S.user);
+      A.renderSoft(); if (manual) D.toast('Refreshed', 'ok');
+    }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
     return A.api('getAdminState').then(function (st) {
       var firstLoad = lastCount === null;
       S.apps = st.applications; S.sessions = st.sessions; S.settings = st.settings; S.meta = st.settingsMeta; S.config = st.config; S.statuses = st.statuses;
-      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats; S.callers = st.callers || []; S.callStatuses = (st.config || {}).callStatuses;
+      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats; S.callers = st.callers || []; S.interviewers = st.interviewers || []; S.scores = st.scores || []; S.scoring = st.scoring || { criteria: [], maxMark: 10, max: 0 }; S.callStatuses = (st.config || {}).callStatuses;
       if (!firstLoad && st.applications.length > lastCount) D.toast((st.applications.length - lastCount) + ' new application' + (st.applications.length - lastCount > 1 ? 's' : '') + ' received', 'ok');
       lastCount = st.applications.length; failures = 0; live(true);
       $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = S.settings.BATCH_LABEL || ''; document.title = 'DCIP ' + (S.settings.BATCH_LABEL || '') + ' · Admin';
@@ -2274,7 +2473,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var n,r,i,a,
   A.render = function () {
     A.pendingRender = false;
     var me = S.me || { user: S.user, name: S.user, role: 'admin' };
-    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : me.role === 'caller' ? 'Caller' : 'Admin') + '</span>';
+    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : me.role === 'caller' ? 'Caller' : me.role === 'interviewer' ? 'Interviewer' : 'Admin') + '</span>';
     var tabs = A.TABS.filter(function (t) { return A.tabAllowed(t[0]); });
     if (!tabs.some(function (t) { return t[0] === S.tab; })) S.tab = tabs[0][0];
     $('#tabs').innerHTML = tabs.map(function (t) { return '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" data-tab="' + t[0] + '">' + esc(t[1]) + badge(t[0]) + '</button>'; }).join('');

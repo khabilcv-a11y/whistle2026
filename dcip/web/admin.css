@@ -201,3 +201,17 @@ table.t tbody tr { transition: background .12s; } table.t tbody tr:hover { backg
 .login-card .btn { min-height: 46px; font-size: 15px; }
 @media (max-width: 700px) { .bar { padding: 8px 12px; } .view { padding: 16px 12px 90px; } .tabs { top: 0; position: static; } .drawer { border-radius: 0; } }
 @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
+
+/* e-mail preview */
+#modal.wide { width: min(760px, 96vw); max-width: 96vw; }
+.pvmeta, .pvto { font-size: 13.5px; color: var(--ink-2); margin: 2px 0 6px; } .pvto select { max-width: 100%; display: inline-block; width: auto; }
+.pvl { font-size: 11.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; }
+.pvbox { background: #f6f9fe; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; line-height: 1.55; }
+.pvframe { width: 100%; height: min(430px, 52vh); border: 1px solid var(--line-2); border-radius: 12px; background: #fff; margin-top: 8px; }
+mark.ph { background: #fff0b8; color: #6b4300; border-radius: 4px; padding: 0 4px; font-weight: 700; }
+.pvwarn { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 13.5px; }
+.marks { margin: 10px 0 4px; } .mrow { display: grid; gap: 4px; margin: 8px 0; } .mlab { font-weight: 700; font-size: 14px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 5px; } .mkb { min-width: 38px; height: 38px; border: 1.5px solid var(--line-2); background: #fff; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+.mkb[aria-pressed=true] { background: var(--ink); color: #fff; border-color: var(--ink); } .mnum { max-width: 110px; }
+.mtot { font-size: 15px; margin-right: 8px; white-space: nowrap; } .icard .info details summary { color: var(--navy-700, #12335b); }
+.icard { display: block; } .icard .info { margin-bottom: 6px; } .icard .callform { margin-top: 10px; align-items: center; }
