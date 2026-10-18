@@ -178,6 +178,7 @@ var ADMIN_API = {   // first argument is always the session token
   ping: ping,
   getAdminState: getAdminState,
   updateApplications: updateApplications,
+  deleteApplications: deleteApplications,
   shortlistTop: shortlistTop,
   assignSessions: assignSessions,
   saveSession: saveSession,
@@ -209,7 +210,7 @@ var ADMIN_API = {   // first argument is always the session token
 var CALLER_FNS = { ping: 1, getMyCalls: 1, updateMyCall: 1, changeMyPassword: 1 };
 var CALLER_ONLY = { getMyCalls: 1, updateMyCall: 1 };
 /** Functions only a super admin may call (chat viewing is checked separately against the ADMIN_CAN_VIEW_CHATS setting). */
-var SUPER_ONLY = { getAudit: 1, getLoginLog: 1 };
+var SUPER_ONLY = { getAudit: 1, getLoginLog: 1, deleteApplications: 1 };
 var _actor = null;   // { user, role } of the signed-in official for the current request
 
 function doGet(e) {
@@ -1044,6 +1045,31 @@ function deleteSession(user, id) {
     audit_(user, 'SESSION_DELETE', '', id);
     touch_();
     return { deleted: id };
+  });
+}
+
+/**
+ * Permanently removes applications (super admin only). The row is deleted, the stored CV goes to the Drive bin, and the audit log keeps who was removed and by whom.
+ * The e-mail address and mobile number become free to apply again.
+ */
+function deleteApplications(user, ids) {
+  ids = [].concat(ids || []).map(String);
+  if (!ids.length) throw new Error('Nothing selected.');
+  if (ids.length > 500) throw new Error('Please delete at most 500 applications at a time.');
+  return withLock_(function () {
+    var sh = sheet_(APP.SHEETS.APPS, FIELDS);
+    var rows = readObjects_(sh, FIELDS).filter(function (r) { return ids.indexOf(String(r.id)) >= 0; });
+    if (!rows.length) throw new Error('Those applications were not found.');
+    rows.sort(function (a, b) { return b._row - a._row; });   // bottom first, so the row numbers above stay valid
+    var gone = [];
+    rows.forEach(function (r) {
+      sh.deleteRow(r._row);
+      if (r.cvFileId) { try { DriveApp.getFileById(r.cvFileId).setTrashed(true); } catch (e) { /* already gone, or not ours */ } }
+      audit_(user, 'APPLICATION_DELETE', r.id, r.fullName + ' · ' + r.email + ' · status ' + (r.status || 'Received'));
+      gone.push(r.id);
+    });
+    touch_();
+    return { deleted: gone.length, ids: gone };
   });
 }
 

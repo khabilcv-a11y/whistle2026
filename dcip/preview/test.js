@@ -271,6 +271,7 @@ test('accounts: super creates admins; admins sign in, cannot reach super functio
   const adm = login('meera', 'Meera@12345');
   const st = call('getAdminState', adm); assert.equal(st.me.role, 'admin'); assert.equal(st.me.user, 'meera'); assert.equal(st.canChats, false);
   ['getAudit', 'getLoginLog'].forEach(fn => fails(fn, /Only a super admin/, adm));
+  fails('deleteApplications', /Only a super admin/, adm, ['x']);
   fails('createUser', /Only a super admin/, adm, 'x1x1', 'X', 'Password@1', 'admin');
   const id = call('getAdminState', adm).applications[0].id;
   call('updateApplications', adm, [id], { remarks: 'checked by meera' });
@@ -578,3 +579,19 @@ test('confirmation e-mails: tracked, and re-sent in bulk once the daily limit al
 });
 
 console.log(`\n${n} tests passed`);
+
+test('delete applications: super admin only, removes the row, frees the e-mail, keeps an audit entry', () => {
+  const sup = login(); call('createUser', sup, 'Deleter', 'Del Admin', 'Delete@12345', 'admin'); const adm = login('deleter', 'Delete@12345');
+  const mk = (o) => base(Object.assign({ email: 'del' + Date.now() + Math.floor(Math.random() * 999) + '@example.com', mobile: '9' + String(100000000 + Math.floor(Math.random() * 899999999)), fullName: 'Delete Me' }, o));
+  const p = mk({}); call('submitApplication', p);
+  const mine = () => call('getAdminState', sup).applications.filter(x => x.email === p.email)[0];
+  const id = mine().id;
+  fails('deleteApplications', /Only a super admin/, adm, [id]);
+  fails('deleteApplications', /Nothing selected/, sup, []);
+  fails('deleteApplications', /not found/, sup, ['NOPE-1']);
+  assert.equal(call('deleteApplications', sup, [id]).deleted, 1);
+  assert.equal(mine(), undefined);
+  assert.equal(call('checkEmail', p.email).exists, false);
+  assert.ok(call('getAudit', sup).some(r => r.action === 'APPLICATION_DELETE' && String(r.target) === id || /APPLICATION_DELETE/.test(JSON.stringify(r))));
+  call('submitApplication', p);   // the same person can apply again
+});

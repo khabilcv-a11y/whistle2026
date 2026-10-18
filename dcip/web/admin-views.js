@@ -115,7 +115,7 @@
         '<div class="muted" style="font-size:13px">' + esc(a.qual) + ' · UG completion ' + esc(D.fmtMonthYear(a.completion)) + '</div>' +
         (a.screeningNotes ? '<ul>' + a.screeningNotes.split(' | ').map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') + '</div>' +
         '<div class="acts"><button class="btn small" data-open="' + esc(a.id) + '">Open</button>' + (a.cv ? '<a class="btn small" target="_blank" rel="noopener" href="' + esc(a.cv) + '">CV ↗</a>' : '') +
-        '<button class="btn small" data-clear="' + esc(a.id) + '">Clear – eligible</button><button class="btn small danger" data-dq="' + esc(a.id) + '">Disqualify</button></div></div>';
+        '<button class="btn small" data-clear="' + esc(a.id) + '">Clear – eligible</button><button class="btn small danger" data-dq="' + esc(a.id) + '">Disqualify</button>' + (A.isSuper() ? '<button class="btn small danger" data-del="' + esc(a.id) + '">Delete</button>' : '') + '</div></div>';
     }
     el.innerHTML = head('Application screening', 'The system checks the basics for you: age ' + esc(c.minAge ? c.minAge + ' to ' + c.maxAge : 'up to ' + c.maxAge) + ' on ' + esc(D.fmtDate(c.ageAsOn)) + ', UG degree completed by <b>' + esc(D.fmtDate(c.ugBy)) + '</b> (' + esc(s.ENFORCE_COMPLETION === 'FLAG' ? 'flagged' : 'blocked at submission') + '), repeat applications. Beyond that, read each applicant\'s answers and CV, then clear, flag or disqualify. Scoring is done in the Shortlist tab.',
       '<button class="btn" id="btnRescreen">Re-screen all</button><button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
@@ -127,6 +127,7 @@
     $$('[data-open]', el).forEach(function (b) { b.onclick = function () { A.openDrawer(b.dataset.open); }; });
     $$('[data-clear]', el).forEach(function (b) { b.onclick = function () { A.save(b.dataset.clear, { screening: 'Cleared', flagged: '', flagNote: '' }, 'Screening').then(function () { D.toast('Cleared', 'ok'); }); }; });
     $$('[data-dq]', el).forEach(function (b) { b.onclick = function () { A.save(b.dataset.dq, { status: 'Disqualified' }, 'Screening').then(function () { D.toast('Disqualified', 'ok'); }); }; });
+    $$('[data-del]', el).forEach(function (b) { b.onclick = function () { A.deleteApps(b.dataset.del); }; });
     if ($('#btnDqAll', el)) $('#btnDqAll', el).onclick = function () {
       A.confirm('Disqualify ' + dq.length + ' applications?', 'All applications marked <b>Suggest disqualify</b> will be set to Disqualified. You can reverse any of them later from the Applications tab.', 'Disqualify all', true).then(function (ok) {
         if (ok) A.save(dq.map(function (a) { return a.id; }), { status: 'Disqualified' }, 'Screening – bulk').then(function (r) { D.toast(r.changed + ' disqualified', 'ok'); });

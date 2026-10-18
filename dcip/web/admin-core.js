@@ -29,6 +29,27 @@
     }, function (e) { D.toast(e.message, 'err'); throw e; });
   };
 
+  /** Permanent removal (super admin only): the person must type DELETE before the button works. */
+  A.isSuper = function () { return ((A.S && A.S.me) || {}).role === 'super'; };
+  A.deleteApps = function (ids, after) {
+    ids = [].concat(ids); var names = ids.map(function (id) { var a = A.byId(id); return a ? a.fullName : id; });
+    var m = A.modal('<h3>Delete ' + (ids.length === 1 ? esc(names[0]) + '\'s application' : ids.length + ' applications') + ' permanently?</h3>' +
+      '<p>This removes ' + (ids.length === 1 ? 'the application' : 'the applications') + ' and the uploaded CV' + (ids.length === 1 ? '' : 's') + ' for good. It cannot be undone. If the person is simply not eligible, use <b>Disqualify</b> instead; that keeps the record.</p>' +
+      (ids.length > 1 && ids.length <= 6 ? '<p class="muted">' + names.map(esc).join(', ') + '</p>' : '') +
+      '<div class="field"><label class="f">Type <b>DELETE</b> to confirm</label><input type="text" id="delWord" autocomplete="off" maxlength="10"></div>' +
+      '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn danger" id="cYes" disabled>Delete permanently</button></div>');
+    var inp = $('#delWord', m), yes = $('#cYes', m);
+    inp.oninput = function () { yes.disabled = inp.value.trim() !== 'DELETE'; };
+    $('#cNo', m).onclick = A.closeModal;
+    yes.onclick = function () {
+      yes.disabled = true; yes.textContent = 'Deleting…';
+      A.api('deleteApplications', ids).then(function (r) {
+        A.closeModal(); A.S.apps = A.S.apps.filter(function (a) { return r.ids.indexOf(a.id) < 0; });
+        A.closeDrawer(); A.renderSoft(); D.toast(r.deleted + ' application' + (r.deleted === 1 ? '' : 's') + ' deleted', 'ok'); if (after) after();
+      }, function (e) { A.closeModal(); D.toast(e.message, 'err'); });
+    };
+  };
+
   /* ---------- data helpers ---------- */
   A.ugText = function (a) { return [a.stream, a.specialisation].filter(Boolean).join(' ') + (a.institution ? ', ' + a.institution : ''); };
   A.phones = function (a) { return [a.mobile, a.altMobile].filter(Boolean).join(' / '); };
@@ -112,6 +133,7 @@
       (issues ? '<h4 style="margin-top:0">Screening</h4>' + issues : '') +
       '<h4' + (issues ? '' : ' style="margin-top:0"') + '>Quick actions</h4><div style="display:flex;gap:6px;flex-wrap:wrap">' +
       ['Shortlisted', 'Selected', 'Confirmed', 'Waitlisted', 'Not Selected', 'Disqualified', 'Received'].map(function (s) { return '<button class="btn small' + (s === 'Disqualified' ? ' danger' : '') + '" data-quick="' + s + '"' + (a.status === s ? ' disabled' : '') + '>' + (s === 'Received' ? 'Reset to Received' : s === 'Disqualified' ? 'Disqualify' : s) + '</button>'; }).join('') + '</div>' +
+      (A.isSuper() ? '<div style="margin-top:8px"><button class="btn small danger" id="dDelete" title="Remove this application and its CV permanently">Delete application…</button></div>' : '') +
       '<h4>Applicant</h4><dl class="dl">' +
       '<dt>E-mail</dt><dd><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a> ' + '' + '</dd>' +
       '<dt>Mobile</dt><dd><a href="tel:' + esc(a.mobile) + '">' + esc(a.mobile) + '</a>' + (a.altMobile ? ' · <a href="tel:' + esc(a.altMobile) + '">' + esc(a.altMobile) + '</a>' : '') + '</dd><dt>WhatsApp</dt><dd>' + esc(a.whatsapp || a.mobile) + (a.whatsapp ? '' : ' <span class="muted">(same as mobile)</span>') + '</dd>' +
@@ -146,6 +168,7 @@
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
     d.classList.remove('hidden'); $('#drawerBg').classList.remove('hidden');
     $('#dClose').onclick = A.closeDrawer;
+    if ($('#dDelete')) $('#dDelete').onclick = function () { A.deleteApps(a.id); };
     A.$$('[data-quick]', d).forEach(function (b) { b.onclick = function () { A.save(a.id, { status: b.dataset.quick }, 'Quick action').then(function () { D.toast(a.fullName + ' → ' + b.dataset.quick, 'ok'); }); }; });
     $('#dSave').onclick = function () {
       var ch = {};
@@ -175,7 +198,7 @@
       '<button class="btn small" id="bkClear" title="Mark the screening result as cleared by an official">Clear screening</button>' +
       '<select id="bkSession">' + A.sessionOpts('', 'Assign session…') + '</select>' +
       '<select id="bkCaller">' + A.callerOpts('', 'Assign caller…') + '</select>' +
-      '<button class="btn small" id="bkMail">E-mail…</button><button class="btn small" id="bkX">Excel</button><button class="btn small" id="bkP">PDF</button>' +
+      (A.isSuper() ? '<button class="btn small danger" id="bkDelete" title="Remove the selected applications permanently">Delete…</button>' : '') + '<button class="btn small" id="bkMail">E-mail…</button><button class="btn small" id="bkX">Excel</button><button class="btn small" id="bkP">PDF</button>' +
       '<span class="grow"></span><button class="btn small" id="bkNone">Clear selection</button></div>';
     var done = function (m) { return function () { D.toast(m, 'ok'); if (opts.after) opts.after(); }; };
     $('#bkStatus', host).onchange = function () {
@@ -191,6 +214,7 @@
     $('#bkClear', host).onclick = function () { A.save(ids, { screening: 'Cleared' }, 'Bulk').then(done('Screening cleared')); };
     $('#bkSession', host).onchange = function () { if (this.value) A.api('assignSessions', ids.reduce(function (m, id) { m[id] = $('#bkSession', host).value; return m; }, {})).then(function () { return A.refresh(); }).then(done('Session assigned'), function (e) { D.toast(e.message, 'err'); }); };
     $('#bkCaller', host).onchange = function () { var v = this.value; if (v) A.save(ids, { caller: v }, 'Bulk caller').then(done('Assigned to caller')); };
+    if ($('#bkDelete', host)) $('#bkDelete', host).onclick = function () { A.deleteApps(ids, opts.after); };
     $('#bkMail', host).onclick = function () { A.compose(ids); };
     $('#bkX', host).onclick = function () { A.download(A.reports.applications(ids.map(A.byId), 'Selected applications'), 'xlsx'); };
     $('#bkP', host).onclick = function () { A.download(A.reports.applications(ids.map(A.byId), 'Selected applications'), 'pdf'); };
