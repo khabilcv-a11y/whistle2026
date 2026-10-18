@@ -45,7 +45,7 @@ window.DCIP_ML = {
   "DCIP highlights": "DCIP ദൃശ്യങ്ങൾ",
   "DCIP highlight {n}": "DCIP ദൃശ്യം {n}",
   "Open DCIP on Instagram": "DCIP-യെ ഇൻസ്റ്റാഗ്രാമിൽ തുറക്കുക",
-  "See what our interns and alumni say": "ഞങ്ങളുടെ ഇന്റേണുകളും പൂർവ വിദ്യാർത്ഥികളും പറയുന്നത് കാണൂ",
+  "Hear from our interns and alumni": "ഞങ്ങളുടെ ഇന്റേണുകളിൽ നിന്നും പൂർവ വിദ്യാർത്ഥികളിൽ നിന്നും കേൾക്കൂ",
   "See more": "കൂടുതൽ കാണൂ",
   "Open": "തുറക്കുക",
   "Instagram": "ഇൻസ്റ്റാഗ്രാം",

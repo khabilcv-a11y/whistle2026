@@ -492,7 +492,7 @@ window.DCIP_ML = {
   "DCIP highlights": "DCIP ദൃശ്യങ്ങൾ",
   "DCIP highlight {n}": "DCIP ദൃശ്യം {n}",
   "Open DCIP on Instagram": "DCIP-യെ ഇൻസ്റ്റാഗ്രാമിൽ തുറക്കുക",
-  "See what our interns and alumni say": "ഞങ്ങളുടെ ഇന്റേണുകളും പൂർവ വിദ്യാർത്ഥികളും പറയുന്നത് കാണൂ",
+  "Hear from our interns and alumni": "ഞങ്ങളുടെ ഇന്റേണുകളിൽ നിന്നും പൂർവ വിദ്യാർത്ഥികളിൽ നിന്നും കേൾക്കൂ",
   "See more": "കൂടുതൽ കാണൂ",
   "Open": "തുറക്കുക",
   "Instagram": "ഇൻസ്റ്റാഗ്രാം",
@@ -1668,7 +1668,7 @@ window.DCIP_ML = {
     var chip = $('#igChip'); chip.href = ig.page; if (ig.handle) $('#igHandle').textContent = '@' + ig.handle;
     if (!ig.posts || !ig.posts.length || !C.open) return;
     var handle = ig.handle ? '@' + ig.handle : 'Instagram';
-    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('See what our interns and alumni say') + '</small></span></div>' +
+    var html = '<a class="igcard" href="' + esc(ig.posts[0].url) + '" target="_blank" rel="noopener" aria-label="' + T('Open DCIP on Instagram') + '"><div class="hd"><span class="av"><i></i></span><span><b>' + esc(handle) + '</b><small>' + T('Hear from our interns and alumni') + '</small></span></div>' +
       '<figure class="th" style="margin:0"><em>▶ REEL</em>' + ig.posts.map(function (p, i) { return '<img src="' + (p.thumb ? esc(p.thumb) : igTile(i)) + '" alt="' + esc(p.caption || 'DCIP on Instagram') + '" referrerpolicy="no-referrer" loading="lazy" data-u="' + esc(p.url) + '" data-c="' + esc(p.caption) + '"' + (i === 0 ? ' class="on"' : '') + '>'; }).join('') + '<figcaption>' + esc(ig.posts[0].caption || '') + '</figcaption></figure>' +
       '<div class="go"><span>' + T('See more') + '</span><i>' + T('Open') + ' ↗</i></div></a>';
     $('#igFix').innerHTML = html; $('#igInline').innerHTML = html; $('#igFix').hidden = false; $('#igInline').hidden = false;
