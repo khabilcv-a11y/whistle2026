@@ -20,7 +20,7 @@
 var APP = {
   TIMEZONE: 'Asia/Kolkata',
   ID_PREFIX: 'DCIP34-',
-  SHEETS: { SOCIAL: 'Social', BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log', SCORES: 'Interview_Scores' },
+  SHEETS: { SOCIAL: 'Social', BANNERS: 'Banners', APPS: 'Applications', SESSIONS: 'Sessions', SETTINGS: 'Settings', AUDIT: 'Audit', FAQ: 'FAQ', CHATLOG: 'Chat_Log', USERS: 'Users', LOGINS: 'Login_Log', SCORES: 'Board_Scores', BOARD: 'Interview_Board' },
   CV_MAX_BYTES: 3 * 1024 * 1024,
   CV_EXT: ['pdf', 'doc', 'docx'],
   ADMIN_TTL_S: 12 * 3600,    // admin session length
@@ -50,8 +50,7 @@ var DEFAULT_SETTINGS = [
   ['ENFORCE_COMPLETION', 'BLOCK', 'BLOCK = the form refuses a UG completion date after UG_COMPLETE_BY.  FLAG = accept, mark "Suggest Disqualify".'],
   ['SHORTLIST_SIZE', '30', 'Number of top-scoring applicants shortlisted for interview.'],
   ['SELECTION_SIZE', '25', 'Target number of interns in the batch.'],
-  ['INTERVIEW_CRITERIA', 'Communication, Motivation and public-service attitude, Knowledge of governance and social issues, Teamwork and leadership, Overall impression', 'What each interviewer marks, separated by commas (2 to 10 items). Change it before interviews begin.'],
-  ['INTERVIEW_MAX_MARK', '10', 'Highest mark an interviewer can give for each item above.'],
+  ['INTERVIEW_MAX_MARK', '10', 'Highest score one interview-board member can give a candidate.'],
   ['CV_REQUIRED', 'TRUE', 'TRUE / FALSE – is the CV upload compulsory?'],
   ['CV_AUTOFILL_AI', 'TRUE', 'TRUE / FALSE – use the AI service to read an uploaded CV and pre-fill the form (CV text is sent to Groq; needs GROQ_API_KEY). The form still pre-fills the basics without it.'],
   ['ADMIN_CAN_VIEW_CHATS', 'FALSE', 'TRUE / FALSE – may normal admins read the chat helper conversations? (Super admins always can.)'],
@@ -140,10 +139,11 @@ var CHATLOG_HEADERS = ['Time', 'Session', 'Role', 'Text', 'Source'];
 var USER_FIELDS = [{ k: 'username', h: 'Username', text: true }, { k: 'name', h: 'Name' }, { k: 'role', h: 'Role' }, { k: 'salt', h: 'Salt', text: true }, { k: 'hash', h: 'Password Hash', text: true },
   { k: 'active', h: 'Active' }, { k: 'created', h: 'Created' }, { k: 'createdBy', h: 'Created By' }, { k: 'lastLogin', h: 'Last Login' }];
 var LOGIN_HEADERS = ['Time', 'Username', 'Result', 'Role', 'Note'];
-var ROLES = ['admin', 'super', 'caller', 'interviewer'];
-/** One row per interviewer per candidate: the marks for each criterion, the total and a short remark. */
-var SCORE_FIELDS = [{ k: 'appId', h: 'Application ID', text: true }, { k: 'interviewer', h: 'Interviewer (username)', text: true }, { k: 'interviewerName', h: 'Interviewer' },
-  { k: 'scores', h: 'Marks per criterion', text: true }, { k: 'total', h: 'Total' }, { k: 'max', h: 'Out of' }, { k: 'remark', h: 'Remark' }, { k: 'updatedAt', h: 'Updated' }];
+var ROLES = ['admin', 'super', 'caller'];
+/** The interview board: members are only named here (they have no logins); their scores are typed in by the office. */
+var BOARD_FIELDS = [{ k: 'id', h: 'Member ID', text: true }, { k: 'name', h: 'Name' }, { k: 'order', h: 'Order' }];
+/** One row per board member per candidate. */
+var SCORE_FIELDS = [{ k: 'appId', h: 'Application ID', text: true }, { k: 'member', h: 'Member ID', text: true }, { k: 'memberName', h: 'Board member' }, { k: 'score', h: 'Score' }, { k: 'updatedAt', h: 'Updated' }];
 var STREAMS = ['B.A', 'B.Sc', 'B.Com', 'B.Tech / B.E', 'BBA / BBM', 'BCA', 'LL.B', 'B.Ed', 'B.Voc', 'BSW', 'B.Arch', 'B.Pharm', 'MBBS / BDS / Nursing', 'Other'];
 
 var GENDERS = ['Female', 'Male', 'Other'];
@@ -212,16 +212,12 @@ var ADMIN_API = {   // first argument is always the session token
   saveSocial: saveSocial,
   getMyCalls: getMyCalls,
   updateMyCall: updateMyCall,
-  getMyInterviews: getMyInterviews,
-  saveInterviewScore: saveInterviewScore,
-  deleteInterviewScore: deleteInterviewScore
+  saveBoard: saveBoard,
+  saveBoardScore: saveBoardScore
 };
 /** What a caller account may use: only its own call list (and its password). */
 var CALLER_FNS = { ping: 1, getMyCalls: 1, updateMyCall: 1, changeMyPassword: 1 };
 var CALLER_ONLY = { getMyCalls: 1, updateMyCall: 1 };
-/** What an interviewer account may use: only the scoring page (and its own password). */
-var INTERVIEWER_FNS = { ping: 1, getMyInterviews: 1, saveInterviewScore: 1, changeMyPassword: 1 };
-var INTERVIEWER_ONLY = { getMyInterviews: 1, saveInterviewScore: 1 };
 /** Functions only a super admin may call (chat viewing is checked separately against the ADMIN_CAN_VIEW_CHATS setting). */
 var SUPER_ONLY = { getAudit: 1, getLoginLog: 1, deleteApplications: 1 };
 var _actor = null;   // { user, role } of the signed-in official for the current request
@@ -245,11 +241,8 @@ function doPost(e) {
       fn = ADMIN_API[body.fn];
       _actor = adminFromToken_(args[0]);
       var isCaller = _actor.role === 'caller';
-      var isInterviewer = _actor.role === 'interviewer';
       if (isCaller && !CALLER_FNS[body.fn]) throw new Error('This account can only use the call list.');
-      if (isInterviewer && !INTERVIEWER_FNS[body.fn]) throw new Error('This account can only use the interview scoring page.');
       if (!isCaller && CALLER_ONLY[body.fn]) throw new Error('This is only for caller accounts.');
-      if (!isInterviewer && INTERVIEWER_ONLY[body.fn]) throw new Error('This is only for interviewer accounts.');
       if (SUPER_ONLY[body.fn] && _actor.role !== 'super') throw new Error('Only a super admin can do this.');
       args[0] = _actor.user;                       // replaces the token with the signed-in official's username
     }
@@ -726,11 +719,11 @@ function changeMyPassword(user, oldPw, newPw) {
 function mayManage_(targetRole) {
   if (!_actor) throw new Error('Not allowed.');
   if (_actor.role === 'super') return;
-  if (_actor.role === 'admin' && (targetRole === 'caller' || targetRole === 'interviewer')) return;
-  throw new Error('Only a super admin can manage admin accounts. You can manage caller and interviewer accounts.');
+  if (_actor.role === 'admin' && targetRole === 'caller') return;
+  throw new Error('Only a super admin can manage admin accounts. You can manage caller accounts.');
 }
 function listUsers(user) {
-  return users_().filter(function (u) { return _actor && (_actor.role === 'super' || u.role === 'caller' || u.role === 'interviewer'); }).map(function (u) { return { username: normUser_(u.username), name: u.name, role: u.role, active: u.active, created: u.created, createdBy: u.createdBy, lastLogin: u.lastLogin }; });
+  return users_().filter(function (u) { return _actor && (_actor.role === 'super' || u.role === 'caller'); }).map(function (u) { return { username: normUser_(u.username), name: u.name, role: u.role, active: u.active, created: u.created, createdBy: u.createdBy, lastLogin: u.lastLogin }; });
 }
 function activeSupers_(except) { return users_().filter(function (u) { return u.role === 'super' && u.active === 'Yes' && normUser_(u.username) !== except; }).length; }
 
@@ -787,9 +780,6 @@ function deleteUser(user, username) {
     audit_(user, 'USER_DELETE', '', uname);
     return { deleted: uname };
   });
-}
-function listInterviewers(user) {
-  return users_().filter(function (u) { return u.role === 'interviewer'; }).map(function (u) { return { username: normUser_(u.username), name: u.name, active: u.active, lastLogin: u.lastLogin }; });
 }
 function listCallers(user) {
   return users_().filter(function (u) { return u.role === 'caller'; }).map(function (u) { return { username: normUser_(u.username), name: u.name, active: u.active, lastLogin: u.lastLogin }; });
@@ -970,75 +960,68 @@ function ping(user) {
   return { stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0' };
 }
 
-/* ---------- interview scoring ---------- */
-function scoring_(s) {
-  var items = String(s.INTERVIEW_CRITERIA || '').split(/[,\n]/).map(clean_).filter(Boolean).slice(0, 10);
-  if (items.length < 2) items = ['Communication', 'Motivation and public-service attitude', 'Knowledge of governance and social issues', 'Teamwork and leadership', 'Overall impression'];
-  var mx = Math.min(100, Math.max(1, num_(s.INTERVIEW_MAX_MARK, 10)));
-  return { criteria: items, maxMark: mx, max: items.length * mx };
+/* ---------- interview board and scores ---------- */
+function maxScore_(s) { return Math.min(1000, Math.max(1, num_(s.INTERVIEW_MAX_MARK, 10))); }
+function boardMembers_() {
+  return readObjects_(sheet_(APP.SHEETS.BOARD, BOARD_FIELDS), BOARD_FIELDS).map(function (r) { return { id: String(r.id), name: clean_(r.name), order: Number(r.order) || 0 }; })
+    .sort(function (a, b) { return a.order - b.order; });
 }
-function parseMarks_(str) { return String(str == null ? '' : str).split(',').map(function (x) { var n = Number(x); return x.trim() === '' || isNaN(n) ? null : n; }); }
 function allScores_() {
-  return readObjects_(sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), SCORE_FIELDS).map(function (r) {
-    return { appId: String(r.appId), interviewer: String(r.interviewer), interviewerName: r.interviewerName, marks: parseMarks_(r.scores), total: Number(r.total), max: Number(r.max), remark: r.remark, updatedAt: r.updatedAt };
-  });
+  return readObjects_(sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), SCORE_FIELDS).map(function (r) { return { appId: String(r.appId), member: String(r.member), score: Number(r.score) }; });
 }
-/** The interviewers see the shortlisted candidates (profile and answers only) and their own marks, never other interviewers' marks or the screening scores. */
-function getMyInterviews(user) {
-  var s = settings_(), sc = scoring_(s), u = findUser_(user), sessions = {}, mine = {};
-  readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS).forEach(function (x) { sessions[x.id] = x; });
-  allScores_().forEach(function (r) { if (r.interviewer === user) mine[r.appId] = r; });
-  var cands = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (a) {
-    return a.shortlisted === 'Yes' && ['Disqualified', 'Withdrawn'].indexOf(a.status) < 0;
-  }).map(function (a) {
-    var ss = sessions[a.session] || {}, m = mine[String(a.id)];
-    return { id: a.id, fullName: a.fullName, age: a.age, gender: a.gender, location: a.location, qual: a.qual, mastersInstitution: a.mastersInstitution,
-      ug: [a.stream, a.specialisation].filter(Boolean).join(' ') + (a.institution ? ', ' + a.institution : ''), completion: a.completion,
-      cv: a.cv, motivation: a.motivation, backgroundQ: a.backgroundQ, background: a.background,
-      session: a.session, sessionDate: ss.date || '', sessionSlot: ss.slot || '', venue: ss.venue || '', mode: a.interviewMode || ss.mode || 'In person',
-      attendance: a.attendance, myMarks: m ? m.marks : null, myTotal: m ? m.total : null, myRemark: m ? m.remark : '', scoredAt: m ? m.updatedAt : '' };
-  }).sort(function (a, b) { return String(a.sessionDate || '9999').localeCompare(String(b.sessionDate || '9999')) || String(a.sessionSlot).localeCompare(String(b.sessionSlot)) || String(a.fullName).localeCompare(String(b.fullName)); });
-  return { name: u ? u.name : user, criteria: sc.criteria, maxMark: sc.maxMark, max: sc.max, candidates: cands, stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0' };
-}
-/** The candidate's Interview Score is always the average of all the interviewers' totals. */
+/** The candidate's Interview Score is the total of all the board members' scores; the rank list is built on it. */
 function syncInterviewScore_(appId, user) {
   var rows = readObjects_(sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), SCORE_FIELDS).filter(function (r) { return String(r.appId) === String(appId); });
-  var avg = rows.length ? Math.round(rows.reduce(function (t, r) { return t + Number(r.total || 0); }, 0) / rows.length * 10) / 10 : '';
+  var total = rows.length ? Math.round(rows.reduce(function (t, r) { return t + Number(r.score || 0); }, 0) * 100) / 100 : '';
   var ash = sheet_(APP.SHEETS.APPS, FIELDS), row = readObjects_(ash, FIELDS).filter(function (r) { return String(r.id) === String(appId); })[0];
-  if (row && String(row.interviewScore) !== String(avg)) { row.interviewScore = avg; row.updatedAt = nowIso_(); row.updatedBy = user; writeRow_(ash, FIELDS, row); }
-  return { average: avg, count: rows.length };
+  if (row && String(row.interviewScore) !== String(total)) { row.interviewScore = total; row.updatedAt = nowIso_(); row.updatedBy = user; writeRow_(ash, FIELDS, row); }
+  return { total: total, count: rows.length };
 }
-function saveInterviewScore(user, id, marks, remark) {
-  var sc = scoring_(settings_());
-  marks = [].concat(marks == null ? [] : marks);
-  if (marks.length !== sc.criteria.length) throw new Error('Please give a mark for every item.');
-  var nums = marks.map(function (m, i) {
-    var n = Number(m);
-    if (m === '' || m == null || isNaN(n) || n < 0 || n > sc.maxMark) throw new Error('The mark for "' + sc.criteria[i] + '" must be between 0 and ' + sc.maxMark + '.');
-    return Math.round(n * 2) / 2;
-  });
-  var total = nums.reduce(function (t, n) { return t + n; }, 0);
+/** members: [{ id?, name }]. Names the board; removing a member also removes the scores entered for them. */
+function saveBoard(user, members) {
+  members = (Array.isArray(members) ? members : []).map(function (m) { return { id: clean_(m && m.id), name: clean_(m && m.name).slice(0, 60) }; }).filter(function (m) { return m.name; });
+  if (members.length > 12) throw new Error('A board can have up to 12 members.');
+  var seen = {}; members.forEach(function (m) { var k = m.name.toLowerCase(); if (seen[k]) throw new Error('"' + m.name + '" is listed twice.'); seen[k] = 1; });
   return withLock_(function () {
-    var cand = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (r) { return String(r.id) === String(id); })[0];
+    var sh = sheet_(APP.SHEETS.BOARD, BOARD_FIELDS), old = boardMembers_(), oldIds = old.map(function (m) { return m.id; }), n = 0;
+    old.forEach(function (m) { var x = Number(String(m.id).replace(/\D/g, '')); if (x > n) n = x; });
+    var rows = members.map(function (m, i) { var id = m.id && oldIds.indexOf(m.id) >= 0 ? m.id : 'M' + (++n); return { id: id, name: m.name, order: i + 1 }; });
+    var keep = rows.map(function (r) { return r.id; }), removed = oldIds.filter(function (id) { return keep.indexOf(id) < 0; });
+    var last = sh.getLastRow();
+    if (last > 1) { var blank = []; for (var i = 0; i < last - 1; i++) blank.push(BOARD_FIELDS.map(function () { return ''; })); sh.getRange(2, 1, last - 1, BOARD_FIELDS.length).setValues(blank); }
+    rows.forEach(function (r) { appendRow_(sh, BOARD_FIELDS, r); });
+    var touched = {};
+    if (removed.length) {
+      var ssh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS);
+      readObjects_(ssh, SCORE_FIELDS).filter(function (r) { return removed.indexOf(String(r.member)) >= 0; }).sort(function (a, b) { return b._row - a._row; }).forEach(function (r) { touched[r.appId] = 1; ssh.deleteRow(r._row); });
+      Object.keys(touched).forEach(function (id) { syncInterviewScore_(id, user); });
+    }
+    audit_(user, 'BOARD_SAVE', '', rows.map(function (r) { return r.name; }).join(', ') + (removed.length ? ' (removed ' + removed.length + ' member(s) and their scores)' : ''));
+    touch_();
+    return { members: boardMembers_() };
+  });
+}
+/** One cell of the score table. An empty score removes the entry. */
+function saveBoardScore(user, appId, memberId, score) {
+  var s = settings_(), mx = maxScore_(s), blank = score === '' || score == null;
+  var n = Number(score);
+  if (!blank && (isNaN(n) || n < 0 || n > mx)) throw new Error('The score must be between 0 and ' + mx + '.');
+  return withLock_(function () {
+    var m = boardMembers_().filter(function (x) { return x.id === String(memberId); })[0];
+    if (!m) throw new Error('That board member was not found.');
+    var cand = readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).filter(function (r) { return String(r.id) === String(appId); })[0];
     if (!cand) throw new Error('Candidate not found.');
     if (cand.shortlisted !== 'Yes' || ['Disqualified', 'Withdrawn'].indexOf(cand.status) >= 0) throw new Error('Only shortlisted candidates can be scored.');
-    var sh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), mine = readObjects_(sh, SCORE_FIELDS).filter(function (r) { return String(r.appId) === String(id) && String(r.interviewer) === user; })[0];
-    var rec = { appId: String(id), interviewer: user, interviewerName: (findUser_(user) || {}).name || user, scores: nums.join(', '), total: total, max: sc.max, remark: clean_(remark).slice(0, 500), updatedAt: nowIso_() };
-    if (mine) { rec._row = mine._row; writeRow_(sh, SCORE_FIELDS, rec); } else appendRow_(sh, SCORE_FIELDS, rec);
-    var r = syncInterviewScore_(id, user);
-    audit_(user, 'INTERVIEW_SCORE', id, total + ' / ' + sc.max + (mine ? ' (revised)' : ''));
+    var sh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), mine = readObjects_(sh, SCORE_FIELDS).filter(function (r) { return String(r.appId) === String(appId) && String(r.member) === m.id; })[0];
+    if (blank) { if (mine) sh.deleteRow(mine._row); }
+    else {
+      var rec = { appId: String(appId), member: m.id, memberName: m.name, score: Math.round(n * 100) / 100, updatedAt: nowIso_() };
+      if (mine) { rec._row = mine._row; writeRow_(sh, SCORE_FIELDS, rec); } else appendRow_(sh, SCORE_FIELDS, rec);
+    }
+    var r = syncInterviewScore_(appId, user);
+    audit_(user, 'BOARD_SCORE', appId, m.name + ': ' + (blank ? 'cleared' : n));
     touch_();
-    return { total: total, max: sc.max, average: r.average, count: r.count };
-  });
-}
-/** Officials can remove one interviewer's marks for a candidate (for example if they were entered by mistake). */
-function deleteInterviewScore(user, id, interviewer) {
-  return withLock_(function () {
-    var sh = sheet_(APP.SHEETS.SCORES, SCORE_FIELDS), r = readObjects_(sh, SCORE_FIELDS).filter(function (x) { return String(x.appId) === String(id) && String(x.interviewer) === String(interviewer); })[0];
-    if (!r) throw new Error('Those marks were not found.');
-    sh.deleteRow(r._row); var res = syncInterviewScore_(id, user);
-    audit_(user, 'INTERVIEW_SCORE_DELETE', id, interviewer + ' · ' + r.total + ' / ' + r.max); touch_();
-    return { average: res.average, count: res.count };
+    return { total: r.total, count: r.count };
   });
 }
 
@@ -1049,7 +1032,7 @@ function getAdminState(user) {
   return {
     user: user, me: { user: user, name: (findUser_(user) || {}).name || user, role: _actor ? _actor.role : 'admin' }, canChats: !!_actor && (_actor.role === 'super' || truthy_(settings_().ADMIN_CAN_VIEW_CHATS)),
     stamp: PropertiesService.getScriptProperties().getProperty('LAST_CHANGE') || '0',
-    callers: listCallers(user), interviewers: listInterviewers(user), scoring: scoring_(s), scores: allScores_(), settings: s, settingsMeta: DEFAULT_SETTINGS.map(function (d) { return { key: d[0], desc: d[2] }; }), config: publicConfig_(), statuses: STATUSES,
+    callers: listCallers(user), board: boardMembers_(), maxScore: maxScore_(s), scores: allScores_(), settings: s, settingsMeta: DEFAULT_SETTINGS.map(function (d) { return { key: d[0], desc: d[2] }; }), config: publicConfig_(), statuses: STATUSES,
     applications: readObjects_(sheet_(APP.SHEETS.APPS, FIELDS), FIELDS).map(publicApp_),
     sessions: readObjects_(sheet_(APP.SHEETS.SESSIONS, SESSION_FIELDS), SESSION_FIELDS),
     mailQuota: quota, cvFolder: safe_(function () { return cvFolder_().getUrl(); })
@@ -1227,7 +1210,6 @@ function saveSettings(user, values) {
       var v = String(values[k] == null ? '' : values[k]).trim();
       if (/^(MAX_AGE|MIN_AGE|SHORTLIST_SIZE|SELECTION_SIZE|INTERVIEW_MAX_MARK)$/.test(k) && v !== '' && isNaN(Number(v))) throw new Error(k + ' must be a number.');
       if (k === 'INTERVIEW_MAX_MARK' && (Number(v) < 1 || Number(v) > 100)) throw new Error('INTERVIEW_MAX_MARK must be between 1 and 100.');
-      if (k === 'INTERVIEW_CRITERIA') { var nc = String(v).split(/[,\n]/).map(clean_).filter(Boolean).length; if (nc < 2 || nc > 10) throw new Error('INTERVIEW_CRITERIA needs 2 to 10 items separated by commas.'); }
       if (/^(INTAKE_START|INTAKE_END|UG_COMPLETE_BY|AGE_AS_ON)$/.test(k) && v !== '' && !isIso_(v)) throw new Error(k + ' must be a date (yyyy-mm-dd).');
       if (/^ENFORCE_/.test(k) && ['BLOCK', 'FLAG'].indexOf(v) < 0) throw new Error(k + ' must be BLOCK or FLAG.');
       if (/^(REG_OPEN|CV_REQUIRED|CV_AUTOFILL_AI|ADMIN_CAN_VIEW_CHATS)$/.test(k)) v = truthy_(v) ? 'TRUE' : 'FALSE';

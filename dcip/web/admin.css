@@ -215,3 +215,5 @@ mark.ph { background: #fff0b8; color: #6b4300; border-radius: 4px; padding: 0 4p
 .mkb[aria-pressed=true] { background: var(--ink); color: #fff; border-color: var(--ink); } .mnum { max-width: 110px; }
 .mtot { font-size: 15px; margin-right: 8px; white-space: nowrap; } .icard .info details summary { color: var(--navy-700, #12335b); }
 .icard { display: block; } .icard .info { margin-bottom: 6px; } .icard .callform { margin-top: 10px; align-items: center; }
+
+.toprow td { background: #f1faf4; } .toprow td:first-child { box-shadow: inset 3px 0 0 var(--ok, #1f9d55); } #pTbl input.score { width: 74px; text-align: right; }

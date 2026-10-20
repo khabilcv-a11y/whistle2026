@@ -599,37 +599,33 @@ test('delete applications: super admin only, removes the row, frees the e-mail, 
   call('submitApplication', p);   // the same person can apply again
 });
 
-test('interviewers: own login, mark every item, average becomes the interview score, officials see each interviewer\'s marks', () => {
+test('interview board: members are named (no logins), scores typed per member, totals feed the rank list', () => {
   const sup = login();
-  call('createUser', sup, 'panel1', 'Dr. Panel One', 'Panel@12345', 'interviewer'); call('createUser', sup, 'panel2', 'Ms. Panel Two', 'Panel@12345', 'interviewer');
-  const adm0 = (() => { call('createUser', sup, 'deskadmin', 'Desk Admin', 'Desk@12345', 'admin'); return login('deskadmin', 'Desk@12345'); })();
-  call('createUser', adm0, 'panel3', 'Panel Three', 'Panel@12345', 'interviewer');   // an admin may add interviewers
-  const p1 = login('panel1', 'Panel@12345'), p2 = login('panel2', 'Panel@12345');
-  const p = base({ email: 'score' + Date.now() + '@example.com', mobile: '9' + String(100000000 + Math.floor(Math.random() * 899999999)), fullName: 'Scored Candidate' }); call('submitApplication', p);
-  const find = () => call('getAdminState', sup).applications.filter(x => x.email === p.email)[0];
-  const id = find().id;
-  const mine = call('getMyInterviews', p1); assert.equal(mine.criteria.length, 5); assert.equal(mine.max, 50);
-  assert.ok(!mine.candidates.some(c => c.id === id), 'not shortlisted yet');
-  fails('saveInterviewScore', /shortlisted/, p1, id, [8, 8, 8, 8, 8], '');
-  call('updateApplications', sup, [id], { status: 'Shortlisted' });
-  const cand = call('getMyInterviews', p1).candidates.find(c => c.id === id); assert.ok(cand); assert.equal(cand.myTotal, null);
-  assert.ok(!('screenScore' in cand) && !('email' in cand) && !('mobile' in cand), 'interviewers do not see screening scores or contact details');
-  fails('saveInterviewScore', /every item/, p1, id, [8, 8], '');
-  fails('saveInterviewScore', /between 0 and 10/, p1, id, [8, 8, 8, 8, 11], '');
-  assert.equal(call('saveInterviewScore', p1, id, [8, 7, 9, 8, 8], 'Clear and confident').total, 40);
-  assert.equal(find().interviewScore, 40);
-  const r2 = call('saveInterviewScore', p2, id, [6, 6, 7, 7, 7], ''); assert.equal(r2.total, 33); assert.equal(r2.count, 2); assert.equal(r2.average, 36.5);
-  assert.equal(find().interviewScore, 36.5);
-  call('saveInterviewScore', p1, id, [10, 7, 9, 8, 8], 'Revised'); assert.equal(call('getMyInterviews', p1).candidates.find(c => c.id === id).myTotal, 42); assert.equal(find().interviewScore, 37.5);
-  const st = call('getAdminState', sup); const mineRows = st.scores.filter(x => x.appId === id); assert.equal(mineRows.length, 2); assert.equal(st.interviewers.length, 3); assert.equal(st.scoring.max, 50);
-  assert.deepEqual(mineRows.find(x => x.interviewer === 'panel1').marks, [10, 7, 9, 8, 8]);
-  assert.equal(call('getMyInterviews', p2).candidates.find(c => c.id === id).myTotal, 33, 'each interviewer sees only their own marks');
-  ['getAdminState', 'updateApplications', 'getMyCalls'].forEach(fn => fails(fn, /only use the interview scoring page/, p1));
-  fails('saveInterviewScore', /only for interviewer/, sup, id, [8, 8, 8, 8, 8], '');
-  assert.equal(call('deleteInterviewScore', adm0, id, 'panel2').count, 1); assert.equal(find().interviewScore, 42);
-  call('deleteApplications', sup, [id]); assert.equal(call('getAdminState', sup).scores.filter(x => x.appId === id).length, 0);
+  const mk = (n) => { const p = base({ email: 'bd' + n + Date.now() + '@example.com', mobile: '9' + String(100000000 + Math.floor(Math.random() * 899999999)), fullName: 'Board Cand ' + n }); call('submitApplication', p); return p; };
+  const a = mk(1), b = mk(2), find = (p) => call('getAdminState', sup).applications.filter(x => x.email === p.email)[0];
+  const ida = find(a).id, idb = find(b).id;
+  call('updateApplications', sup, [ida, idb], { status: 'Shortlisted' });
+  fails('saveBoardScore', /not found/, sup, ida, 'M99', 5);
+  const adm = (call('createUser', sup, 'boardadm', 'Board Admin', 'Board@12345', 'admin'), login('boardadm', 'Board@12345'));
+  fails('saveBoard', /twice/, sup, [{ name: 'Dr A' }, { name: 'dr a' }]);
+  fails('saveBoard', /up to 12/, sup, Array.from({ length: 13 }, (_, i) => ({ name: 'M' + i })));
+  const bm = call('saveBoard', adm, [{ name: 'Dr. Asha Nair' }, { name: 'Mr. Basheer' }, { name: 'Ms. Chitra' }]).members;
+  assert.equal(bm.length, 3); const [m1, m2, m3] = bm.map(x => x.id);
+  assert.equal(call('saveBoardScore', sup, ida, m1, 8).total, 8);
+  assert.equal(call('saveBoardScore', sup, ida, m2, 7.5).total, 15.5);
+  fails('saveBoardScore', /between 0 and 10/, sup, ida, m3, 11);
+  fails('saveBoardScore', /between 0 and 10/, sup, ida, m3, -1);
+  call('saveBoardScore', sup, ida, m3, 9); assert.equal(find(a).interviewScore, 24.5, 'total of all members');
+  call('saveBoardScore', sup, idb, m1, 6); call('saveBoardScore', sup, idb, m2, 6); assert.equal(find(b).interviewScore, 12);
+  call('saveBoardScore', sup, ida, m1, 9); assert.equal(find(a).interviewScore, 25.5, 'a score can be revised');
+  let st = call('getAdminState', sup); assert.equal(st.board.length, 3); assert.equal(st.maxScore, 10); assert.equal(st.scores.filter(x => x.appId === ida).length, 3);
+  call('saveBoardScore', sup, ida, m3, ''); assert.equal(find(a).interviewScore, 16.5, 'clearing a cell removes it');
+  call('saveBoard', sup, [{ id: m1, name: 'Dr. Asha Nair (Chair)' }, { name: 'Ms. Chitra' }]);   // Basheer removed with his scores, Chitra re-added as a new member
+  st = call('getAdminState', sup); assert.equal(st.board.length, 2); assert.equal(st.scores.filter(x => x.member === m2).length, 0); assert.equal(find(a).interviewScore, 9); assert.equal(find(b).interviewScore, 6);
+  call('updateApplications', sup, [idb], { status: 'Disqualified' }); fails('saveBoardScore', /shortlisted/, sup, idb, m1, 5);
+  call('deleteApplications', sup, [ida]); assert.equal(call('getAdminState', sup).scores.filter(x => x.appId === ida).length, 0);
+  call('createUser', sup, 'boardcall', 'Board Caller', 'Caller@12345', 'caller'); fails('saveBoard', /call list/, login('boardcall', 'Caller@12345'), []);
 });
-
 test('e-mail preview shows each applicant\'s own version before sending; settings for the panel are validated', () => {
   const sup = login(); const st = call('getAdminState', sup); const ids = st.applications.slice(0, 3).map(a => a.id);
   const before = (env.store.mails || []).length;
@@ -638,5 +634,5 @@ test('e-mail preview shows each applicant\'s own version before sending; setting
   assert.equal((env.store.mails || []).length, before, 'a preview sends nothing');
   fails('previewEmail', /required/, sup, ids, '', 'x', 0);
   const pc = call('previewConfirmation', sup, ids[0]); assert.match(pc.subject, /Application received/); assert.ok(pc.html.length > 500);
-  fails('saveSettings', /2 to 10 items/, sup, { INTERVIEW_CRITERIA: 'Only one' }); fails('saveSettings', /between 1 and 100/, sup, { INTERVIEW_MAX_MARK: '500' });
+  fails('saveSettings', /between 1 and 100/, sup, { INTERVIEW_MAX_MARK: '500' });
 });

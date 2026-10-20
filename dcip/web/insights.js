@@ -38,8 +38,12 @@
   var SCOPES = {
     all: { label: 'All applications', pick: function (a) { return true; } },
     shortlisted: { label: 'Shortlisted', pick: function (a) { return a.shortlisted === 'Yes'; } },
-    selected: { label: 'Selected / Confirmed', pick: function (a) { return a.status === 'Selected' || a.status === 'Confirmed'; } }
+    selected: { label: 'Selected / Confirmed', pick: function (a) { return a.status === 'Selected' || a.status === 'Confirmed'; } },
+    ranked: { label: 'Top of rank list', pick: function (a) { return !!rankedIds[a.id]; } }
   };
+  var rankedIds = {};
+  /** The candidates currently in the top of the interview rank list (set by the admin screens). */
+  function setRanked(ids, n) { rankedIds = ids || {}; SCOPES.ranked.label = 'Top ' + (n || '') + ' of rank list'; }
 
   function compute(allApps, scope, settings) {
     var apps = allApps.filter(SCOPES[scope].pick), n = apps.length;
@@ -87,7 +91,7 @@
     } else {
       var pg = apps.filter(function (a) { return /^master/i.test(a.qual); }).length;
       out.tiles = [
-        [scope === 'shortlisted' ? 'Shortlisted' : 'Selected / confirmed', n], ['Female', fem], ['Male', mal],
+        [scope === 'shortlisted' ? 'Shortlisted' : scope === 'ranked' ? 'In the top ranks' : 'Selected / confirmed', n], ['Female', fem], ['Male', mal],
         ['Districts', new Set(apps.map(function (a) { return a.district; })).size], ['Colleges', facets[4].rows.filter(function (r) { return r[0] !== '(not given)'; }).length],
         ['Post-graduates', pg]
       ];
@@ -140,5 +144,5 @@
     return { filename: 'DCIP_Insights_' + data.label, orientation: 'portrait', batch: batch, programme: programme, sheets: sheets };
   }
 
-  w.Insights = { compute: compute, render: render, toReport: toReport, SCOPES: SCOPES, normKey: normKey };
+  w.Insights = { compute: compute, render: render, toReport: toReport, SCOPES: SCOPES, normKey: normKey, setRanked: setRanked };
 })(window);

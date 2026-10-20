@@ -8,8 +8,8 @@
 
   A.TABS = [
     ['overview', 'Overview'], ['applications', 'Applications'], ['screening', 'Screening'], ['shortlist', 'Shortlist'],
-    ['interviews', 'Interviews'], ['panel', 'Panel scores'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['social', 'Instagram'], ['settings', 'Settings'],
-    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls'], ['myinterviews', 'My interviews']
+    ['interviews', 'Interviews'], ['panel', 'Interview scores'], ['callers', 'Callers'], ['selection', 'Selection'], ['reports', 'Reports'], ['banners', 'Banners'], ['social', 'Instagram'], ['settings', 'Settings'],
+    ['chats', 'Chats'], ['users', 'Users'], ['logs', 'Logs'], ['mycalls', 'My calls']
   ];
   function dl(rep, label) { return '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>'; }
   function bindDl(root, makeRep) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(makeRep(), b.dataset.dl); }; }); }
@@ -30,7 +30,7 @@
 
   /* ============================== Overview ============================== */
   V.overview = function (el) {
-    var scopes = w.Insights.SCOPES;
+    var scopes = w.Insights.SCOPES; if (A.syncRanked) A.syncRanked();
     el.innerHTML = head('Insights', 'Live counts. Refreshes whenever an application arrives or changes.',
       '<div class="seg" role="group" aria-label="Insight scope">' + Object.keys(scopes).map(function (k) { return '<button aria-pressed="' + (S.scope === k) + '" data-scope="' + k + '">' + esc(scopes[k].label) + '</button>'; }).join('') + '</div>' + dl()) +
       '<div id="insBody"></div>';
@@ -394,7 +394,7 @@
   }
   function loginUrl() { return location.origin + location.pathname; }
   function shareText(name, username, password, role) {
-    return 'Hello' + (name ? ' ' + name : '') + ',\n\nYour ' + (role === 'caller' ? 'caller' : role === 'interviewer' ? 'interviewer' : role === 'super' ? 'super admin' : 'admin') + ' login for DCIP Application Processing & Management:\n\nLink: ' + loginUrl() + '\nUsername: ' + username + '\nPassword: ' + password +
+    return 'Hello' + (name ? ' ' + name : '') + ',\n\nYour ' + (role === 'caller' ? 'caller' : role === 'super' ? 'super admin' : 'admin') + ' login for DCIP Application Processing & Management:\n\nLink: ' + loginUrl() + '\nUsername: ' + username + '\nPassword: ' + password +
       '\n\nPlease sign in and change your password under "My account".\n\nTeam DCIP';
   }
   function credentialsDialog(title, username, password, name, role) {
@@ -412,7 +412,7 @@
     var m = A.modal('<h3>Add a user</h3><div class="fgrid">' +
       '<div><label class="f">Username</label><input type="text" id="nuUser" autocapitalize="none" spellcheck="false" placeholder="e.g. meera.k"><div class="hint">Letters, numbers, dot, dash, underscore</div></div>' +
       '<div><label class="f">Full name</label><input type="text" id="nuName"></div>' +
-      '<div><label class="f">Role</label><select id="nuRole" ' + '>' + ((S.me || {}).role === 'super' ? '<option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option>' : '') + '<option value="caller">Caller – sees only the call list given to them</option><option value="interviewer">Interviewer – scores the shortlisted candidates</option></select></div>' +
+      '<div><label class="f">Role</label><select id="nuRole" ' + '>' + ((S.me || {}).role === 'super' ? '<option value="admin">Admin – manages applications</option><option value="super">Super admin – also users, logs, chats</option>' : '') + '<option value="caller">Caller – sees only the call list given to them</option></select></div>' +
       '<div><label class="f">Password</label><div style="display:flex;gap:6px"><input type="text" id="nuPass" autocomplete="off" spellcheck="false"><button type="button" class="btn small" id="nuGen">Generate</button></div><div class="hint">At least 8 characters</div></div></div>' +
       '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Create user</button></div>');
     $('#nuPass', m).value = genPassword();
@@ -424,9 +424,9 @@
     };
   }
   V.users = function (el) {
-    el.innerHTML = head('Users', 'Create accounts for admins, callers and interviewers. People sign in with their own username and password.' + ((S.me || {}).role === 'super' ? '' : ' You can manage caller and interviewer accounts.'), '<button class="btn primary" id="uAdd">+ Add user</button>') +
+    el.innerHTML = head('Users', 'Create accounts for admins and callers. People sign in with their own username and password.' + ((S.me || {}).role === 'super' ? '' : ' You can manage caller accounts.'), '<button class="btn primary" id="uAdd">+ Add user</button>') +
       '<div class="tw"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Created</th><th></th></tr></thead><tbody id="uBody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table></div>' +
-      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs. <b>Caller</b>: sees only the candidates assigned to them (name, basic profile and contact details) and marks call status and remarks. <b>Interviewer</b>: sees only the shortlisted candidates (profile, answers and CV, no scores or contact details) and enters their own marks; you see every interviewer\'s marks under <b>Panel scores</b>.</p><p class="hint">Passwords are stored scrambled, so nobody (including you) can look one up later. If someone forgets theirs, or you need the login message again, use <b>Copy login</b>: it sets a fresh password and copies a ready-to-send message.</p>';
+      '<p class="hint" style="margin-top:12px"><b>Admin</b>: everything in the portal except Users, Logs and (unless allowed in Settings) Chats. <b>Super admin</b>: everything, including all logs. <b>Caller</b>: sees only the candidates assigned to them (name, basic profile and contact details) and marks call status and remarks.</p><p class="hint">Passwords are stored scrambled, so nobody (including you) can look one up later. If someone forgets theirs, or you need the login message again, use <b>Copy login</b>: it sets a fresh password and copies a ready-to-send message.</p>';
     $('#uAdd', el).onclick = userDialog;
     var rowsByUser = {};
     A.api('listUsers').then(function (rows) {
@@ -434,7 +434,7 @@
       var b = $('#uBody', el); if (!b) return;
       b.innerHTML = rows.map(function (u) {
         var me = S.me && S.me.user === u.username;
-        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : u.role === 'caller' ? 'Caller' : u.role === 'interviewer' ? 'Interviewer' : 'Admin') + '</span></td>' +
+        return '<tr><td><b>' + esc(u.username) + '</b>' + (me ? ' <span class="chip info">you</span>' : '') + '</td><td>' + esc(u.name) + '</td><td><span class="chip ' + (u.role === 'super' ? 'warn' : '') + '">' + (u.role === 'super' ? 'Super admin' : u.role === 'caller' ? 'Caller' : 'Admin') + '</span></td>' +
           '<td>' + (u.active === 'Yes' ? '<span class="chip ok">Active</span>' : '<span class="chip bad">Disabled</span>') + '</td><td class="nowrap">' + esc(u.lastLogin ? D.fmtDateTime(u.lastLogin) : '—') + '</td><td class="nowrap"><small style="display:inline">' + esc(D.fmtDate(String(u.created).slice(0, 10))) + ' · ' + esc(u.createdBy) + '</small></td>' +
           '<td class="nowrap"><button class="btn small primary" data-copylogin="' + esc(u.username) + '" title="Sets a fresh password and copies the login message">Copy login</button> <button class="btn small" data-reset="' + esc(u.username) + '">Reset password</button> ' + (me ? '' : '<button class="btn small" data-tog="' + esc(u.username) + '" data-on="' + (u.active === 'Yes' ? '0' : '1') + '">' + (u.active === 'Yes' ? 'Disable' : 'Enable') + '</button> <button class="btn small danger" data-del="' + esc(u.username) + '">Delete</button>') + '</td></tr>';
       }).join('');

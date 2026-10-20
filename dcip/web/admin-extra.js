@@ -134,103 +134,101 @@
     });
   };
 
-  /* ============================ Interviewers: marks per candidate ============================ */
-  function mk(n) { return Math.round(n * 2) / 2; }
-  function sessLabel(c) { return c.sessionDate ? D.fmtDate(c.sessionDate) + ' · ' + c.sessionSlot : 'Session not set'; }
-  S.iF = 'todo'; S.iSess = ''; S.iDraft = {};
-  V.myinterviews = function (el) {
-    var my = S.myI; if (!my) { el.innerHTML = '<div class="muted">Loading…</div>'; return; }
-    var crit = my.criteria, mx = my.maxMark, cands = my.candidates, done = cands.filter(function (c) { return c.myMarks; }).length;
-    var sess = []; cands.forEach(function (c) { var k = c.session || ''; if (!sess.some(function (x) { return x.k === k; })) sess.push({ k: k, t: sessLabel(c) }); });
-    if (S.iSess && !sess.some(function (x) { return x.k === S.iSess; })) S.iSess = '';
-    var list = cands.filter(function (c) { return (!S.iSess || (c.session || '') === S.iSess) && (S.iF === 'all' || (S.iF === 'todo' ? !c.myMarks : !!c.myMarks)); });
-    function draft(c) { var d = S.iDraft[c.id]; if (!d) d = S.iDraft[c.id] = { marks: c.myMarks ? c.myMarks.slice() : crit.map(function () { return null; }), remark: c.myRemark || '' }; return d; }
-    function total(d) { return d.marks.reduce(function (t, n) { return t + (n == null ? 0 : n); }, 0); }
-    el.innerHTML = head('My interviews', 'Welcome, <b>' + esc(my.name) + '</b>. Give each candidate a mark for every item (0 to ' + mx + '), then save. Only you can see your marks; the office combines everyone\'s marks.',
-      '<div class="seg" role="group">' + [['todo', 'To score (' + (cands.length - done) + ')'], ['done', 'Scored (' + done + ')'], ['all', 'All (' + cands.length + ')']].map(function (t) { return '<button aria-pressed="' + (S.iF === t[0]) + '" data-f="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>') +
-      (sess.length > 1 ? '<div class="toolbar"><select id="iSess" aria-label="Interview session" style="max-width:340px"><option value="">All sessions</option>' + sess.map(function (x) { return '<option value="' + esc(x.k) + '"' + (S.iSess === x.k ? ' selected' : '') + '>' + esc(x.t) + '</option>'; }).join('') + '</select></div>' : '') +
-      '<div class="kv"><div><b>' + cands.length + '</b>shortlisted candidates</div><div><b>' + done + '</b>scored by me</div><div><b>' + (cands.length - done) + '</b>still to score</div></div>' +
-      (list.length ? '<div class="cards">' + list.map(function (c) {
-        var d = draft(c);
-        return '<div class="sc icard" data-id="' + esc(c.id) + '"><div class="info"><b>' + esc(c.fullName) + '</b> <span class="muted">' + esc(c.age) + ' yrs · ' + esc(c.gender) + ' · ' + esc(c.location) + '</span>' + (c.myMarks ? ' <span class="chip ok">Scored ' + esc(c.myTotal) + ' / ' + esc(my.max) + '</span>' : '') +
-          '<div class="muted" style="font-size:13px">' + esc(c.qual) + (c.mastersInstitution ? ' · ' + esc(c.mastersInstitution) : '') + '<br>' + esc(c.ug) + (c.completion ? ' · ' + esc(D.fmtMonthYear(c.completion)) : '') + '</div>' +
-          '<div style="margin-top:4px"><b>' + esc(sessLabel(c)) + '</b> · ' + esc(c.mode) + (c.venue ? ' · ' + esc(c.venue) : '') + (c.attendance ? ' · <span class="chip ' + (c.attendance === 'Present' ? 'ok' : 'bad') + '">' + esc(c.attendance) + '</span>' : '') + '</div>' +
-          '<details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">Read their answers' + (c.cv ? ' and CV' : '') + '</summary>' +
-          (c.cv ? '<p><a class="btn small" href="' + esc(c.cv) + '" target="_blank" rel="noopener">Open CV ↗</a></p>' : '') +
-          '<label class="f">Why DCIP?</label><div class="note-box">' + esc(c.motivation) + '</div>' + (c.background ? '<label class="f" style="margin-top:8px">Background and influences' + (c.backgroundQ ? ' · question <b>' + esc(c.backgroundQ) + '</b>' : '') + '</label><div class="note-box">' + esc(c.background) + '</div>' : '') + '</details></div>' +
-          '<div class="marks">' + crit.map(function (name, i) {
-            var chips = ''; for (var n = 0; n <= mx && mx <= 10; n++) chips += '<button type="button" class="mkb" data-i="' + i + '" data-v="' + n + '" aria-pressed="' + (d.marks[i] === n) + '">' + n + '</button>';
-            return '<div class="mrow"><div class="mlab">' + esc(name) + '</div>' + (mx <= 10 ? '<div class="mchips" role="group" aria-label="' + esc(name) + '">' + chips + '</div>' : '<input type="number" class="mnum" data-i="' + i + '" min="0" max="' + mx + '" step="0.5" value="' + (d.marks[i] == null ? '' : d.marks[i]) + '" aria-label="' + esc(name) + '">') + '</div>';
-          }).join('') + '</div>' +
-          '<div class="acts callform"><span class="mtot"><b class="tv">' + total(d) + '</b> / ' + my.max + '</span><input type="text" class="cnote" maxlength="500" placeholder="Remarks (optional)" value="' + esc(d.remark) + '" aria-label="Remarks for ' + esc(c.fullName) + '"><button class="btn small primary csave">' + (c.myMarks ? 'Update marks' : 'Save marks') + '</button></div></div>';
-      }).join('') + '</div>' : '<div class="empty">' + (cands.length ? 'Nothing in this list.' : 'No candidates have been shortlisted yet.') + '</div>');
-    $$('[data-f]', el).forEach(function (b) { b.onclick = function () { S.iF = b.dataset.f; A.render(); }; });
-    if ($('#iSess', el)) $('#iSess', el).onchange = function () { S.iSess = this.value; A.render(); };
-    $$('.icard', el).forEach(function (card) {
-      var id = card.dataset.id, c = cands.filter(function (x) { return x.id === id; })[0], d = draft(c);
-      function sum() { $('.tv', card).textContent = total(d); }
-      $$('.mkb', card).forEach(function (b) { b.onclick = function () { var i = +b.dataset.i, v = +b.dataset.v; d.marks[i] = v; $$('.mkb[data-i="' + i + '"]', card).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); sum(); }; });
-      $$('.mnum', card).forEach(function (inp) { inp.oninput = function () { d.marks[+inp.dataset.i] = inp.value === '' ? null : mk(Number(inp.value)); sum(); }; });
-      $('.cnote', card).oninput = function () { d.remark = this.value; };
-      $('.csave', card).onclick = function () {
-        var missing = crit.filter(function (n, i) { return d.marks[i] == null || isNaN(d.marks[i]); });
-        if (missing.length) { D.toast('Give a mark for: ' + missing.join(', '), 'err'); return; }
-        var btn = this; btn.disabled = true;
-        A.api('saveInterviewScore', id, d.marks, d.remark).then(function (r) { c.myMarks = d.marks.slice(); c.myTotal = r.total; c.myRemark = d.remark; delete S.iDraft[id]; D.toast(c.fullName + ': saved ' + r.total + ' / ' + r.max, 'ok'); A.renderSoft(); },
-          function (e) { D.toast(e.message, 'err'); }).then(function () { btn.disabled = false; });
+  /* ============================ Interview board: scores per member, totals and rank list ============================ */
+  var CUT_KEY = 'SELECTION_SIZE';
+  function cutSize() { return Math.max(1, Math.floor(Number((S.settings || {})[CUT_KEY]) || 25)); }
+  function maxScore() { return Number(S.maxScore) || 10; }
+  function fmtNum(n) { return n == null || n === '' ? '' : String(Math.round(Number(n) * 100) / 100); }
+  /** Candidates on the rank list with every board member's score, the total and the rank (equal totals share a rank). */
+  A.panelRows = function () {
+    var members = S.board || [], by = {};
+    (S.scores || []).forEach(function (r) { (by[r.appId] = by[r.appId] || {})[r.member] = r.score; });
+    var pool = S.apps.filter(function (a) { return a.shortlisted === 'Yes' && ['Disqualified', 'Withdrawn'].indexOf(a.status) < 0; });
+    var rows = pool.map(function (a) {
+      var sc = by[a.id] || {}, n = 0, t = 0; members.forEach(function (m) { if (sc[m.id] != null) { n++; t += sc[m.id]; } });
+      return { a: a, sc: sc, n: n, total: n ? Math.round(t * 100) / 100 : null };
+    }).sort(function (x, y) { return (y.total == null ? -1e9 : y.total) - (x.total == null ? -1e9 : x.total) || A.nameCmp(x.a, y.a); });
+    var rank = 0, prev = null, pos = 0;
+    rows.forEach(function (r) { if (r.total == null) { r.rank = null; return; } pos++; if (r.total !== prev) { rank = pos; prev = r.total; } r.rank = rank; });
+    var cut = cutSize();
+    rows.forEach(function (r) { r.top = r.rank != null && r.rank <= cut; });
+    return { members: members, rows: rows, max: maxScore(), cut: cut, scored: rows.filter(function (r) { return r.total != null; }).length };
+  };
+  /** Tells the insights which candidates are in the top of the rank list. */
+  A.syncRanked = function () {
+    var P = A.panelRows(), ids = {}, k = 0;
+    P.rows.forEach(function (r) { if (r.rank != null && k < P.cut) { ids[r.a.id] = 1; k++; } });
+    w.Insights.setRanked(ids, P.cut);
+    return P;
+  };
+  /** A short read-only line inside a candidate's drawer. */
+  A.panelBlock = function (a) {
+    if (a.shortlisted !== 'Yes' && a.interviewScore === '') return '';
+    var P = A.panelRows(), r = P.rows.filter(function (x) { return x.a.id === a.id; })[0];
+    if (!r || r.total == null) return '<h4>Interview board</h4><p class="muted" style="margin:0">No scores entered yet. Enter them under <b>Interview scores</b>.</p>';
+    return '<h4>Interview board · total ' + esc(fmtNum(r.total)) + (r.rank ? ' · rank ' + r.rank : '') + '</h4><div class="tw"><table class="t"><thead><tr>' + P.members.map(function (m) { return '<th class="num">' + esc(m.name) + '</th>'; }).join('') + '<th class="num">Total</th></tr></thead><tbody><tr>' +
+      P.members.map(function (m) { return '<td class="num">' + (r.sc[m.id] != null ? esc(fmtNum(r.sc[m.id])) : '<span class="muted">–</span>') + '</td>'; }).join('') + '<td class="num"><b>' + esc(fmtNum(r.total)) + '</b></td></tr></tbody></table></div>';
+  };
+  function boardDialog() {
+    var list = (S.board || []).map(function (m) { return { id: m.id, name: m.name }; });
+    if (!list.length) list = [{ id: '', name: '' }, { id: '', name: '' }, { id: '', name: '' }];
+    function draw() {
+      var m = A.modal('<h3>Interview board members</h3><p class="muted" style="margin:0 0 10px">Name the members of the board. Each gets a column in the score table. They do not need a login.</p><div id="bdList">' +
+        list.map(function (x, i) { return '<div class="bdrow" style="display:flex;gap:6px;margin-bottom:8px"><input type="text" data-bd="' + i + '" maxlength="60" placeholder="Member ' + (i + 1) + ' (e.g. Dr. Asha Nair)" value="' + esc(x.name) + '" aria-label="Board member ' + (i + 1) + '"><button class="btn small danger" data-rm="' + i + '" title="Remove this member" aria-label="Remove member ' + (i + 1) + '">✕</button></div>'; }).join('') + '</div>' +
+        '<button class="btn small" id="bdAdd"' + (list.length >= 12 ? ' disabled' : '') + '>+ Add member</button><p class="hint" style="margin-top:10px">Removing a member also removes the scores entered under their name, and the totals are recalculated.</p>' +
+        '<div class="acts"><button class="btn" id="cNo">Cancel</button><button class="btn primary" id="cYes">Save board</button></div>');
+      $$('[data-bd]', m).forEach(function (inp) { inp.oninput = function () { list[+inp.dataset.bd].name = inp.value; }; });
+      $$('[data-rm]', m).forEach(function (b) { b.onclick = function () { var x = list[+b.dataset.rm]; if (x.id && (S.scores || []).some(function (r) { return r.member === x.id; })) { if (!window.confirm('Remove ' + (x.name || 'this member') + ' and the scores entered for them?')) return; } list.splice(+b.dataset.rm, 1); draw(); }; });
+      $('#bdAdd', m).onclick = function () { list.push({ id: '', name: '' }); draw(); var all = $$('[data-bd]', $('#modal')); if (all.length) all[all.length - 1].focus(); };
+      $('#cNo', m).onclick = A.closeModal;
+      $('#cYes', m).onclick = function () {
+        var names = list.filter(function (x) { return x.name.trim(); }); if (!names.length) { D.toast('Add at least one board member.', 'err'); return; }
+        A.api('saveBoard', names).then(function () { A.closeModal(); D.toast('Board saved', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); });
+      };
+    }
+    draw();
+  }
+  function topInsights() {
+    A.syncRanked(); var data = w.Insights.compute(S.apps, 'ranked', S.settings);
+    var m = A.modal('<h3>' + esc(data.label) + '</h3><p class="muted" style="margin:0 0 10px">Who is in the top ' + esc(cutSize()) + ' of the interview rank list: district, gender, education, age, college, stream, subject and local body.</p><div id="insTop"></div><div class="acts"><button class="btn" id="insX">Excel</button><button class="btn" id="insP">PDF</button><button class="btn primary" id="cYes">Close</button></div>');
+    m.classList.add('wide'); w.Insights.render($('#insTop', m), data);
+    $('#cYes', m).onclick = A.closeModal; $('#insX', m).onclick = function () { A.download(A.reports.insights('ranked'), 'xlsx'); }; $('#insP', m).onclick = function () { A.download(A.reports.insights('ranked'), 'pdf'); };
+  }
+  S.pF = { sess: '', q: '' };
+  V.panel = function (el) {
+    var P = A.syncRanked(), f = S.pF, sessions = A.sortSessions(S.sessions), mx = P.max, cols = P.members;
+    var q = f.q.trim().toLowerCase();
+    var rows = P.rows.filter(function (r) { return (!f.sess || (f.sess === '__none' ? !r.a.session : r.a.session === f.sess)) && (!q || (r.a.fullName + ' ' + r.a.id).toLowerCase().indexOf(q) >= 0); });
+    el.innerHTML = head('Interview scores', 'Type each board member\'s score for every candidate (0 to <b>' + esc(mx) + '</b>). The total and rank update by themselves, and the rank list is built on the total. The top <b>' + esc(P.cut) + '</b> (selection size) are highlighted.',
+      '<button class="btn" id="bdEdit">Board members (' + cols.length + ')</button><button class="btn" id="insBtn"' + (P.scored ? '' : ' disabled') + '>Insights – top ' + esc(P.cut) + '</button><button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
+      '<div class="kv"><div><b>' + cols.length + '</b>board members</div><div><b>' + P.scored + ' / ' + P.rows.length + '</b>candidates scored</div><div><b>' + P.rows.filter(function (r) { return r.n && r.n < cols.length; }).length + '</b>with a score still missing</div></div>' +
+      (!cols.length ? '<div class="alert warn" style="padding:10px 14px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-weight:600;margin-bottom:12px">Start by naming the board: click <b>Board members</b> and add the people who interview. Each gets a column here.</div>' : '') +
+      '<div class="toolbar"><input type="search" id="pQ" placeholder="Find a candidate…" value="' + esc(f.q) + '" style="max-width:240px" aria-label="Find a candidate"><select id="pSess" aria-label="Session" style="max-width:320px"><option value="">All sessions</option>' + sessions.map(function (s) { return '<option value="' + esc(s.id) + '"' + (f.sess === s.id ? ' selected' : '') + '>' + esc(A.sessionLabel(s)) + '</option>'; }).join('') + '<option value="__none"' + (f.sess === '__none' ? ' selected' : '') + '>Not yet assigned</option></select></div>' +
+      (rows.length ? '<div class="tw"><table class="t" id="pTbl"><thead><tr><th class="num">Rank</th><th>Candidate</th><th>Session</th>' + cols.map(function (m) { return '<th class="num">' + esc(m.name) + '</th>'; }).join('') + '<th class="num">Total</th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          var s = S.sessions.filter(function (x) { return x.id === r.a.session; })[0];
+          return '<tr class="' + (r.top ? 'toprow' : '') + '"><td class="num">' + (r.rank == null ? '–' : r.rank) + '</td><td><a href="#" data-open="' + esc(r.a.id) + '"><b>' + esc(r.a.fullName) + '</b></a><small>' + esc(r.a.id) + ' · ' + esc(r.a.status) + (r.top ? ' · <b style="color:var(--ok)">Top ' + esc(P.cut) + '</b>' : '') + '</small></td><td class="nowrap">' + esc(s ? A.sessionLabel(s) : '—') + '</td>' +
+            cols.map(function (m, ci) { return '<td class="num"><input type="number" class="score" step="0.5" min="0" max="' + esc(mx) + '" data-a="' + esc(r.a.id) + '" data-m="' + esc(m.id) + '" data-c="' + ci + '" value="' + (r.sc[m.id] != null ? esc(r.sc[m.id]) : '') + '" aria-label="' + esc(m.name) + ' – ' + esc(r.a.fullName) + '"></td>'; }).join('') +
+            '<td class="num"><b>' + (r.total == null ? '–' : esc(fmtNum(r.total))) + '</b></td></tr>';
+        }).join('') + '</tbody></table></div>' : '<div class="empty">No shortlisted candidates in this view.</div>');
+    bindDlLocal(el, function () { return A.reports.panelScores(); });
+    $('#bdEdit', el).onclick = boardDialog; $('#insBtn', el).onclick = topInsights;
+    $('#pSess', el).onchange = function () { f.sess = this.value; A.render(); };
+    $('#pQ', el).onchange = function () { f.q = this.value; A.render(); };
+    $$('[data-open]', el).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); A.openDrawer(b.dataset.open); }; });
+    $$('input[data-a]', el).forEach(function (inp) {
+      inp.onkeydown = function (e) { if (e.key !== 'Enter') return; e.preventDefault(); var all = $$('input[data-c="' + inp.dataset.c + '"]', el), i = all.indexOf(inp); this.blur(); setTimeout(function () { var n = $$('input[data-c="' + inp.dataset.c + '"]', $('#view'))[i + 1]; if (n) n.focus(); }, 160); };
+      inp.onchange = function () {
+        var v = inp.value.trim(), num = Number(v);
+        if (v !== '' && (isNaN(num) || num < 0 || num > mx)) { D.toast('The score must be between 0 and ' + mx + '.', 'err'); inp.value = ''; v = ''; }
+        A.api('saveBoardScore', inp.dataset.a, inp.dataset.m, v).then(function (r) {
+          S.scores = (S.scores || []).filter(function (x) { return !(x.appId === inp.dataset.a && x.member === inp.dataset.m); });
+          if (v !== '') S.scores.push({ appId: inp.dataset.a, member: inp.dataset.m, score: Math.round(Number(v) * 100) / 100 });
+          var app = A.byId(inp.dataset.a); if (app) app.interviewScore = r.total;
+          A.renderSoft();
+        }, function (e) { D.toast(e.message, 'err'); });
       };
     });
-  };
-
-  /* ============================ Panel scores (officials) ============================ */
-  function scoresOf(id) { return (S.scores || []).filter(function (r) { return r.appId === String(id); }); }
-  function names() {
-    var m = {}; (S.interviewers || []).forEach(function (u) { m[u.username] = u.name; });
-    (S.scores || []).forEach(function (r) { if (!m[r.interviewer]) m[r.interviewer] = r.interviewerName || r.interviewer; });
-    return m;
-  }
-  A.panelRows = function () {
-    var nm = names(), users = Object.keys(nm).sort(function (a, b) { return String(nm[a]).localeCompare(String(nm[b])); });
-    var pool = S.apps.filter(function (a) { return (a.shortlisted === 'Yes' && ['Disqualified', 'Withdrawn'].indexOf(a.status) < 0) || scoresOf(a.id).length; });
-    var rows = pool.map(function (a) {
-      var sc = scoresOf(a.id), by = {}; sc.forEach(function (r) { by[r.interviewer] = r; });
-      var avg = sc.length ? Math.round(sc.reduce(function (t, r) { return t + r.total; }, 0) / sc.length * 10) / 10 : null;
-      return { a: a, by: by, n: sc.length, avg: avg };
-    }).sort(function (x, y) { return (y.avg == null ? -1e9 : y.avg) - (x.avg == null ? -1e9 : x.avg) || A.nameCmp(x.a, y.a); });
-    return { users: users, names: nm, rows: rows, max: (S.scoring || {}).max || 0, criteria: (S.scoring || {}).criteria || [] };
-  };
-  /** The marks section shown inside a candidate's drawer. */
-  A.panelBlock = function (a) {
-    var sc = scoresOf(a.id), cr = (S.scoring || {}).criteria || [], max = (S.scoring || {}).max;
-    if (!a.shortlisted && !sc.length) return '';
-    if (!sc.length) return '<h4>Interview panel</h4><p class="muted" style="margin:0">No interviewer has entered marks yet.</p>';
-    var avg = Math.round(sc.reduce(function (t, r) { return t + r.total; }, 0) / sc.length * 10) / 10;
-    return '<h4>Interview panel · average ' + esc(avg) + ' / ' + esc(max) + '</h4><div class="tw"><table class="t"><thead><tr><th>Interviewer</th>' + cr.map(function (c) { return '<th class="num" title="' + esc(c) + '">' + esc(c.length > 14 ? c.slice(0, 13) + '…' : c) + '</th>'; }).join('') + '<th class="num">Total</th><th></th></tr></thead><tbody>' +
-      sc.map(function (r) { return '<tr><td><b>' + esc(r.interviewerName || r.interviewer) + '</b>' + (r.remark ? '<small>' + esc(r.remark) + '</small>' : '') + '</td>' + cr.map(function (c, i) { return '<td class="num">' + esc(r.marks[i] == null ? '' : r.marks[i]) + '</td>'; }).join('') + '<td class="num"><b>' + esc(r.total) + '</b></td><td><button class="btn small danger" data-rmscore="' + esc(r.interviewer) + '" title="Remove these marks">✕</button></td></tr>'; }).join('') +
-      '</tbody></table></div><p class="hint" style="margin:6px 0 0">The Interview score above is the average of all interviewers\' totals and updates by itself.</p>';
-  };
-  V.panel = function (el) {
-    var P = A.panelRows(), sessions = A.sortSessions(S.sessions);
-    var f = S.pF || (S.pF = { sess: '', only: false });
-    var rows = P.rows.filter(function (r) { return (!f.sess || (f.sess === '__none' ? !r.a.session : r.a.session === f.sess)) && (!f.only || r.n); });
-    var scored = P.rows.filter(function (r) { return r.n; }).length;
-    el.innerHTML = head('Panel scores', 'Every interviewer\'s total for each shortlisted candidate. The <b>Interview score</b> used for ranking and selection is the average of these totals. Marks are out of <b>' + esc(P.max) + '</b> (' + esc(P.criteria.length) + ' items, up to ' + esc((S.scoring || {}).maxMark) + ' each; change the items under <b>Settings</b>).',
-      '<button class="btn small" data-dl="xlsx">Excel</button><button class="btn small" data-dl="pdf">PDF</button>') +
-      '<div class="kv"><div><b>' + (S.interviewers || []).length + '</b>interviewers</div><div><b>' + scored + ' / ' + P.rows.length + '</b>candidates with marks</div><div><b>' + P.rows.filter(function (r) { return r.n && r.n >= Math.max(1, (S.interviewers || []).filter(function (u) { return u.active === 'Yes'; }).length); }).length + '</b>marked by every interviewer</div></div>' +
-      '<div class="toolbar"><select id="pSess" aria-label="Session" style="max-width:320px"><option value="">All sessions</option>' + sessions.map(function (s) { return '<option value="' + esc(s.id) + '"' + (f.sess === s.id ? ' selected' : '') + '>' + esc(A.sessionLabel(s)) + '</option>'; }).join('') + '<option value="__none"' + (f.sess === '__none' ? ' selected' : '') + '>Not yet assigned</option></select>' +
-      '<label class="chk" style="margin:0"><input type="checkbox" id="pOnly"' + (f.only ? ' checked' : '') + '> Only candidates with marks</label></div>' +
-      (!(S.interviewers || []).length ? '<div class="alert warn" style="padding:10px 14px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-weight:600;margin-bottom:12px">No interviewers yet. Add them under <b>Users</b> (role: Interviewer); each gets their own login.</div>' : '') +
-      (rows.length ? '<div class="tw"><table class="t"><thead><tr><th class="num">Rank</th><th>Candidate</th><th>Session</th>' + P.users.map(function (u) { return '<th class="num">' + esc(P.names[u]) + '</th>'; }).join('') + '<th class="num">Marked by</th><th class="num">Average</th></tr></thead><tbody>' +
-        rows.map(function (r, i) {
-          var rk = r.avg == null ? '–' : P.rows.indexOf(r) + 1, s = S.sessions.filter(function (x) { return x.id === r.a.session; })[0];
-          return '<tr><td class="num">' + rk + '</td><td><a href="#" data-open="' + esc(r.a.id) + '"><b>' + esc(r.a.fullName) + '</b></a><small>' + esc(r.a.id) + ' · ' + esc(r.a.status) + '</small></td><td>' + esc(s ? A.sessionLabel(s) : '—') + '</td>' +
-            P.users.map(function (u) { var x = r.by[u]; return '<td class="num">' + (x ? '<span title="' + esc((x.remark || '') + ' · marks ' + x.marks.join(', ')) + '">' + esc(x.total) + '</span>' : '<span class="muted">–</span>') + '</td>'; }).join('') +
-            '<td class="num">' + r.n + '</td><td class="num"><b>' + (r.avg == null ? '–' : esc(r.avg)) + '</b></td></tr>';
-        }).join('') + '</tbody></table></div>' : '<div class="empty">No candidates in this view.</div>');
-    bindDlLocal(el, function () { return A.reports.panelScores(); });
-    $('#pSess', el).onchange = function () { f.sess = this.value; A.render(); };
-    $('#pOnly', el).onchange = function () { f.only = this.checked; A.render(); };
-    $$('[data-open]', el).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); A.openDrawer(b.dataset.open); }; });
   };
   function bindDlLocal(root, make) { $$('[data-dl]', root).forEach(function (b) { b.onclick = function () { A.download(make(), b.dataset.dl); }; }); }
 

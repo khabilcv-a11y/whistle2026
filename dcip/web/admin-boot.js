@@ -16,7 +16,7 @@
   $('#loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var btn = $('#lbtn'); btn.disabled = true; btn.textContent = 'Signing in…'; $('#lerr').textContent = '';
-    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; S.tab = r.role === 'caller' ? 'mycalls' : r.role === 'interviewer' ? 'myinterviews' : 'overview'; saveSession(); start(); },
+    D.call('adminLogin', $('#luser').value, $('#lpass').value).then(function (r) { S.token = r.token; S.user = r.user; S.me = { user: r.user, name: r.name, role: r.role }; S.tab = r.role === 'caller' ? 'mycalls' : 'overview'; saveSession(); start(); },
       function (err) { $('#lerr').textContent = err.message; }).then(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
   });
   $('#btnLogout').onclick = function () { A.logout(); };
@@ -25,8 +25,7 @@
   A.tabAllowed = function (id) {
     var role = (S.me || {}).role;
     if (role === 'caller') return id === 'mycalls';
-    if (role === 'interviewer') return id === 'myinterviews';
-    if (id === 'mycalls' || id === 'myinterviews') return false;
+    if (id === 'mycalls') return false;
     if (id === 'logs') return role === 'super';
     if (id === 'chats') return role === 'super' || !!S.canChats;
     return true;
@@ -39,15 +38,10 @@
       $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = 'Caller · ' + (r.name || S.user);
       A.renderSoft(); if (manual) D.toast('Refreshed', 'ok');
     }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
-    if ((S.me || {}).role === 'interviewer') return A.api('getMyInterviews').then(function (r) {
-      S.myI = r; S.stamp = r.stamp; failures = 0; live(true);
-      $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = 'Interviewer · ' + (r.name || S.user);
-      A.renderSoft(); if (manual) D.toast('Refreshed', 'ok');
-    }, function (e) { if (e.message !== 'SESSION_EXPIRED') { failures++; live(false); if (manual) D.toast(e.message, 'err'); } });
     return A.api('getAdminState').then(function (st) {
       var firstLoad = lastCount === null;
       S.apps = st.applications; S.sessions = st.sessions; S.settings = st.settings; S.meta = st.settingsMeta; S.config = st.config; S.statuses = st.statuses;
-      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats; S.callers = st.callers || []; S.interviewers = st.interviewers || []; S.scores = st.scores || []; S.scoring = st.scoring || { criteria: [], maxMark: 10, max: 0 }; S.callStatuses = (st.config || {}).callStatuses;
+      S.stamp = st.stamp; S.mailQuota = st.mailQuota; S.cvFolder = st.cvFolder; S.me = st.me; S.canChats = st.canChats; S.callers = st.callers || []; S.board = st.board || []; S.scores = st.scores || []; S.maxScore = st.maxScore || 10; S.callStatuses = (st.config || {}).callStatuses;
       if (!firstLoad && st.applications.length > lastCount) D.toast((st.applications.length - lastCount) + ' new application' + (st.applications.length - lastCount > 1 ? 's' : '') + ' received', 'ok');
       lastCount = st.applications.length; failures = 0; live(true);
       $('#hTitle').textContent = 'DCIP APPLICATION PROCESSING & MANAGEMENT'; $('#hSub').textContent = S.settings.BATCH_LABEL || ''; document.title = 'DCIP ' + (S.settings.BATCH_LABEL || '') + ' · Admin';
@@ -68,7 +62,7 @@
   A.render = function () {
     A.pendingRender = false;
     var me = S.me || { user: S.user, name: S.user, role: 'admin' };
-    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : me.role === 'caller' ? 'Caller' : me.role === 'interviewer' ? 'Interviewer' : 'Admin') + '</span>';
+    $('#who').innerHTML = esc(me.name || me.user) + ' <span class="rolechip ' + me.role + '">' + (me.role === 'super' ? 'Super admin' : me.role === 'caller' ? 'Caller' : 'Admin') + '</span>';
     var tabs = A.TABS.filter(function (t) { return A.tabAllowed(t[0]); });
     if (!tabs.some(function (t) { return t[0] === S.tab; })) S.tab = tabs[0][0];
     $('#tabs').innerHTML = tabs.map(function (t) { return '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" data-tab="' + t[0] + '">' + esc(t[1]) + badge(t[0]) + '</button>'; }).join('');

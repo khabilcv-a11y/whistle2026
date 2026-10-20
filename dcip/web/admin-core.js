@@ -169,7 +169,6 @@
       '<footer><button class="btn primary" id="dSave">Save changes</button><button class="btn" id="dMail">E-mail…</button><button class="btn" id="dResend">Resend confirmation</button></footer>';
     d.classList.remove('hidden'); $('#drawerBg').classList.remove('hidden');
     $('#dClose').onclick = A.closeDrawer;
-    A.$$('[data-rmscore]', d).forEach(function (b) { b.onclick = function () { A.confirm('Remove these marks?', 'The marks given by this interviewer for ' + esc(a.fullName) + ' are deleted and the average is recalculated.', 'Remove', true).then(function (ok) { if (ok) A.api('deleteInterviewScore', a.id, b.dataset.rmscore).then(function () { D.toast('Marks removed', 'ok'); return A.refresh(); }, function (e) { D.toast(e.message, 'err'); }); }); }; });
     if ($('#dDelete')) $('#dDelete').onclick = function () { A.deleteApps(a.id); };
     A.$$('[data-quick]', d).forEach(function (b) { b.onclick = function () { A.save(a.id, { status: b.dataset.quick }, 'Quick action').then(function () { D.toast(a.fullName + ' → ' + b.dataset.quick, 'ok'); }); }; });
     $('#dSave').onclick = function () {
